@@ -38,7 +38,7 @@ export function StepExport({ proposal, sections, lfa, budget, donor }: StepProps
       if (format === "pdf") await exportPdf(bundle);
       else if (format === "docx") await exportDocx(bundle);
       else await exportXlsx(bundle);
-      void logAudit("export", "proposal", proposal.id, { format });
+      void logAudit({ action: "export", entityType: "proposal", entityId: proposal.id, newValues: { format } });
       toast.success(`Dokumen ${format.toUpperCase()} berhasil diunduh.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Ekspor dokumen gagal.");
