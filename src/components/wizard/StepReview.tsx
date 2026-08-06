@@ -38,7 +38,10 @@ export function StepReview({ proposal, sections, lfa, budget, donor, save }: Ste
           <Badge variant={passed === checks.length ? "default" : "secondary"}>
             {passed} dari {checks.length} pemeriksaan lolos
           </Badge>
-          <Select value={proposal.status} onValueChange={(v) => save({ status: v }, true)}>
+          <Select
+            value={proposal.status}
+            onValueChange={(v) => save({ status: v as typeof proposal.status }, true)}
+          >
             <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
               {PROPOSAL_STATUSES.map((s) => (
