@@ -127,7 +127,7 @@ export async function exportDocx(bundle: ExportBundle) {
   );
   const p = bundle.proposal;
 
-  const children: InstanceType<typeof Paragraph>[] | unknown[] = [];
+  const children: unknown[] = [];
   children.push(new Paragraph({ text: p.title, heading: HeadingLevel.TITLE }));
   children.push(
     new Paragraph({
