@@ -1,4 +1,4 @@
-import { generateText, streamText, Output } from "ai";
+import { streamText, Output } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider, AI_MODEL } from "./ai-gateway.server";
 
@@ -220,5 +220,3 @@ Harga satuan tidak boleh melebihi standar biaya yang tersedia. Total keseluruhan
     handleError(error);
   }
 }
-
-export const _unusedGenerateText = generateText;
