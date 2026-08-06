@@ -92,7 +92,7 @@ function WizardPage() {
           </div>
           <div className="space-y-2">
             <Label>Provinsi</Label>
-            <Select defaultValue={p.province ?? undefined} onValueChange={(v) => save({ province: v }, true)}>
+            <Select defaultValue={p.province ?? ""} onValueChange={(v) => save({ province: v }, true)}>
               <SelectTrigger><SelectValue placeholder="Pilih provinsi" /></SelectTrigger>
               <SelectContent>
                 {PROVINCES.map((prov) => (
@@ -103,7 +103,7 @@ function WizardPage() {
           </div>
           <div className="space-y-2">
             <Label>Kategori Program</Label>
-            <Select defaultValue={p.category ?? undefined} onValueChange={(v) => save({ category: v }, true)}>
+            <Select defaultValue={p.category ?? ""} onValueChange={(v) => save({ category: v }, true)}>
               <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
               <SelectContent>
                 {PROGRAM_CATEGORIES.map((c) => (
