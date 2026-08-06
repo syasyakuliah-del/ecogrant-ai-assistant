@@ -63,7 +63,7 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
   async function addItem() {
     const { error } = await supabase.from("budget_items").insert({
       proposal_id: proposal.id,
-      category: BUDGET_CATEGORIES[0],
+      category: BUDGET_CATEGORIES[0] ?? "Lainnya",
       description: "",
       unit: "Paket",
       volume: 1,
