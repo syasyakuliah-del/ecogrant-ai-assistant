@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useProposalData, useAutosave, computeProgress } from "@/hooks/useProposalData";
 import { WIZARD_STEPS, PROVINCES, PROGRAM_CATEGORIES } from "@/lib/constants";
 import { formatCurrency } from "@/lib/format";
+import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/app-shell";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +15,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { StepProps, Donor } from "@/components/wizard/shared";
+import { StepNarrative } from "@/components/wizard/StepNarrative";
+import { StepSummary } from "@/components/wizard/StepSummary";
+import { StepDonor } from "@/components/wizard/StepDonor";
+import { StepLfa } from "@/components/wizard/StepLfa";
+import { StepStandards } from "@/components/wizard/StepStandards";
+import { StepBudget } from "@/components/wizard/StepBudget";
+import { StepReview } from "@/components/wizard/StepReview";
+import { StepExport } from "@/components/wizard/StepExport";
 
 export const Route = createFileRoute("/_authenticated/proposals/$id")({
   head: () => ({
@@ -26,8 +39,20 @@ export const Route = createFileRoute("/_authenticated/proposals/$id")({
 
 function WizardPage() {
   const { id } = Route.useParams();
-  const { data, isLoading } = useProposalData(id);
+  const { data, isLoading, refetch } = useProposalData(id);
   const { save, state } = useAutosave(id);
+  const [step, setStep] = useState(1);
+
+  const donorId = data?.proposal?.donor_id ?? null;
+  const { data: donor } = useQuery({
+    queryKey: ["donor", donorId],
+    enabled: Boolean(donorId),
+    queryFn: async () => {
+      const { data, error } = await supabase.from("donors").select("*").eq("id", donorId!).maybeSingle();
+      if (error) throw error;
+      return data as Donor | null;
+    },
+  });
 
   if (isLoading || !data?.proposal) {
     return (
@@ -39,6 +64,16 @@ function WizardPage() {
 
   const p = data.proposal;
   const progress = computeProgress({ proposal: p, sections: data.sections, lfa: data.lfa, budget: data.budget });
+  const stepProps: StepProps = {
+    proposal: p,
+    sections: data.sections,
+    lfa: data.lfa,
+    budget: data.budget,
+    donor: donor ?? null,
+    refetch: () => void refetch(),
+    save,
+  };
+  const current = WIZARD_STEPS.find((s) => s.step === step) ?? WIZARD_STEPS[0]!;
 
   return (
     <div className="space-y-6">
@@ -61,9 +96,14 @@ function WizardPage() {
           <Progress value={progress.percent} className="h-2" />
           <div className="flex flex-wrap gap-2 pt-2">
             {WIZARD_STEPS.map((s) => (
-              <Badge key={s.step} variant={progress.checks[s.step - 1] ? "default" : "outline"}>
-                {s.step}. {s.short}
-              </Badge>
+              <button key={s.step} type="button" onClick={() => setStep(s.step)}>
+                <Badge
+                  variant={s.step === step ? "default" : progress.checks[s.step - 1] ? "secondary" : "outline"}
+                  className="cursor-pointer"
+                >
+                  {s.step}. {s.short}
+                </Badge>
+              </button>
             ))}
           </div>
         </CardContent>
@@ -71,8 +111,11 @@ function WizardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Langkah 1 — Informasi Proposal</CardTitle>
+          <CardTitle className="text-base">
+            Langkah {current.step} — {current.title}
+          </CardTitle>
         </CardHeader>
+        {step === 1 && (
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="title">Judul Proposal</Label>
@@ -155,7 +198,30 @@ function WizardPage() {
             />
           </div>
         </CardContent>
+        )}
+        {step > 1 && (
+          <CardContent>
+            {step === 2 && <StepNarrative {...stepProps} />}
+            {step === 3 && <StepSummary {...stepProps} />}
+            {step === 4 && <StepDonor {...stepProps} />}
+            {step === 5 && <StepLfa {...stepProps} />}
+            {step === 6 && <StepStandards {...stepProps} source="sbm" />}
+            {step === 7 && <StepStandards {...stepProps} source="sbu" />}
+            {step === 8 && <StepBudget {...stepProps} />}
+            {step === 9 && <StepReview {...stepProps} />}
+            {step === 10 && <StepExport {...stepProps} />}
+          </CardContent>
+        )}
       </Card>
+
+      <div className="flex items-center justify-between">
+        <Button variant="outline" disabled={step === 1} onClick={() => setStep((s) => Math.max(1, s - 1))}>
+          <ChevronLeft className="size-4" /> Sebelumnya
+        </Button>
+        <Button disabled={step === 10} onClick={() => setStep((s) => Math.min(10, s + 1))}>
+          Selanjutnya <ChevronRight className="size-4" />
+        </Button>
+      </div>
     </div>
   );
 }
