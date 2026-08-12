@@ -1,6 +1,6 @@
 -- ============================================================================
 -- EcoGrant AI - Consolidated Supabase Database Schema & Migrations
--- Generated for Supabase Project: ozxdpagxumfxveqyfene
+-- Generated for Supabase Project: scnouypfyimjuonbnnhj
 -- Description: Complete schema, security functions, RLS policies, triggers, 
 --              performance indexes, and master seed data.
 -- ============================================================================
