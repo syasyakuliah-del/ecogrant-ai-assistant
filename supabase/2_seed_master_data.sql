@@ -132,5 +132,10 @@ INSERT INTO public.help_articles (category, title, slug, excerpt, content, sort_
 ('Panduan','Panduan Wizard Proposal 10 Langkah','panduan-wizard','Penjelasan sepuluh langkah penyusunan proposal.','Langkah 1 Informasi Proposal, Langkah 2 Penyusunan Narasi, Langkah 3 Executive Summary, Langkah 4 Pemilihan Donor, Langkah 5 Logical Framework Matrix, Langkah 6 Sinkronisasi SBM, Langkah 7 Sinkronisasi SBU, Langkah 8 Rencana Anggaran Biaya, Langkah 9 Review, Langkah 10 Export.',2)
 ON CONFLICT (slug) DO NOTHING;
 
--- 9. SYNC EXISTING USER TO ADMIN IF ANY
+-- 9. ENSURE SYASYAKULIAH@GMAIL.COM IS SET AS ADMIN
+INSERT INTO public.user_roles (user_id, role, role_id)
+SELECT id, 'admin'::public.app_role, (SELECT id FROM public.roles WHERE name = 'admin')
+FROM auth.users WHERE email = 'syasyakuliah@gmail.com'
+ON CONFLICT (user_id, role) DO UPDATE SET role = 'admin', role_id = EXCLUDED.role_id;
+
 UPDATE public.user_roles SET role = 'admin' WHERE role_id IS NULL;

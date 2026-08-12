@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { KeyRound, Shield, ShieldCheck, UserCheck, Users } from "lucide-react";
+import { KeyRound, Shield, ShieldCheck, UserCheck, UserPlus, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { logAudit } from "@/lib/audit";
@@ -12,6 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,6 +61,66 @@ function AdminUsers() {
   const { user } = useAuth();
   const [q, setQ] = useState("");
   const [activeTab, setActiveTab] = useState("users");
+
+  // Create User Modal state
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newFullName, setNewFullName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newOrg, setNewOrg] = useState("");
+  const [newRole, setNewRole] = useState<"user" | "admin">("user");
+  const [isCreating, setIsCreating] = useState(false);
+
+  async function handleCreateUser(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newEmail.trim() || !newPassword.trim()) {
+      toast.error("Email dan kata sandi wajib diisi.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("Kata sandi minimal 8 karakter.");
+      return;
+    }
+
+    setIsCreating(true);
+    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+      email: newEmail.trim(),
+      password: newPassword,
+      options: {
+        data: {
+          full_name: newFullName.trim(),
+          organization_name: newOrg.trim(),
+        },
+      },
+    });
+
+    setIsCreating(false);
+
+    if (signUpErr) {
+      toast.error("Gagal membuat user: " + signUpErr.message);
+      return;
+    }
+
+    const createdUserId = signUpData.user?.id;
+    if (createdUserId && newRole === "admin") {
+      const { data: roleRow } = await supabase.from("roles").select("id").eq("name", "admin").maybeSingle();
+      await supabase.from("user_roles").upsert(
+        { user_id: createdUserId, role: "admin", role_id: roleRow?.id ?? null },
+        { onConflict: "user_id,role" },
+      );
+    }
+
+    await logAudit({ action: "admin.user.create", entityType: "profile", entityId: createdUserId ?? null, newValues: { email: newEmail, role: newRole } });
+    void qc.invalidateQueries({ queryKey: ["admin-users"] });
+
+    toast.success(`Akun user ${newEmail} berhasil dibuat!`);
+    setIsCreateOpen(false);
+    setNewFullName("");
+    setNewEmail("");
+    setNewPassword("");
+    setNewOrg("");
+    setNewRole("user");
+  }
 
   // Fetch users & roles
   const { data: userData, isLoading: isUsersLoading } = useQuery({
@@ -232,7 +295,98 @@ function AdminUsers() {
         </TabsList>
 
         <TabsContent value="users" className="mt-6 space-y-4">
-          <AdminToolbar query={q} onQueryChange={setQ} placeholder="Cari nama, email, atau organisasi..." />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex-1">
+              <AdminToolbar query={q} onQueryChange={setQ} placeholder="Cari nama, email, atau organisasi..." />
+            </div>
+            <Button onClick={() => setIsCreateOpen(true)} className="gap-2 shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white">
+              <UserPlus className="size-4" />
+              Tambah User Baru
+            </Button>
+          </div>
+
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                  <UserPlus className="size-5" />
+                  Tambah User & Password Baru
+                </DialogTitle>
+                <DialogDescription>
+                  Administrator dapat membuatkan akun pengguna operasional atau admin baru secara langsung.
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleCreateUser} className="space-y-4 py-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="fullname">Nama Lengkap</Label>
+                  <Input
+                    id="fullname"
+                    placeholder="Contoh: Budi Santoso"
+                    value={newFullName}
+                    onChange={(e) => setNewFullName(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Alamat Email <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    required
+                    placeholder="user@organisasi.or.id"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="password">Kata Sandi (Password) <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="password"
+                    type="text"
+                    required
+                    placeholder="Minimal 8 karakter"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                  <div className="text-[11px] text-muted-foreground">Admin dapat menentukan password awal pengguna di sini.</div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="org">Nama Organisasi / Yayasan</Label>
+                  <Input
+                    id="org"
+                    placeholder="Contoh: KSPM Kalimantan Barat"
+                    value={newOrg}
+                    onChange={(e) => setNewOrg(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="role">Peran (Role)</Label>
+                  <Select value={newRole} onValueChange={(v) => setNewRole(v as "user" | "admin")}>
+                    <SelectTrigger id="role">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">User Operasional (Default)</SelectItem>
+                      <SelectItem value="admin">Administrator Sistem</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <DialogFooter className="pt-2">
+                  <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
+                    Batal
+                  </Button>
+                  <Button type="submit" disabled={isCreating} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                    {isCreating ? "Membuat Akun…" : "Buat Akun Sekarang"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           <AdminTable headers={["Nama", "Email & Organisasi", "Proposal", "Terdaftar & Last Login", "Peran", "Status", "Aksi"]}>
             {isUsersLoading ? (
