@@ -3,6 +3,9 @@ export type DonorRow = {
   name: string;
   category: string;
   country: string | null;
+  website?: string | null;
+  email?: string | null;
+  phone?: string | null;
   funding_fields: string[];
   priorities: string[];
   requirements: string[];

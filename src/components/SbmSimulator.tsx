@@ -132,11 +132,11 @@ export function SbmSimulator() {
   const [showMagicLinkModal, setShowMagicLinkModal] = useState(false);
   const [signedState, setSignedState] = useState(false);
 
-  const preset = PRESETS.find((p) => p.id === selectedPresetId) || PRESETS[0];
-  const region = REGIONS[selectedRegionKey] || REGIONS["kalsel"];
+  const preset = PRESETS.find((p) => p.id === selectedPresetId) ?? PRESETS[0];
+  const region = REGIONS[selectedRegionKey] ?? REGIONS["kalsel"];
 
-  const calculatedItems = preset.sbmItems.map((item, idx) => {
-    const baseRate = Math.round(item.rateBase * region.multiplier);
+  const calculatedItems = (preset?.sbmItems ?? []).map((item, idx) => {
+    const baseRate = Math.round(item.rateBase * (region?.multiplier ?? 1));
     const finalRate = idx === 0 && customOverrideRate !== null ? customOverrideRate : baseRate;
     const total = finalRate * item.volumeDefault;
     return { ...item, finalRate, total, isOverridden: idx === 0 && customOverrideRate !== null };
@@ -172,7 +172,7 @@ export function SbmSimulator() {
         </div>
         <div className="mt-3 flex items-center gap-2 sm:mt-0">
           <Badge variant="outline" className="gap-1 text-xs border-border bg-background">
-            <MapPin className="size-3 text-primary" /> {region.label.split(" ")[0]}
+            <MapPin className="size-3 text-primary" /> {region?.label?.split(" ")[0] ?? ""}
           </Badge>
         </div>
       </div>
@@ -224,7 +224,7 @@ export function SbmSimulator() {
         <div className="mt-3 flex items-center gap-2 rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground border border-border/50">
           <ShieldCheck className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <span>
-            <strong>Acuan SBM:</strong> {region.sbmNote}
+            <strong>Acuan SBM:</strong> {region?.sbmNote ?? "Standard nasional"}
           </span>
         </div>
 
@@ -245,14 +245,14 @@ export function SbmSimulator() {
           {/* TAB 1: Scope & Timeline */}
           <TabsContent value="scope" className="mt-4 space-y-4">
             <div className="rounded-lg border border-border bg-background p-4">
-              <h4 className="font-display text-sm font-semibold text-foreground">{preset.title}</h4>
-              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{preset.description}</p>
+              <h4 className="font-display text-sm font-semibold text-foreground">{preset?.title}</h4>
+              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{preset?.description}</p>
               
               <div className="mt-4 grid gap-4 sm:grid-cols-3">
                 <div className="rounded-md border border-border/80 bg-muted/30 p-3">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Deliverables Utama</span>
                   <ul className="mt-2 space-y-1.5 text-xs text-foreground">
-                    {preset.deliverables.map((d, i) => (
+                    {(preset?.deliverables ?? []).map((d, i) => (
                       <li key={i} className="flex items-start gap-1.5">
                         <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0 mt-0.5" />
                         <span>{d}</span>
@@ -264,7 +264,7 @@ export function SbmSimulator() {
                 <div className="rounded-md border border-border/80 bg-muted/30 p-3">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Milestones & Tahapan</span>
                   <ul className="mt-2 space-y-1.5 text-xs text-foreground">
-                    {preset.milestones.map((m, i) => (
+                    {(preset?.milestones ?? []).map((m, i) => (
                       <li key={i} className="flex items-start gap-1.5">
                         <ChevronRight className="size-3.5 text-emerald-500 shrink-0 mt-0.5" />
                         <span>{m}</span>
@@ -276,7 +276,7 @@ export function SbmSimulator() {
                 <div className="rounded-md border border-border/80 bg-muted/30 p-3">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">KPI Indikator Keberhasilan</span>
                   <ul className="mt-2 space-y-1.5 text-xs text-foreground">
-                    {preset.kpis.map((k, i) => (
+                    {(preset?.kpis ?? []).map((k, i) => (
                       <li key={i} className="flex items-start gap-1.5">
                         <Badge variant="secondary" className="px-1 py-0 text-[10px] bg-primary/10 text-primary">KPI</Badge>
                         <span>{k}</span>
@@ -355,7 +355,7 @@ export function SbmSimulator() {
 
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground px-1">
               <span className="flex items-center gap-1">
-                <CheckCircle2 className="size-3.5 text-emerald-500" /> Auto-mapped to target institution guidelines ({preset.targetOrg})
+                <CheckCircle2 className="size-3.5 text-emerald-500" /> Auto-mapped to target institution guidelines ({preset?.targetOrg ?? ""})
               </span>
               <span className="font-mono text-[11px]">Database Schema: `sbm_rates` (Version 2026)</span>
             </div>
@@ -472,15 +472,15 @@ export function SbmSimulator() {
         </div>
       </div>
 
-      {/* Magic Link Preview Dialog */}
+      {/* Modal Dialog Interactive Magic Link Portal */}
       <Dialog open={showMagicLinkModal} onOpenChange={setShowMagicLinkModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl sm:max-w-3xl">
           <DialogHeader>
-            <div className="flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-widest">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
               <Sparkles className="size-3.5" /> Interactive Magic Link Portal
             </div>
             <DialogTitle className="font-display text-xl">
-              [Preview Client Portal] Proposal Hibah {preset.title}
+              [Preview Client Portal] Proposal Hibah {preset?.title ?? ""}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Tampilan interaktif yang diterima oleh pihak donor/kementerian melalui Magic Link aman.
@@ -505,13 +505,13 @@ export function SbmSimulator() {
 
             <div className="space-y-2">
               <h5 className="font-semibold text-foreground text-sm">Ringkasan Eksekutif Program</h5>
-              <p className="text-muted-foreground leading-relaxed">{preset.description}</p>
+              <p className="text-muted-foreground leading-relaxed">{preset?.description ?? ""}</p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded bg-muted/40 p-2.5 border border-border/60">
                 <span className="font-semibold text-foreground">Wilayah Operasional:</span>
-                <p className="text-muted-foreground mt-0.5">{region.label}</p>
+                <p className="text-muted-foreground mt-0.5">{region?.label ?? ""}</p>
               </div>
               <div className="rounded bg-muted/40 p-2.5 border border-border/60">
                 <span className="font-semibold text-foreground">Total Pengajuan Anggaran (RAB):</span>

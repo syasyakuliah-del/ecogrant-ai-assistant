@@ -14,11 +14,48 @@ type Profile = {
   status: string;
 };
 
+const ALL_PERMISSIONS = [
+  "dashboard.user.view",
+  "dashboard.admin.view",
+  "proposal.create",
+  "proposal.view.own",
+  "proposal.view.all",
+  "proposal.update.own",
+  "proposal.update.all",
+  "proposal.delete.own",
+  "proposal.delete.all",
+  "proposal.approve",
+  "proposal.export",
+  "ai.generate",
+  "donor.manage",
+  "sbm.manage",
+  "sbu.manage",
+  "activity.manage",
+  "user.manage",
+  "community.manage",
+  "analytics.view",
+  "audit.view",
+  "settings.manage",
+];
+
+const DEFAULT_USER_PERMISSIONS = [
+  "dashboard.user.view",
+  "proposal.create",
+  "proposal.view.own",
+  "proposal.update.own",
+  "proposal.delete.own",
+  "proposal.export",
+  "ai.generate",
+];
+
 type AuthState = {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   isAdmin: boolean;
+  roles: string[];
+  permissions: string[];
+  hasPermission: (permissionName: string) => boolean;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -31,15 +68,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function loadUserData(userId: string) {
-    const [{ data: p }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", userId),
-    ]);
-    setProfile((p as Profile) ?? null);
-    setIsAdmin((roles ?? []).some((r) => r.role === "admin"));
+    try {
+      const [{ data: p }, { data: userRoles }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+        supabase.from("user_roles").select("role, role_id, roles(name)").eq("user_id", userId),
+      ]);
+
+      setProfile((p as Profile) ?? null);
+
+      const assignedRoles: string[] = [];
+      for (const ur of userRoles ?? []) {
+        if (ur.roles && typeof ur.roles === "object" && "name" in ur.roles && ur.roles.name) {
+          assignedRoles.push(ur.roles.name);
+        } else if (ur.role) {
+          assignedRoles.push(ur.role);
+        }
+      }
+
+      const adminFlag = assignedRoles.includes("admin");
+      setIsAdmin(adminFlag);
+      setRoles(assignedRoles.length > 0 ? assignedRoles : ["user"]);
+
+      // Fetch permissions from role_permissions
+      const roleIds = (userRoles ?? []).map((ur) => ur.role_id).filter(Boolean) as string[];
+      let fetchedPerms: string[] = [];
+
+      if (roleIds.length > 0) {
+        const { data: rp } = await supabase
+          .from("role_permissions")
+          .select("permissions(name)")
+          .in("role_id", roleIds);
+
+        if (rp) {
+          fetchedPerms = rp
+            .map((item) => (item.permissions && typeof item.permissions === "object" && "name" in item.permissions ? item.permissions.name : null))
+            .filter(Boolean) as string[];
+        }
+      }
+
+      if (fetchedPerms.length === 0) {
+        fetchedPerms = adminFlag ? ALL_PERMISSIONS : DEFAULT_USER_PERMISSIONS;
+      }
+
+      setPermissions(Array.from(new Set(fetchedPerms)));
+    } catch (err) {
+      console.error("Error loading user RBAC data:", err);
+    }
   }
 
   useEffect(() => {
@@ -52,6 +131,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setRoles([]);
+        setPermissions([]);
       }
     });
 
@@ -65,11 +146,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  const hasPermission = (permissionName: string) => {
+    if (isAdmin) return true;
+    return permissions.includes(permissionName);
+  };
+
   const value: AuthState = {
     user,
     session,
     profile,
     isAdmin,
+    roles,
+    permissions,
+    hasPermission,
     loading,
     refreshProfile: async () => {
       if (user) await loadUserData(user.id);
@@ -78,6 +167,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.auth.signOut();
       setProfile(null);
       setIsAdmin(false);
+      setRoles([]);
+      setPermissions([]);
     },
   };
 

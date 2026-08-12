@@ -33,8 +33,8 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const USER_NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: Gauge },
-  { to: "/proposals", label: "Proposal Saya", icon: FileText },
+  { to: "/dashboard", label: "Dashboard", icon: Gauge, permission: "dashboard.user.view" },
+  { to: "/proposals", label: "Proposal Saya", icon: FileText, permission: "proposal.view.own" },
   { to: "/community", label: "Community", icon: Users },
   { to: "/notifications", label: "Notifikasi", icon: Bell },
   { to: "/help", label: "Help Center", icon: HelpCircle },
@@ -44,20 +44,28 @@ const USER_NAV = [
 ] as const;
 
 const ADMIN_NAV = [
-  { to: "/admin", label: "Dashboard Admin", icon: ShieldCheck },
-  { to: "/admin/proposals", label: "Kelola Proposal", icon: ClipboardList },
-  { to: "/admin/users", label: "Kelola User", icon: Users },
-  { to: "/admin/donors", label: "Kelola Donor", icon: Building2 },
-  { to: "/admin/activities", label: "Kelola Kegiatan", icon: Leaf },
-  { to: "/admin/sbm", label: "Kelola SBM", icon: Coins },
-  { to: "/admin/sbu", label: "Kelola SBU", icon: Wallet },
-  { to: "/admin/analytics", label: "Analytics", icon: PieChart },
-  { to: "/admin/audit", label: "Audit Log", icon: ScrollText },
+  { to: "/admin", label: "Dashboard Admin", icon: ShieldCheck, permission: "dashboard.admin.view" },
+  { to: "/admin/proposals", label: "Kelola Proposal", icon: ClipboardList, permission: "proposal.view.all" },
+  { to: "/admin/users", label: "Kelola User & RBAC", icon: Users, permission: "user.manage" },
+  { to: "/admin/donors", label: "Kelola Donor", icon: Building2, permission: "donor.manage" },
+  { to: "/admin/activities", label: "Kelola Kegiatan", icon: Leaf, permission: "activity.manage" },
+  { to: "/admin/sbm", label: "Kelola SBM", icon: Coins, permission: "sbm.manage" },
+  { to: "/admin/sbu", label: "Kelola SBU", icon: Wallet, permission: "sbu.manage" },
+  { to: "/admin/analytics", label: "Analytics", icon: PieChart, permission: "analytics.view" },
+  { to: "/admin/audit", label: "Audit Log", icon: ScrollText, permission: "audit.view" },
 ] as const;
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, hasPermission } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  const visibleUserNav = USER_NAV.filter(
+    (item) => !("permission" in item) || !item.permission || hasPermission(item.permission),
+  );
+
+  const visibleAdminNav = ADMIN_NAV.filter(
+    (item) => !item.permission || hasPermission(item.permission),
+  );
 
   return (
     <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-4">
@@ -65,7 +73,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
         <p className="px-3 pb-2 text-[11px] font-semibold tracking-widest text-sidebar-foreground/50 uppercase">
           Ruang Kerja
         </p>
-        {USER_NAV.map((item) => (
+        {visibleUserNav.map((item) => (
           <Link
             key={item.to}
             to={item.to}
@@ -81,12 +89,12 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </div>
 
-      {isAdmin ? (
+      {isAdmin || visibleAdminNav.length > 0 ? (
         <div className="space-y-1">
           <p className="px-3 pb-2 text-[11px] font-semibold tracking-widest text-sidebar-foreground/50 uppercase">
             Administrasi
           </p>
-          {ADMIN_NAV.map((item) => (
+          {visibleAdminNav.map((item) => (
             <Link
               key={item.to}
               to={item.to}

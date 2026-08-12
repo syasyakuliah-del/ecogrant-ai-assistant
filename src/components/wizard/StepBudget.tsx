@@ -1,25 +1,43 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, CheckCircle2, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Calculator,
+  CheckCircle2,
+  Download,
+  FileSpreadsheet,
+  Layers,
+  Loader2,
+  PieChart,
+  Plus,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 import { generateBudgetPlan } from "@/lib/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/format";
 import { budgetTotals, validateItem, type StandardRow } from "@/lib/budget";
 import { BUDGET_CATEGORIES, UNITS } from "@/lib/constants";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { aiErrorMessage, buildContext, type StepProps } from "./shared";
 import type { BudgetItem } from "@/hooks/useProposalData";
 
 export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps) {
   const run = useServerFn(generateBudgetPlan);
   const [busy, setBusy] = useState(false);
+  const [ppnRate, setPpnRate] = useState<number>(proposal.tax_rate ?? 11);
+  const [activeTab, setActiveTab] = useState("items");
 
   const { data: standards } = useQuery({
     queryKey: ["standards", "all"],
@@ -44,20 +62,81 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
   const grantAmount = Number(proposal.grant_amount ?? 0);
   const overBudget = grantAmount > 0 && totals.grandTotal > grantAmount;
 
+  // Duplicate item check
+  const duplicateWarnings = useMemo(() => {
+    const descriptions = budget.map((b) => b.description.trim().toLowerCase());
+    const duplicates = new Set<string>();
+    descriptions.forEach((desc, idx) => {
+      if (desc && descriptions.indexOf(desc) !== idx) duplicates.add(desc);
+    });
+    return Array.from(duplicates);
+  }, [budget]);
+
+  // Recaps per Category
+  const categoryRecaps = useMemo(() => {
+    const map = new Map<string, { subtotal: number; tax: number; total: number; count: number }>();
+    for (const b of budget) {
+      const cat = b.category || "Lainnya";
+      const current = map.get(cat) || { subtotal: 0, tax: 0, total: 0, count: 0 };
+      const sub = Number(b.subtotal ?? 0);
+      const tx = Number(b.tax_amount ?? 0);
+      const tot = Number(b.total ?? 0);
+      map.set(cat, {
+        subtotal: current.subtotal + sub,
+        tax: current.tax + tx,
+        total: current.total + tot,
+        count: current.count + 1,
+      });
+    }
+    return Array.from(map.entries()).map(([category, stats]) => ({ category, ...stats }));
+  }, [budget]);
+
   async function update(item: BudgetItem, patch: Partial<BudgetItem>) {
     const merged = { ...item, ...patch };
     const volume = Number(merged.volume ?? 0);
     const frequency = Number(merged.frequency ?? 1);
     const price = Number(merged.unit_price ?? 0);
     const subtotal = volume * frequency * price;
-    const taxAmount = subtotal * (Number(merged.tax_rate ?? 0) / 100);
+    const currentTaxRate = patch.tax_rate !== undefined ? Number(patch.tax_rate) : ppnRate;
+    const taxAmount = subtotal * (currentTaxRate / 100);
     const validation = validateItem(merged as never, maps);
+
     const { error } = await supabase
       .from("budget_items")
-      .update({ ...patch, subtotal, tax_amount: taxAmount, total: subtotal + taxAmount, ...validation })
+      .update({
+        ...patch,
+        subtotal,
+        tax_rate: currentTaxRate,
+        tax_amount: taxAmount,
+        total: subtotal + taxAmount,
+        ...validation,
+      })
       .eq("id", item.id);
+
     if (error) toast.error(error.message);
     else refetch();
+  }
+
+  async function updateGlobalPpnRate(newRate: number) {
+    setPpnRate(newRate);
+    // Update proposal tax_rate
+    await supabase.from("proposals").update({ tax_rate: newRate }).eq("id", proposal.id);
+
+    // Update all budget items PPN rate
+    for (const item of budget) {
+      const subtotal = Number(item.subtotal ?? 0);
+      const taxAmount = subtotal * (newRate / 100);
+      await supabase
+        .from("budget_items")
+        .update({
+          tax_rate: newRate,
+          tax_amount: taxAmount,
+          total: subtotal + taxAmount,
+        })
+        .eq("id", item.id);
+    }
+    toast.success(`Tarif PPN diperbarui menjadi ${newRate}%.`);
+    refetch();
   }
 
   async function addItem() {
@@ -69,6 +148,7 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
       volume: 1,
       frequency: 1,
       unit_price: 0,
+      tax_rate: ppnRate,
       source_type: "manual",
       sort_order: budget.length + 1,
     });
@@ -115,6 +195,7 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
         const frequency = Number(item.frequency ?? 1);
         const price = Number(item.unit_price ?? 0);
         const subtotal = volume * frequency * price;
+        const taxAmount = subtotal * (ppnRate / 100);
         const draft = {
           proposal_id: proposal.id,
           category: item.category,
@@ -129,8 +210,9 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
           sbu_id: std?.source === "sbu" ? std.id : null,
           source_type: std ? std.source : "ai",
           subtotal,
-          tax_amount: 0,
-          total: subtotal,
+          tax_rate: ppnRate,
+          tax_amount: taxAmount,
+          total: subtotal + taxAmount,
           sort_order: i + 1,
         };
         return { ...draft, ...validateItem({ ...draft, override_reason: null } as never, maps) };
@@ -140,7 +222,7 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
       const { error } = await supabase.from("budget_items").insert(rows);
       if (error) throw error;
       refetch();
-      toast.success(`${rows.length} item anggaran berhasil disusun.`);
+      toast.success(`${rows.length} item Rencana Anggaran Biaya disusun otomatis oleh AI.`);
     } catch (error) {
       toast.error(aiErrorMessage(error));
     } finally {
@@ -148,156 +230,281 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
     }
   }
 
+  function exportRabXlsx() {
+    const data = budget.map((b, idx) => ({
+      No: idx + 1,
+      Kode: b.code || "-",
+      Kategori: b.category,
+      "Aktivitas LFA": b.activity_name || "-",
+      "Uraian Biaya": b.description,
+      Satuan: b.unit,
+      Volume: Number(b.volume),
+      Frekuensi: Number(b.frequency),
+      "Harga Satuan (IDR)": Number(b.unit_price),
+      "Subtotal (IDR)": Number(b.subtotal),
+      "Tarif PPN (%)": `${Number(b.tax_rate ?? ppnRate)}%`,
+      "PPN (IDR)": Number(b.tax_amount),
+      "Total (IDR)": Number(b.total),
+      "Status Validasi": b.validation_status || "Valid",
+      Catatan: b.override_reason || "-",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "RAB Proposal");
+    XLSX.writeFile(workbook, `RAB_${proposal.title.slice(0, 20).replace(/\s+/g, "_")}.xlsx`);
+    toast.success("File XLSX Rencana Anggaran Biaya (RAB) berhasil diunduh.");
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          Setiap item divalidasi terhadap standar biaya. Item yang melebihi standar wajib diberi alasan override.
-        </p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => void addItem()}>
-            <Plus className="size-4" /> Tambah Item
-          </Button>
-          <Button size="sm" onClick={() => void handleGenerate()} disabled={busy}>
-            {busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-            Susun RAB dengan AI
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calculator className="size-5 text-primary" /> Step 8: Rencana Anggaran Biaya (RAB)
+              </CardTitle>
+              <CardDescription>
+                Formulasi: Subtotal = Vol × Frek × Harga. Total = Subtotal + PPN. Terkunci validasi SBM & nilai hibah.
+              </CardDescription>
+            </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card><CardContent className="pt-6">
-          <p className="text-xs text-muted-foreground">Subtotal</p>
-          <p className="text-lg font-semibold">{formatCurrency(totals.subtotal)}</p>
-        </CardContent></Card>
-        <Card><CardContent className="pt-6">
-          <p className="text-xs text-muted-foreground">Pajak</p>
-          <p className="text-lg font-semibold">{formatCurrency(totals.tax)}</p>
-        </CardContent></Card>
-        <Card className={overBudget ? "border-destructive" : undefined}><CardContent className="pt-6">
-          <p className="text-xs text-muted-foreground">Total terhadap nilai hibah</p>
-          <p className="text-lg font-semibold">{formatCurrency(totals.grandTotal)}</p>
-          <p className="text-xs text-muted-foreground">dari {formatCurrency(grantAmount)}</p>
-        </CardContent></Card>
-      </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={exportRabXlsx} className="gap-1.5 text-xs">
+                <Download className="size-3.5 text-emerald-600 dark:text-emerald-400" /> Ekspor RAB XLSX
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => void addItem()} className="gap-1.5 text-xs">
+                <Plus className="size-3.5" /> Tambah Item
+              </Button>
+              <Button size="sm" onClick={() => void handleGenerate()} disabled={busy} className="gap-1.5 text-xs shadow-sm">
+                {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                Rekomendasi AI RAB
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
 
-      {budget.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-          Belum ada item anggaran. Susun otomatis dari aktivitas Logical Framework atau tambah manual.
-        </div>
-      ) : (
-        <div className="overflow-auto rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-44">Kategori</TableHead>
-                <TableHead className="min-w-64">Uraian</TableHead>
-                <TableHead className="w-28">Satuan</TableHead>
-                <TableHead className="w-20">Vol</TableHead>
-                <TableHead className="w-20">Frek</TableHead>
-                <TableHead className="w-36">Harga Satuan</TableHead>
-                <TableHead className="w-36 text-right">Total</TableHead>
-                <TableHead className="w-44">Validasi</TableHead>
-                <TableHead className="w-12" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {budget.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <Select value={item.category} onValueChange={(v) => void update(item, { category: v })}>
-                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {BUDGET_CATEGORIES.map((c) => (
-                          <SelectItem key={c} value={c}>{c}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      className="h-8"
-                      defaultValue={item.description}
-                      onBlur={(e) => void update(item, { description: e.target.value })}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Select value={item.unit} onValueChange={(v) => void update(item, { unit: v })}>
-                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {UNITS.map((u) => (
-                          <SelectItem key={u} value={u}>{u}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      className="h-8"
-                      type="number"
-                      defaultValue={Number(item.volume)}
-                      onBlur={(e) => void update(item, { volume: Number(e.target.value) })}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      className="h-8"
-                      type="number"
-                      defaultValue={Number(item.frequency)}
-                      onBlur={(e) => void update(item, { frequency: Number(e.target.value) })}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      className="h-8"
-                      type="number"
-                      defaultValue={Number(item.unit_price)}
-                      onBlur={(e) => void update(item, { unit_price: Number(e.target.value) })}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right text-sm font-medium">
-                    {formatCurrency(item.total ?? 0)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <Badge
-                        variant={
-                          item.validation_status === "sesuai"
-                            ? "default"
-                            : item.validation_status === "melebihi_standar"
-                              ? "destructive"
-                              : "outline"
-                        }
-                        className="gap-1 text-[10px]"
-                      >
-                        {item.validation_status === "sesuai" ? (
-                          <CheckCircle2 className="size-3" />
-                        ) : (
-                          <AlertTriangle className="size-3" />
-                        )}
-                        {item.validation_status}
-                      </Badge>
-                      {item.validation_status === "melebihi_standar" && (
-                        <Input
-                          className="h-7 text-xs"
-                          placeholder="Alasan override"
-                          defaultValue={item.override_reason ?? ""}
-                          onBlur={(e) => void update(item, { override_reason: e.target.value || null })}
-                        />
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => void removeItem(item.id)}>
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+        <CardContent className="space-y-4">
+          {/* Summary Cards */}
+          <div className="grid gap-3 sm:grid-cols-4">
+            <Card className="p-3">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Total Subtotal</span>
+              <p className="font-mono text-base font-bold text-foreground mt-0.5">{formatCurrency(totals.subtotal, proposal.currency)}</p>
+            </Card>
+            <Card className="p-3">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Total PPN</span>
+                <Select value={String(ppnRate)} onValueChange={(v) => void updateGlobalPpnRate(Number(v))}>
+                  <SelectTrigger className="w-16 h-6 text-[10px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0%</SelectItem>
+                    <SelectItem value="11">11%</SelectItem>
+                    <SelectItem value="12">12%</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="font-mono text-base font-bold text-foreground mt-0.5">{formatCurrency(totals.tax, proposal.currency)}</p>
+            </Card>
+            <Card className={`p-3 ${overBudget ? "border-2 border-destructive bg-destructive/5" : ""}`}>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Grand Total RAB</span>
+              <p className="font-mono text-base font-bold text-primary mt-0.5">{formatCurrency(totals.grandTotal, proposal.currency)}</p>
+            </Card>
+            <Card className="p-3">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Target Pengajuan Hibah</span>
+              <p className="font-mono text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                {formatCurrency(grantAmount, proposal.currency)}
+              </p>
+            </Card>
+          </div>
+
+          {/* Validation Warnings */}
+          {overBudget && (
+            <Alert variant="destructive">
+              <AlertTriangle className="size-4" />
+              <AlertTitle className="text-xs font-semibold">Grand Total RAB Melampaui Nilai Hibah!</AlertTitle>
+              <AlertDescription className="text-xs mt-1">
+                Grand Total RAB ({formatCurrency(totals.grandTotal, proposal.currency)}) melampaui nilai target hibah ({formatCurrency(grantAmount, proposal.currency)}). Sesuaikan volume atau harga satuan.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {duplicateWarnings.length > 0 && (
+            <Alert variant="destructive" className="bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200">
+              <AlertTriangle className="size-4 text-amber-500" />
+              <AlertTitle className="text-xs font-semibold">Peringatan Duplikasi Uraian Biaya</AlertTitle>
+              <AlertDescription className="text-xs mt-1">
+                Terdapat uraian biaya ganda: {duplicateWarnings.join(", ")}.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Tabs View: Table vs Recaps */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 max-w-xs">
+              <TabsTrigger value="items" className="text-xs gap-1.5">
+                <Calculator className="size-3.5" /> Item RAB ({budget.length})
+              </TabsTrigger>
+              <TabsTrigger value="recaps" className="text-xs gap-1.5">
+                <PieChart className="size-3.5" /> Rekap Per Kategori
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="items" className="mt-4">
+              {budget.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-10 text-center text-xs text-muted-foreground">
+                  Belum ada item anggaran RAB. Susun otomatis dari aktivitas LFA dengan tombol AI di atas atau tambah item manual.
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border">
+                  <Table>
+                    <TableHeader className="bg-muted/40">
+                      <TableRow className="text-xs">
+                        <TableHead className="w-36">Kategori</TableHead>
+                        <TableHead className="min-w-48">Uraian Biaya</TableHead>
+                        <TableHead className="w-24">Satuan</TableHead>
+                        <TableHead className="w-16">Vol</TableHead>
+                        <TableHead className="w-16">Frek</TableHead>
+                        <TableHead className="w-32">Harga Satuan</TableHead>
+                        <TableHead className="w-32 text-right">Subtotal</TableHead>
+                        <TableHead className="w-32 text-right">Total (+PPN)</TableHead>
+                        <TableHead className="w-28">Status</TableHead>
+                        <TableHead className="w-10" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {budget.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            <Select value={item.category} onValueChange={(v) => void update(item, { category: v })}>
+                              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {BUDGET_CATEGORIES.map((c) => (
+                                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              className="h-7 text-xs"
+                              defaultValue={item.description}
+                              onBlur={(e) => void update(item, { description: e.target.value })}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Select value={item.unit} onValueChange={(v) => void update(item, { unit: v })}>
+                              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {UNITS.map((u) => (
+                                  <SelectItem key={u} value={u}>{u}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              className="h-7 text-xs"
+                              type="number"
+                              min={1}
+                              defaultValue={Number(item.volume)}
+                              onBlur={(e) => void update(item, { volume: Number(e.target.value) })}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              className="h-7 text-xs"
+                              type="number"
+                              min={1}
+                              defaultValue={Number(item.frequency)}
+                              onBlur={(e) => void update(item, { frequency: Number(e.target.value) })}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              className="h-7 text-xs font-mono"
+                              type="number"
+                              min={0}
+                              defaultValue={Number(item.unit_price)}
+                              onBlur={(e) => void update(item, { unit_price: Number(e.target.value) })}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right text-xs font-mono">
+                            {formatCurrency(item.subtotal ?? 0, proposal.currency)}
+                          </TableCell>
+                          <TableCell className="text-right text-xs font-mono font-bold text-primary">
+                            {formatCurrency(item.total ?? 0, proposal.currency)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                item.validation_status === "valid" || item.validation_status === "sesuai"
+                                  ? "default"
+                                  : "destructive"
+                              }
+                              className="text-[10px]"
+                            >
+                              {item.validation_status || "Valid"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-6 text-muted-foreground hover:text-destructive"
+                              onClick={() => void removeItem(item.id)}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="recaps" className="mt-4">
+              <div className="rounded-lg border p-4 space-y-4">
+                <h4 className="font-semibold text-xs text-foreground uppercase tracking-wider flex items-center gap-2">
+                  <PieChart className="size-4 text-primary" /> Rekapitulasi Rencana Anggaran Biaya Per Kategori
+                </h4>
+
+                <div className="rounded-lg border overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-muted/40">
+                      <TableRow className="text-xs">
+                        <TableHead>Kategori Anggaran</TableHead>
+                        <TableHead className="text-center">Jumlah Item</TableHead>
+                        <TableHead className="text-right">Subtotal (IDR)</TableHead>
+                        <TableHead className="text-right">PPN (IDR)</TableHead>
+                        <TableHead className="text-right">Total Anggaran (IDR)</TableHead>
+                        <TableHead className="text-right">Proporsi (%)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {categoryRecaps.map((cat) => {
+                        const proportion = totals.grandTotal > 0 ? Math.round((cat.total / totals.grandTotal) * 100) : 0;
+                        return (
+                          <TableRow key={cat.category} className="text-xs">
+                            <TableCell className="font-semibold">{cat.category}</TableCell>
+                            <TableCell className="text-center font-mono">{cat.count}</TableCell>
+                            <TableCell className="text-right font-mono">{formatCurrency(cat.subtotal)}</TableCell>
+                            <TableCell className="text-right font-mono">{formatCurrency(cat.tax)}</TableCell>
+                            <TableCell className="text-right font-mono font-bold text-primary">{formatCurrency(cat.total)}</TableCell>
+                            <TableCell className="text-right font-mono font-semibold">{proportion}%</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

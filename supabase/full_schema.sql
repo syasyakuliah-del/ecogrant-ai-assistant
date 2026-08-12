@@ -38,10 +38,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SET search_path = public;
 
-CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role public.app_role)
+CREATE OR REPLACE FUNCTION public.has_permission(_user_id UUID, _perm_name TEXT)
 RETURNS BOOLEAN LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT EXISTS (
-    SELECT 1 FROM public.user_roles WHERE user_id = _user_id AND role = _role
+    SELECT 1
+    FROM public.user_roles ur
+    JOIN public.role_permissions rp ON ur.role_id = rp.role_id
+    JOIN public.permissions p ON rp.permission_id = p.id
+    WHERE ur.user_id = _user_id AND p.name = _perm_name
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role TEXT)
+RETURNS BOOLEAN LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles ur
+    LEFT JOIN public.roles r ON ur.role_id = r.id
+    WHERE ur.user_id = _user_id AND (r.name = _role OR ur.role::text = _role)
   );
 $$;
 
@@ -65,11 +79,39 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- ROLES
+CREATE TABLE IF NOT EXISTS public.roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- PERMISSIONS
+CREATE TABLE IF NOT EXISTS public.permissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  description TEXT,
+  category TEXT NOT NULL DEFAULT 'General',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ROLE PERMISSIONS
+CREATE TABLE IF NOT EXISTS public.role_permissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  role_id UUID NOT NULL REFERENCES public.roles(id) ON DELETE CASCADE,
+  permission_id UUID NOT NULL REFERENCES public.permissions(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (role_id, permission_id)
+);
+
 -- USER ROLES
 CREATE TABLE IF NOT EXISTS public.user_roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   role public.app_role NOT NULL DEFAULT 'user',
+  role_id UUID REFERENCES public.roles(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (user_id, role)
 );

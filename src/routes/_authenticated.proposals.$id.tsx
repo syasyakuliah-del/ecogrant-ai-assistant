@@ -1,21 +1,18 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Loader2, RotateCcw } from "lucide-react";
 import { useProposalData, useAutosave, computeProgress } from "@/hooks/useProposalData";
-import { WIZARD_STEPS, PROVINCES, PROGRAM_CATEGORIES } from "@/lib/constants";
-import { formatCurrency } from "@/lib/format";
+import { WIZARD_STEPS } from "@/lib/constants";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { StepProps, Donor } from "@/components/wizard/shared";
+import { StepInfo } from "@/components/wizard/StepInfo";
 import { StepNarrative } from "@/components/wizard/StepNarrative";
 import { StepSummary } from "@/components/wizard/StepSummary";
 import { StepDonor } from "@/components/wizard/StepDonor";
@@ -28,10 +25,10 @@ import { StepExport } from "@/components/wizard/StepExport";
 export const Route = createFileRoute("/_authenticated/proposals/$id")({
   head: () => ({
     meta: [
-      { title: "Wizard Proposal — EcoGrant AI" },
-      { name: "description", content: "Susun proposal hibah melalui wizard sepuluh langkah dengan bantuan AI." },
-      { property: "og:title", content: "Wizard Proposal — EcoGrant AI" },
-      { property: "og:description", content: "Susun narasi, Logical Framework, dan RAB proposal hibah Anda." },
+      { title: "Wizard Penyusunan Proposal — EcoGrant AI" },
+      { name: "description", content: "Susun proposal hibah 10 langkah lengkap dengan Asisten AI, LFA, SBM/SBU sync, RAB, & Export." },
+      { property: "og:title", content: "Wizard Penyusunan Proposal — EcoGrant AI" },
+      { property: "og:description", content: "Penyusunan narasi, Logical Framework Matrix, dan RAB proposal hibah." },
     ],
   }),
   component: WizardPage,
@@ -40,7 +37,9 @@ export const Route = createFileRoute("/_authenticated/proposals/$id")({
 function WizardPage() {
   const { id } = Route.useParams();
   const { data, isLoading, refetch } = useProposalData(id);
-  const { save, state } = useAutosave(id);
+
+  const currentVersion = data?.proposal?.version_number ?? 1;
+  const { save, retrySave, state: autosaveState, lastError } = useAutosave(id, currentVersion);
   const [step, setStep] = useState(1);
 
   const donorId = data?.proposal?.donor_id ?? null;
@@ -57,7 +56,7 @@ function WizardPage() {
   if (isLoading || !data?.proposal) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" />
+        <Loader2 className="size-5 animate-spin mr-2" /> Memuat data proposal wizard...
       </div>
     );
   }
@@ -73,153 +72,135 @@ function WizardPage() {
     refetch: () => void refetch(),
     save,
   };
-  const current = WIZARD_STEPS.find((s) => s.step === step) ?? WIZARD_STEPS[0]!;
+  const currentStepInfo = WIZARD_STEPS.find((s) => s.step === step) ?? WIZARD_STEPS[0]!;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={p.title}
-        description="Wizard penyusunan proposal hibah sepuluh langkah."
+        title={p.title || "Proposal Tanpa Judul"}
+        description={`Wizard Penyusunan Proposal — Step ${currentStepInfo.step}: ${currentStepInfo.title}`}
         actions={
-          <Badge variant="secondary">
-            {state === "saving" ? "Menyimpan…" : state === "saved" ? "Tersimpan" : "Autosave aktif"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant={
+                autosaveState === "saving"
+                  ? "secondary"
+                  : autosaveState === "saved"
+                  ? "default"
+                  : autosaveState === "error" || autosaveState === "conflict"
+                  ? "destructive"
+                  : "outline"
+              }
+              className="text-xs font-medium gap-1 px-2.5 py-1"
+            >
+              {autosaveState === "saving" && <Loader2 className="size-3 animate-spin" />}
+              {autosaveState === "saved" && <CheckCircle2 className="size-3 text-emerald-400" />}
+              {autosaveState === "error" && <AlertCircle className="size-3" />}
+              {autosaveState === "conflict" && <AlertTriangle className="size-3" />}
+
+              {autosaveState === "saving"
+                ? "Menyimpan (Autosave 1.5s)..."
+                : autosaveState === "saved"
+                ? "Tersimpan"
+                : autosaveState === "error"
+                ? "Gagal Menyimpan"
+                : autosaveState === "conflict"
+                ? "Konflik Versi"
+                : "Autosave Aktif"}
+            </Badge>
+
+            {(autosaveState === "error" || autosaveState === "conflict") && (
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={retrySave}>
+                <RotateCcw className="size-3" /> Coba Lagi
+              </Button>
+            )}
+          </div>
         }
       />
 
+      {/* Optimistic Locking Conflict Warning Alert */}
+      {autosaveState === "conflict" && (
+        <Alert variant="destructive">
+          <AlertTriangle className="size-4" />
+          <AlertTitle>Terjadi Konflik Versi (Optimistic Lock)</AlertTitle>
+          <AlertDescription className="text-xs mt-1">
+            Data proposal di server telah diperbarui oleh sesi lain. Muat ulang halaman untuk menyelaraskan versi terbaru.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Progress & Step Navigation */}
       <Card>
-        <CardContent className="space-y-2 pt-6">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Progres penyusunan</span>
-            <span className="font-medium">{progress.percent} persen</span>
+        <CardContent className="space-y-3 pt-6">
+          <div className="flex items-center justify-between text-xs sm:text-sm font-medium">
+            <span className="text-muted-foreground flex items-center gap-1.5">
+              Kelengkapan Berkas Proposal
+            </span>
+            <span className="font-mono text-primary font-bold">{progress.percent}% Selesai</span>
           </div>
           <Progress value={progress.percent} className="h-2" />
-          <div className="flex flex-wrap gap-2 pt-2">
-            {WIZARD_STEPS.map((s) => (
-              <button key={s.step} type="button" onClick={() => setStep(s.step)}>
-                <Badge
-                  variant={s.step === step ? "default" : progress.checks[s.step - 1] ? "secondary" : "outline"}
-                  className="cursor-pointer"
-                >
-                  {s.step}. {s.short}
-                </Badge>
-              </button>
-            ))}
+
+          {/* 10 Step Buttons Grid */}
+          <div className="flex flex-wrap gap-1.5 pt-2">
+            {WIZARD_STEPS.map((s) => {
+              const isCurrent = s.step === step;
+              const isChecked = progress.checks[s.step - 1];
+              return (
+                <button key={s.step} type="button" onClick={() => setStep(s.step)}>
+                  <Badge
+                    variant={isCurrent ? "default" : isChecked ? "secondary" : "outline"}
+                    className={`cursor-pointer transition-colors text-xs py-1 px-2.5 ${
+                      isCurrent
+                        ? "bg-primary text-primary-foreground font-bold shadow-sm"
+                        : isChecked
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    {s.step}. {s.short}
+                  </Badge>
+                </button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">
-            Langkah {current.step} — {current.title}
-          </CardTitle>
-        </CardHeader>
-        {step === 1 && (
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="title">Judul Proposal</Label>
-            <Input id="title" defaultValue={p.title} onChange={(e) => save({ title: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="org">Nama Organisasi</Label>
-            <Input
-              id="org"
-              defaultValue={p.organization_name ?? ""}
-              onChange={(e) => save({ organization_name: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="pic">Penanggung Jawab</Label>
-            <Input id="pic" defaultValue={p.pic_name ?? ""} onChange={(e) => save({ pic_name: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Provinsi</Label>
-            <Select defaultValue={p.province ?? ""} onValueChange={(v) => save({ province: v }, true)}>
-              <SelectTrigger><SelectValue placeholder="Pilih provinsi" /></SelectTrigger>
-              <SelectContent>
-                {PROVINCES.map((prov) => (
-                  <SelectItem key={prov} value={prov}>{prov}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Kategori Program</Label>
-            <Select defaultValue={p.category ?? ""} onValueChange={(v) => save({ category: v }, true)}>
-              <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
-              <SelectContent>
-                {PROGRAM_CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="loc">Lokasi Pelaksanaan</Label>
-            <Input id="loc" defaultValue={p.location ?? ""} onChange={(e) => save({ location: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="amount">Nilai Hibah Diajukan</Label>
-            <Input
-              id="amount"
-              type="number"
-              defaultValue={Number(p.grant_amount)}
-              onChange={(e) => save({ grant_amount: Number(e.target.value) })}
-            />
-            <p className="text-xs text-muted-foreground">{formatCurrency(p.grant_amount, p.currency)}</p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="start">Tanggal Mulai</Label>
-            <Input
-              id="start"
-              type="date"
-              defaultValue={p.start_date ?? ""}
-              onChange={(e) => save({ start_date: e.target.value || null })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="end">Tanggal Selesai</Label>
-            <Input
-              id="end"
-              type="date"
-              defaultValue={p.end_date ?? ""}
-              onChange={(e) => save({ end_date: e.target.value || null })}
-            />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="idea">Ringkasan Ide Program</Label>
-            <Textarea
-              id="idea"
-              rows={5}
-              defaultValue={p.idea_summary ?? ""}
-              onChange={(e) => save({ idea_summary: e.target.value })}
-              placeholder="Jelaskan gagasan program, masalah yang diatasi, dan penerima manfaat."
-            />
-          </div>
-        </CardContent>
-        )}
-        {step > 1 && (
-          <CardContent>
-            {step === 2 && <StepNarrative {...stepProps} />}
-            {step === 3 && <StepSummary {...stepProps} />}
-            {step === 4 && <StepDonor {...stepProps} />}
-            {step === 5 && <StepLfa {...stepProps} />}
-            {step === 6 && <StepStandards {...stepProps} source="sbm" />}
-            {step === 7 && <StepStandards {...stepProps} source="sbu" />}
-            {step === 8 && <StepBudget {...stepProps} />}
-            {step === 9 && <StepReview {...stepProps} />}
-            {step === 10 && <StepExport {...stepProps} />}
-          </CardContent>
-        )}
-      </Card>
+      {/* Step Render Area */}
+      <div>
+        {step === 1 && <StepInfo {...stepProps} />}
+        {step === 2 && <StepNarrative {...stepProps} />}
+        {step === 3 && <StepSummary {...stepProps} />}
+        {step === 4 && <StepDonor {...stepProps} />}
+        {step === 5 && <StepLfa {...stepProps} />}
+        {step === 6 && <StepStandards {...stepProps} source="sbm" />}
+        {step === 7 && <StepStandards {...stepProps} source="sbu" />}
+        {step === 8 && <StepBudget {...stepProps} />}
+        {step === 9 && <StepReview {...stepProps} />}
+        {step === 10 && <StepExport {...stepProps} />}
+      </div>
 
-      <div className="flex items-center justify-between">
-        <Button variant="outline" disabled={step === 1} onClick={() => setStep((s) => Math.max(1, s - 1))}>
-          <ChevronLeft className="size-4" /> Sebelumnya
+      {/* Previous & Next Navigation Controls */}
+      <div className="flex items-center justify-between border-t pt-4">
+        <Button
+          variant="outline"
+          disabled={step === 1}
+          onClick={() => setStep((s) => Math.max(1, s - 1))}
+          className="gap-1.5 text-xs sm:text-sm"
+        >
+          <ChevronLeft className="size-4" /> Langkah Sebelumnya ({step > 1 ? WIZARD_STEPS[step - 2]?.short : ""})
         </Button>
-        <Button disabled={step === 10} onClick={() => setStep((s) => Math.min(10, s + 1))}>
-          Selanjutnya <ChevronRight className="size-4" />
+
+        <span className="text-xs font-semibold text-muted-foreground font-mono">
+          Langkah {step} dari 10
+        </span>
+
+        <Button
+          disabled={step === 10}
+          onClick={() => setStep((s) => Math.min(10, s + 1))}
+          className="gap-1.5 text-xs sm:text-sm shadow-sm"
+        >
+          Langkah Selanjutnya ({step < 10 ? WIZARD_STEPS[step]?.short : ""}) <ChevronRight className="size-4" />
         </Button>
       </div>
     </div>

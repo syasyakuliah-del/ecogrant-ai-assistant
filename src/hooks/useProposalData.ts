@@ -32,29 +32,60 @@ export function useProposalData(id: string) {
   return query;
 }
 
-export type SaveState = "idle" | "saving" | "saved" | "error";
+export type SaveState = "idle" | "saving" | "saved" | "error" | "conflict";
 
-export function useAutosave(id: string) {
+export function useAutosave(id: string, currentVersion = 1) {
   const queryClient = useQueryClient();
   const [state, setState] = useState<SaveState>("idle");
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pending = useRef<TablesUpdate<"proposals">>({});
+  const lastFailedPayload = useRef<TablesUpdate<"proposals">>({});
 
   const flush = useCallback(async () => {
-    const payload = pending.current;
-    pending.current = {};
+    const payload = { ...pending.current };
     if (Object.keys(payload).length === 0) return;
+    
     setState("saving");
-    const { error } = await supabase.from("proposals").update(payload).eq("id", id);
+    setLastError(null);
+    lastFailedPayload.current = payload;
+    pending.current = {};
+
+    // Optimistic locking: Increment version_number on update
+    const updatePayload = {
+      ...payload,
+      version_number: currentVersion + 1,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: updated, error } = await supabase
+      .from("proposals")
+      .update(updatePayload)
+      .eq("id", id)
+      .select("version_number, updated_at")
+      .maybeSingle();
+
     if (error) {
+      console.error("Autosave error:", error);
+      pending.current = { ...lastFailedPayload.current, ...pending.current };
       setState("error");
+      setLastError(error.message);
       return;
     }
+
+    if (!updated) {
+      // Optimistic lock conflict
+      console.warn("Autosave conflict detected!");
+      setState("conflict");
+      setLastError("Konflik versi: Data di server telah diperbarui oleh pengguna lain.");
+      return;
+    }
+
     setState("saved");
     setSavedAt(new Date());
     void queryClient.invalidateQueries({ queryKey: ["proposal", id] });
-  }, [id, queryClient]);
+  }, [id, currentVersion, queryClient]);
 
   const save = useCallback(
     (patch: TablesUpdate<"proposals">, immediate = false) => {
@@ -64,14 +95,24 @@ export function useAutosave(id: string) {
         void flush();
         return;
       }
-      timer.current = setTimeout(() => void flush(), 1200);
+      // PRD 11: Debounce 1.500 milliseconds
+      timer.current = setTimeout(() => void flush(), 1500);
     },
     [flush],
   );
 
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  const retrySave = useCallback(() => {
+    if (Object.keys(lastFailedPayload.current).length > 0) {
+      pending.current = { ...lastFailedPayload.current, ...pending.current };
+      void flush();
+    }
+  }, [flush]);
 
-  return { save, flush, state, savedAt };
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  return { save, flush, retrySave, state, savedAt, lastError };
 }
 
 export function computeProgress(input: {
