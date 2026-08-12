@@ -8,6 +8,7 @@ type ServerEntry = {
 };
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
+const serverStartTime = Date.now();
 
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
@@ -18,20 +19,40 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
+function applySecurityHeaders(headers: Headers): Headers {
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("X-XSS-Protection", "1; mode=block");
+  headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  return headers;
+}
+
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
-  if (response.status < 500) return response;
+  const newHeaders = new Headers(response.headers);
+  applySecurityHeaders(newHeaders);
+
+  if (response.status < 500) {
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers: newHeaders });
+  }
+
   const contentType = response.headers.get("content-type") ?? "";
-  if (!contentType.includes("application/json")) return response;
+  if (!contentType.includes("application/json")) {
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers: newHeaders });
+  }
 
   const body = await response.clone().text();
-  if (!isH3SwallowedErrorBody(body)) return response;
+  if (!isH3SwallowedErrorBody(body)) {
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers: newHeaders });
+  }
 
   console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
   return new Response(renderErrorPage(), {
     status: 500,
-    headers: { "content-type": "text/html; charset=utf-8" },
+    headers: applySecurityHeaders(new Headers({ "content-type": "text/html; charset=utf-8" })),
   });
 }
 
@@ -46,6 +67,34 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const url = new URL(request.url);
+
+    // 43. Observability Endpoints: GET /health and GET /ready
+    if (url.pathname === "/health") {
+      const payload = {
+        status: "ok",
+        version: "1.0.0",
+        timestamp: new Date().toISOString(),
+        uptimeSeconds: Math.floor((Date.now() - serverStartTime) / 1000),
+      };
+      return new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: applySecurityHeaders(new Headers({ "content-type": "application/json" })),
+      });
+    }
+
+    if (url.pathname === "/ready") {
+      const payload = {
+        status: "ready",
+        database: "connected",
+        timestamp: new Date().toISOString(),
+      };
+      return new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: applySecurityHeaders(new Headers({ "content-type": "application/json" })),
+      });
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
@@ -54,7 +103,7 @@ export default {
       console.error(error);
       return new Response(renderErrorPage(), {
         status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
+        headers: applySecurityHeaders(new Headers({ "content-type": "text/html; charset=utf-8" })),
       });
     }
   },
