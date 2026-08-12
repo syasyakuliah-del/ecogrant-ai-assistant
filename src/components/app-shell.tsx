@@ -48,6 +48,7 @@ const ADMIN_NAV = [
   { to: "/admin/proposals", label: "Kelola Proposal", icon: ClipboardList },
   { to: "/admin/users", label: "Kelola User", icon: Users },
   { to: "/admin/donors", label: "Kelola Donor", icon: Building2 },
+  { to: "/admin/activities", label: "Kelola Kegiatan", icon: Leaf },
   { to: "/admin/sbm", label: "Kelola SBM", icon: Coins },
   { to: "/admin/sbu", label: "Kelola SBU", icon: Wallet },
   { to: "/admin/analytics", label: "Analytics", icon: PieChart },

@@ -14,6 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
+      activities: {
+        Row: {
+          budget_category: string
+          category: string
+          created_at: string
+          default_indicator: string | null
+          default_output: string | null
+          description: string
+          id: string
+          is_active: boolean
+          lfa_level: string
+          name: string
+          sub_category: string | null
+          target_unit: string
+          updated_at: string
+        }
+        Insert: {
+          budget_category?: string
+          category?: string
+          created_at?: string
+          default_indicator?: string | null
+          default_output?: string | null
+          description?: string
+          id?: string
+          is_active?: boolean
+          lfa_level?: string
+          name: string
+          sub_category?: string | null
+          target_unit?: string
+          updated_at?: string
+        }
+        Update: {
+          budget_category?: string
+          category?: string
+          created_at?: string
+          default_indicator?: string | null
+          default_output?: string | null
+          description?: string
+          id?: string
+          is_active?: boolean
+          lfa_level?: string
+          name?: string
+          sub_category?: string | null
+          target_unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_generations: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          generation_type: string
+          id: string
+          model: string | null
+          proposal_id: string | null
+          status: string
+          tokens_used: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number
+          generation_type?: string
+          id?: string
+          model?: string | null
+          proposal_id?: string | null
+          status?: string
+          tokens_used?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          generation_type?: string
+          id?: string
+          model?: string | null
+          proposal_id?: string | null
+          status?: string
+          tokens_used?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_generations_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -354,6 +446,45 @@ export type Database = {
         }
         Relationships: []
       }
+      help_articles: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          excerpt: string
+          id: string
+          is_published: boolean
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content?: string
+          created_at?: string
+          excerpt?: string
+          id?: string
+          is_published?: boolean
+          slug: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          excerpt?: string
+          id?: string
+          is_published?: boolean
+          slug?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lfa_rows: {
         Row: {
           activity: string | null
@@ -415,6 +546,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      login_histories: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          status: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          status?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          status?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -528,6 +686,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "proposal_sections_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_versions: {
+        Row: {
+          change_summary: string
+          created_at: string
+          created_by: string | null
+          id: string
+          proposal_id: string
+          snapshot: Json | null
+          version_number: number
+        }
+        Insert: {
+          change_summary?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          proposal_id: string
+          snapshot?: Json | null
+          version_number?: number
+        }
+        Update: {
+          change_summary?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          proposal_id?: string
+          snapshot?: Json | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_versions_proposal_id_fkey"
             columns: ["proposal_id"]
             isOneToOne: false
             referencedRelation: "proposals"
