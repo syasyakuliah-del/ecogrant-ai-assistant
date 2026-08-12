@@ -74,40 +74,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadUserData(userId: string) {
     try {
-      const [{ data: p }, { data: userRoles }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
-        supabase.from("user_roles").select("role, role_id, roles(name)").eq("user_id", userId),
-      ]);
-
+      // Load profile first
+      const { data: p } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
       setProfile((p as Profile) ?? null);
 
-      const assignedRoles: string[] = [];
-      for (const ur of userRoles ?? []) {
-        if (ur.roles && typeof ur.roles === "object" && "name" in ur.roles && ur.roles.name) {
-          assignedRoles.push(ur.roles.name);
-        } else if (ur.role) {
-          assignedRoles.push(ur.role);
+      // Load roles - may fail if tables don't exist yet
+      let assignedRoles: string[] = [];
+      let roleIds: string[] = [];
+      try {
+        const { data: userRoles } = await supabase
+          .from("user_roles")
+          .select("role, role_id, roles(name)")
+          .eq("user_id", userId);
+
+        for (const ur of userRoles ?? []) {
+          if (ur.roles && typeof ur.roles === "object" && "name" in ur.roles && ur.roles.name) {
+            assignedRoles.push(ur.roles.name);
+          } else if (ur.role) {
+            assignedRoles.push(ur.role);
+          }
         }
+        roleIds = (userRoles ?? []).map((ur) => ur.role_id).filter(Boolean) as string[];
+      } catch {
+        // Tables may not exist yet — silently fallback
+        console.warn("[useAuth] user_roles query failed — tables may not exist yet");
       }
 
-      const adminFlag = assignedRoles.includes("admin");
+      // Fallback: detect admin by known admin email if no roles found
+      const currentEmail = p?.email ?? "";
+      const ADMIN_EMAILS = ["syasyakuliah@gmail.com"];
+      const emailIsAdmin = ADMIN_EMAILS.includes(currentEmail.toLowerCase());
+
+      const adminFlag = assignedRoles.includes("admin") || (assignedRoles.length === 0 && emailIsAdmin);
       setIsAdmin(adminFlag);
-      setRoles(assignedRoles.length > 0 ? assignedRoles : ["user"]);
+      setRoles(assignedRoles.length > 0 ? assignedRoles : emailIsAdmin ? ["admin"] : ["user"]);
 
       // Fetch permissions from role_permissions
-      const roleIds = (userRoles ?? []).map((ur) => ur.role_id).filter(Boolean) as string[];
       let fetchedPerms: string[] = [];
 
       if (roleIds.length > 0) {
-        const { data: rp } = await supabase
-          .from("role_permissions")
-          .select("permissions(name)")
-          .in("role_id", roleIds);
+        try {
+          const { data: rp } = await supabase
+            .from("role_permissions")
+            .select("permissions(name)")
+            .in("role_id", roleIds);
 
-        if (rp) {
-          fetchedPerms = rp
-            .map((item) => (item.permissions && typeof item.permissions === "object" && "name" in item.permissions ? item.permissions.name : null))
-            .filter(Boolean) as string[];
+          if (rp) {
+            fetchedPerms = rp
+              .map((item) => (item.permissions && typeof item.permissions === "object" && "name" in item.permissions ? item.permissions.name : null))
+              .filter(Boolean) as string[];
+          }
+        } catch {
+          console.warn("[useAuth] role_permissions query failed — tables may not exist yet");
         }
       }
 

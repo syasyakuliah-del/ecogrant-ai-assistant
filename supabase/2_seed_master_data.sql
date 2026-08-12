@@ -1,37 +1,38 @@
 -- ============================================================================
 -- PART 2: MASTER SEED DATA
 -- Project: EcoGrant AI (scnouypfyimjuonbnnhj)
+-- PRD Section 25 Compliant Seed Data
 -- ============================================================================
 
 -- 1. SEED ROLES
-INSERT INTO public.roles (name, description) VALUES
-  ('admin', 'Administrator dengan hak pengelolaan penuh sistem'),
-  ('user', 'Pengguna operasional untuk membuat dan mengelola proposal')
+INSERT INTO public.roles (name, code, description, is_system) VALUES
+  ('admin', 'ROLE_ADMIN', 'Administrator dengan hak pengelolaan penuh sistem', true),
+  ('user', 'ROLE_USER', 'Pengguna operasional untuk membuat dan mengelola proposal', true)
 ON CONFLICT (name) DO UPDATE SET description = EXCLUDED.description;
 
 -- 2. SEED PERMISSIONS
-INSERT INTO public.permissions (name, description, category) VALUES
-  ('dashboard.user.view', 'Melihat dashboard user', 'Dashboard'),
-  ('dashboard.admin.view', 'Melihat dashboard admin', 'Dashboard'),
-  ('proposal.create', 'Membuat proposal baru', 'Proposal'),
-  ('proposal.view.own', 'Melihat proposal milik sendiri atau workspace yang diikuti', 'Proposal'),
-  ('proposal.view.all', 'Melihat seluruh proposal sistem', 'Proposal'),
-  ('proposal.update.own', 'Mengedit proposal milik sendiri', 'Proposal'),
-  ('proposal.update.all', 'Mengedit seluruh proposal sistem', 'Proposal'),
-  ('proposal.delete.own', 'Menghapus proposal sendiri dengan soft delete', 'Proposal'),
-  ('proposal.delete.all', 'Menghapus seluruh proposal sistem', 'Proposal'),
-  ('proposal.approve', 'Mengubah status dan memberikan approval proposal', 'Proposal'),
-  ('proposal.export', 'Mengekspor proposal (PDF, Word, Excel)', 'Proposal'),
-  ('ai.generate', 'Menjalankan AI generator untuk proposal', 'AI'),
-  ('donor.manage', 'Mengelola master data donor (CRUD)', 'Master Data'),
-  ('sbm.manage', 'Mengelola master data SBM (CRUD)', 'Master Data'),
-  ('sbu.manage', 'Mengelola master data SBU (CRUD)', 'Master Data'),
-  ('activity.manage', 'Mengelola master data kegiatan (CRUD)', 'Master Data'),
-  ('user.manage', 'Mengelola pengguna, hak akses, peran, dan reset password', 'User Management'),
-  ('community.manage', 'Mengelola artikel community dan moderasi komentar', 'Community'),
-  ('analytics.view', 'Melihat analytics dan mengekspor laporan platform', 'Analytics'),
-  ('audit.view', 'Melihat seluruh Audit Log sistem', 'System'),
-  ('settings.manage', 'Mengelola System Settings', 'System')
+INSERT INTO public.permissions (name, code, module, category, description) VALUES
+  ('dashboard.user.view', 'PERM_DASHBOARD_USER', 'Dashboard', 'Dashboard', 'Melihat dashboard user'),
+  ('dashboard.admin.view', 'PERM_DASHBOARD_ADMIN', 'Dashboard', 'Dashboard', 'Melihat dashboard admin'),
+  ('proposal.create', 'PERM_PROPOSAL_CREATE', 'Proposal', 'Proposal', 'Membuat proposal baru'),
+  ('proposal.view.own', 'PERM_PROPOSAL_VIEW_OWN', 'Proposal', 'Proposal', 'Melihat proposal milik sendiri atau workspace'),
+  ('proposal.view.all', 'PERM_PROPOSAL_VIEW_ALL', 'Proposal', 'Proposal', 'Melihat seluruh proposal sistem'),
+  ('proposal.update.own', 'PERM_PROPOSAL_UPDATE_OWN', 'Proposal', 'Proposal', 'Mengedit proposal milik sendiri'),
+  ('proposal.update.all', 'PERM_PROPOSAL_UPDATE_ALL', 'Proposal', 'Proposal', 'Mengedit seluruh proposal sistem'),
+  ('proposal.delete.own', 'PERM_PROPOSAL_DELETE_OWN', 'Proposal', 'Proposal', 'Menghapus proposal sendiri (soft delete)'),
+  ('proposal.delete.all', 'PERM_PROPOSAL_DELETE_ALL', 'Proposal', 'Proposal', 'Menghapus seluruh proposal sistem'),
+  ('proposal.approve', 'PERM_PROPOSAL_APPROVE', 'Proposal', 'Proposal', 'Mengubah status dan memberikan approval proposal'),
+  ('proposal.export', 'PERM_PROPOSAL_EXPORT', 'Proposal', 'Proposal', 'Mengekspor proposal (PDF, Word, Excel)'),
+  ('ai.generate', 'PERM_AI_GENERATE', 'AI', 'AI Generator', 'Menjalankan AI generator untuk proposal'),
+  ('donor.manage', 'PERM_DONOR_MANAGE', 'Master Data', 'Master Data', 'Mengelola master data donor (CRUD)'),
+  ('sbm.manage', 'PERM_SBM_MANAGE', 'Master Data', 'Master Data', 'Mengelola master data SBM (CRUD)'),
+  ('sbu.manage', 'PERM_SBU_MANAGE', 'Master Data', 'Master Data', 'Mengelola master data SBU (CRUD)'),
+  ('activity.manage', 'PERM_ACTIVITY_MANAGE', 'Master Data', 'Master Data', 'Mengelola master data kegiatan (CRUD)'),
+  ('user.manage', 'PERM_USER_MANAGE', 'User Management', 'User & RBAC', 'Mengelola pengguna, hak akses, peran, dan reset password'),
+  ('community.manage', 'PERM_COMMUNITY_MANAGE', 'Community', 'Community', 'Mengelola artikel community dan moderasi komentar'),
+  ('analytics.view', 'PERM_ANALYTICS_VIEW', 'Analytics', 'Analytics & System', 'Melihat analytics dan mengekspor laporan platform'),
+  ('audit.view', 'PERM_AUDIT_VIEW', 'System', 'Analytics & System', 'Melihat seluruh Audit Log sistem'),
+  ('settings.manage', 'PERM_SETTINGS_MANAGE', 'System', 'Analytics & System', 'Mengelola System Settings')
 ON CONFLICT (name) DO UPDATE SET description = EXCLUDED.description;
 
 -- 3. LINK ROLE PERMISSIONS
@@ -60,7 +61,15 @@ BEGIN
   END IF;
 END $$;
 
--- 4. SEED DONORS
+-- 4. SEED DONOR CATEGORIES & DONORS
+INSERT INTO public.donor_categories (name, code, description) VALUES
+  ('Multilateral', 'CAT_MULTI', 'Lembaga pendanaan internasional multilateral'),
+  ('Bilateral', 'CAT_BI', 'Lembaga pendanaan hubungan dua negara'),
+  ('Yayasan Filantropi', 'CAT_FILANTROPI', 'Yayasan donor internasional & nasional'),
+  ('Yayasan Nasional', 'CAT_NASIONAL', 'Yayasan hibah lokal Indonesia'),
+  ('Pemerintah', 'CAT_GOV', 'Lembaga pendanaan atau badan pengelola dana pemerintah')
+ON CONFLICT (name) DO NOTHING;
+
 INSERT INTO public.donors (name, category, country, website, email, phone, funding_fields, priorities, requirements, min_grant, max_grant, currency, deadline) VALUES
 ('Global Environment Facility Small Grants Programme','Multilateral','Amerika Serikat','https://sgp.undp.org','sgp.indonesia@undp.org','+62 21 3141308',
  ARRAY['Konservasi Keanekaragaman Hayati','Mitigasi Perubahan Iklim','Degradasi Lahan'],
@@ -118,7 +127,14 @@ INSERT INTO public.sbu (year, version, code, category, description, unit, price,
 (2026,'1.0','SBU-130','Akomodasi','Penginapan Standar Pelaksana','OH',620000,'PAPUA','SEMUA','Peraturan Gubernur Papua','2026-01-01')
 ON CONFLICT (year, version, code, province_code, city_code) DO NOTHING;
 
--- 7. SEED ACTIVITIES
+-- 7. SEED ACTIVITY CATEGORIES & ACTIVITIES
+INSERT INTO public.activity_categories (name, code, description) VALUES
+  ('Rehabilitasi Hutan', 'ACT_CAT_REHAB', 'Kegiatan penanaman dan restorasi kawasan hutan'),
+  ('Pemberdayaan Masyarakat', 'ACT_CAT_PEMBERDAYAAN', 'Peningkatan kapasitas dan ekonomi kelompok tani'),
+  ('Konservasi', 'ACT_CAT_KONSERVASI', 'Pengamanan kawasan dan riset keanekaragaman hayati'),
+  ('Monitoring dan Evaluasi', 'ACT_CAT_MONEV', 'Pemantauan dan evaluasi program berkala')
+ON CONFLICT (name) DO NOTHING;
+
 INSERT INTO public.activities (category, sub_category, name, description, default_output, default_indicator, target_unit, lfa_level, budget_category) VALUES
 ('Rehabilitasi Hutan','Penanaman','Penanaman Pohon Multiguna','Kegiatan penanaman bibit pohon multiguna pada lahan kritis.','Lahan kritis terehabilitasi','Jumlah hektare lahan tertanam','hektare','output','Bahan'),
 ('Pemberdayaan Masyarakat','Pelatihan','Pelatihan Kelompok Tani Hutan','Peningkatan kapasitas kelompok tani hutan.','Kapasitas kelompok meningkat','Jumlah peserta terlatih','orang','activity','Honorarium'),
@@ -126,13 +142,29 @@ INSERT INTO public.activities (category, sub_category, name, description, defaul
 ('Monitoring dan Evaluasi','Monitoring','Monitoring dan Evaluasi Program','Pemantauan capaian indikator program secara berkala.','Laporan monitoring tersusun','Jumlah laporan monitoring','laporan','activity','Operasional')
 ON CONFLICT DO NOTHING;
 
--- 8. SEED HELP ARTICLES
+-- 8. SEED COMMUNITY CATEGORIES
+INSERT INTO public.community_categories (name, slug, description) VALUES
+  ('Praktik Baik', 'praktik-baik', 'Praktik baik dan pembelajaran lapangan'),
+  ('Panduan Proposal', 'panduan-proposal', 'Panduan teknis penyusunan proposal hibah'),
+  ('Studi Kasus', 'studi-kasus', 'Studi kasus program lingkungan hidup'),
+  ('Info Donor', 'info-donor', 'Peluang dan info panggilan proposal hibah'),
+  ('Umum', 'umum', 'Diskusi umum komunitas')
+ON CONFLICT (slug) DO NOTHING;
+
+-- 9. SEED SYSTEM SETTINGS
+INSERT INTO public.system_settings (key, value_json, is_public, description) VALUES
+  ('platform.info', '{"name": "EcoGrant AI", "version": "1.0.0", "description": "Generator Proposal Hibah AI Lingkungan Hidup"}', true, 'Informasi umum platform'),
+  ('platform.financial', '{"default_tax_rate": 0.11, "currency_default": "IDR"}', true, 'Default keuangan dan pajak PPN'),
+  ('ai.config', '{"enabled": true, "default_model": "gpt-4o-mini", "max_tokens_per_request": 4000}', false, 'Pengaturan AI Generator')
+ON CONFLICT (key) DO NOTHING;
+
+-- 10. SEED HELP ARTICLES
 INSERT INTO public.help_articles (category, title, slug, excerpt, content, sort_order) VALUES
 ('Memulai','Panduan Memulai Wizard Proposal','panduan-memulai','Langkah pertama menggunakan EcoGrant AI.','1. Lengkapi profil dan nama organisasi pada menu Profil.\n2. Buka menu Proposal Saya lalu pilih Buat Proposal.\n3. Ikuti wizard sepuluh langkah dari informasi dasar hingga ekspor dokumen.\n4. Seluruh perubahan tersimpan otomatis.',1),
 ('Panduan','Panduan Wizard Proposal 10 Langkah','panduan-wizard','Penjelasan sepuluh langkah penyusunan proposal.','Langkah 1 Informasi Proposal, Langkah 2 Penyusunan Narasi, Langkah 3 Executive Summary, Langkah 4 Pemilihan Donor, Langkah 5 Logical Framework Matrix, Langkah 6 Sinkronisasi SBM, Langkah 7 Sinkronisasi SBU, Langkah 8 Rencana Anggaran Biaya, Langkah 9 Review, Langkah 10 Export.',2)
 ON CONFLICT (slug) DO NOTHING;
 
--- 9. ENSURE SYASYAKULIAH@GMAIL.COM IS SET AS ADMIN
+-- 11. ENSURE SYASYAKULIAH@GMAIL.COM IS SET AS ADMIN
 INSERT INTO public.user_roles (user_id, role, role_id)
 SELECT id, 'admin'::public.app_role, (SELECT id FROM public.roles WHERE name = 'admin')
 FROM auth.users WHERE email = 'syasyakuliah@gmail.com'

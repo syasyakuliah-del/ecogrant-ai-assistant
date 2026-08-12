@@ -1062,6 +1062,217 @@ export type Database = {
           },
         ]
       }
+      community_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workspace_members: {
+        Row: {
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      donor_categories: {
+        Row: {
+          code: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      activity_categories: {
+        Row: {
+          code: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          status: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          key: string
+          updated_at: string
+          value_json: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          key: string
+          updated_at?: string
+          value_json?: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          key?: string
+          updated_at?: string
+          value_json?: Json
+        }
+        Relationships: []
+      }
+      login_histories: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          status: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          status?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          status?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_prompt_versions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          prompt_key: string
+          prompt_template: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          prompt_key: string
+          prompt_template: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          prompt_key?: string
+          prompt_template?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      job_failures: {
+        Row: {
+          error_message: string
+          failed_at: string
+          id: string
+          job_name: string
+          payload_json: Json | null
+        }
+        Insert: {
+          error_message: string
+          failed_at?: string
+          id?: string
+          job_name: string
+          payload_json?: Json | null
+        }
+        Update: {
+          error_message?: string
+          failed_at?: string
+          id?: string
+          job_name?: string
+          payload_json?: Json | null
+        }
+        Relationships: []
+      }
+    }
     }
     Views: {
       [_ in never]: never

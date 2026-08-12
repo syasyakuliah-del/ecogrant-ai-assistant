@@ -6,6 +6,9 @@ export async function logAudit(params: {
   entityId?: string | null;
   oldValues?: unknown;
   newValues?: unknown;
+  ipAddress?: string;
+  userAgent?: string;
+  requestId?: string;
 }) {
   try {
     const { data } = await supabase.auth.getUser();
@@ -17,7 +20,11 @@ export async function logAudit(params: {
       entity_id: params.entityId ?? null,
       old_values: (params.oldValues ?? null) as never,
       new_values: (params.newValues ?? null) as never,
-      user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+      old_values_json: (params.oldValues ?? null) as never,
+      new_values_json: (params.newValues ?? null) as never,
+      ip_address: params.ipAddress ?? null,
+      user_agent: params.userAgent ?? (typeof navigator !== "undefined" ? navigator.userAgent : null),
+      request_id: params.requestId ?? null,
     });
   } catch {
     // audit failures must never block the user flow
@@ -30,6 +37,7 @@ export async function notify(params: {
   title: string;
   message?: string;
   actionUrl?: string;
+  dataJson?: unknown;
 }) {
   try {
     await supabase.from("notifications").insert({
@@ -38,6 +46,7 @@ export async function notify(params: {
       title: params.title,
       message: params.message ?? null,
       action_url: params.actionUrl ?? null,
+      data_json: (params.dataJson ?? {}) as never,
     });
   } catch {
     // ignore

@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Bell, CheckCheck } from "lucide-react";
+import {
+  AlertTriangle, Bell, CheckCircle2, CheckCheck, Clock, Download,
+  ExternalLink, FileCheck, FileText, Info, ShieldAlert, Upload, XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,12 +20,36 @@ export const Route = createFileRoute("/_authenticated/notifications")({
     meta: [
       { title: "Notifikasi — EcoGrant AI" },
       { name: "description", content: "Pusat notifikasi status proposal, ulasan admin, dan pengingat tenggat donor." },
-      { property: "og:title", content: "Notifikasi — EcoGrant AI" },
-      { property: "og:description", content: "Pantau seluruh pemberitahuan ruang kerja proposal hibah Anda." },
     ],
   }),
   component: NotificationsPage,
 });
+
+function getNotificationIcon(type: string) {
+  switch (type) {
+    case "status":
+    case "proposal_approved":
+      return <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0" />;
+    case "proposal_revision":
+    case "peringatan":
+      return <AlertTriangle className="size-5 text-amber-600 dark:text-amber-400 shrink-0" />;
+    case "proposal_failed":
+    case "import_failed":
+    case "export_failed":
+    case "account_locked":
+      return <XCircle className="size-5 text-red-600 dark:text-red-400 shrink-0" />;
+    case "import_success":
+      return <Upload className="size-5 text-cyan-600 dark:text-cyan-400 shrink-0" />;
+    case "export_success":
+      return <Download className="size-5 text-indigo-600 dark:text-indigo-400 shrink-0" />;
+    case "donor_deadline":
+      return <Clock className="size-5 text-rose-600 dark:text-rose-400 shrink-0" />;
+    case "security":
+      return <ShieldAlert className="size-5 text-violet-600 dark:text-violet-400 shrink-0" />;
+    default:
+      return <Info className="size-5 text-blue-600 dark:text-blue-400 shrink-0" />;
+  }
+}
 
 function NotificationsPage() {
   const { user } = useAuth();
@@ -42,85 +69,91 @@ function NotificationsPage() {
     },
   });
 
-  const rows = data.filter((n) => (filter === "semua" ? true : filter === "belum" ? !n.read_at : n.type === filter));
+  const rows = data.filter((n) => {
+    if (filter === "semua") return true;
+    if (filter === "belum") return !n.read_at;
+    if (filter === "status") return ["status", "proposal_approved", "proposal_revision", "proposal_failed"].includes(n.type);
+    if (filter === "keamanan") return ["security", "account_locked"].includes(n.type);
+    if (filter === "data") return ["import_success", "import_failed", "export_success", "export_failed"].includes(n.type);
+    return n.type === filter;
+  });
+
   const unread = data.filter((n) => !n.read_at).length;
 
   async function markRead(id: string) {
     await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
     void qc.invalidateQueries({ queryKey: ["notifications"] });
-    void qc.invalidateQueries({ queryKey: ["notifications-unread"] });
   }
 
   async function markAll() {
     await supabase.from("notifications").update({ read_at: new Date().toISOString() }).is("read_at", null);
     void qc.invalidateQueries({ queryKey: ["notifications"] });
-    void qc.invalidateQueries({ queryKey: ["notifications-unread"] });
     toast.success("Seluruh notifikasi ditandai telah dibaca.");
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-4xl space-y-4">
       <PageHeader
-        title="Notifikasi"
-        description={`${unread} notifikasi belum dibaca`}
+        title="Pusat Notifikasi"
+        description={`${unread} notifikasi belum dibaca.`}
         actions={
           <div className="flex items-center gap-2">
             <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="semua">Semua</SelectItem>
-                <SelectItem value="belum">Belum dibaca</SelectItem>
-                <SelectItem value="info">Informasi</SelectItem>
+                <SelectItem value="semua">Semua Notifikasi</SelectItem>
+                <SelectItem value="belum">Belum Dibaca</SelectItem>
                 <SelectItem value="status">Status Proposal</SelectItem>
-                <SelectItem value="peringatan">Peringatan</SelectItem>
+                <SelectItem value="data">Impor & Ekspor Data</SelectItem>
+                <SelectItem value="keamanan">Keamanan Akun</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={markAll} disabled={unread === 0}>
-              <CheckCheck className="size-4" /> Tandai semua
+            <Button variant="outline" onClick={markAll} disabled={unread === 0} className="gap-1.5">
+              <CheckCheck className="size-4" /> Tandai Semua Dibaca
             </Button>
           </div>
         }
       />
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Memuat notifikasi…</p>
+        <p className="py-10 text-center text-sm text-muted-foreground">Memuat notifikasi…</p>
       ) : rows.length === 0 ? (
-        <EmptyState title="Belum ada notifikasi" description="Notifikasi akan muncul saat ada perubahan status proposal atau informasi penting lainnya." />
+        <EmptyState title="Belum Ada Notifikasi" description="Notifikasi pergerakan status proposal, impor data, dan keamanan akun akan muncul di sini." />
       ) : (
         <ul className="space-y-2">
           {rows.map((n) => (
             <li
               key={n.id}
               className={cn(
-                "surface-panel flex items-start gap-3 px-4 py-3",
-                !n.read_at && "border-primary/40 bg-primary/5",
+                "surface-panel flex items-start justify-between gap-4 p-4 transition-all hover:border-primary/40",
+                !n.read_at && "border-primary/50 bg-primary/5 shadow-xs",
               )}
             >
-              <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                <Bell className="size-4" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-semibold">{n.title}</p>
-                  <Badge variant="secondary">{n.type}</Badge>
-                  {!n.read_at ? <Badge>Baru</Badge> : null}
+              <div className="flex items-start gap-3 min-w-0">
+                {getNotificationIcon(n.type)}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm leading-tight text-foreground">{n.title}</p>
+                    {!n.read_at && <Badge className="text-[10px] bg-primary">Baru</Badge>}
+                  </div>
+                  {n.message && <p className="text-xs text-muted-foreground leading-normal">{n.message}</p>}
+                  <p className="text-[10px] text-muted-foreground pt-1">{formatDateTime(n.created_at)}</p>
                 </div>
-                {n.message ? <p className="mt-1 text-sm text-muted-foreground">{n.message}</p> : null}
-                <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(n.created_at)}</p>
               </div>
-              <div className="flex shrink-0 flex-col gap-1">
-                {n.action_url ? (
-                  <Link to={n.action_url} className="text-xs font-medium text-primary underline-offset-4 hover:underline">
-                    Buka
+
+              <div className="flex items-center gap-2 shrink-0">
+                {n.action_url && (
+                  <Link to={n.action_url as never}>
+                    <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                      Buka <ExternalLink className="size-3" />
+                    </Button>
                   </Link>
-                ) : null}
-                {!n.read_at ? (
-                  <button onClick={() => void markRead(n.id)} className="text-xs text-muted-foreground hover:underline">
-                    Tandai dibaca
-                  </button>
-                ) : null}
+                )}
+                {!n.read_at && (
+                  <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-foreground" onClick={() => void markRead(n.id)}>
+                    Tandai Dibaca
+                  </Button>
+                )}
               </div>
             </li>
           ))}
