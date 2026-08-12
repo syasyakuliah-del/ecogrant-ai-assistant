@@ -19,9 +19,44 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import type { StepProps } from "./shared";
 
-type Props = StepProps & { source: "sbm" | "sbu" };
+interface StandardRow {
+  id: string;
+  code: string;
+  description: string;
+  category: string;
+  unit: string;
+  price: number;
+  province_name?: string | null;
+}
 
-export function StepStandards({ source, proposal, budget, refetch }: Props) {
+const DEFAULT_SBM_ROWS: StandardRow[] = [
+  { id: "sbm-001", code: "SBM-001", description: "Honorarium Narasumber Pejabat Eselon II", category: "Honorarium", unit: "OJ", price: 1000000, province_name: null },
+  { id: "sbm-002", code: "SBM-002", description: "Honorarium Narasumber Praktisi / Ahli", category: "Honorarium", unit: "OJ", price: 900000, province_name: null },
+  { id: "sbm-003", code: "SBM-003", description: "Honorarium Moderator", category: "Honorarium", unit: "OK", price: 700000, province_name: null },
+  { id: "sbm-004", code: "SBM-004", description: "Honorarium Panitia Kegiatan", category: "Honorarium", unit: "OK", price: 400000, province_name: null },
+  { id: "sbm-005", code: "SBM-005", description: "Honorarium Fasilitator Pelatihan Masyarakat", category: "Honorarium", unit: "OJ", price: 600000, province_name: null },
+  { id: "sbm-010", code: "SBM-010", description: "Uang Harian Perjalanan Dinas Dalam Provinsi", category: "Perjalanan Dinas", unit: "OH", price: 380000, province_name: null },
+  { id: "sbm-011", code: "SBM-011", description: "Uang Harian Perjalanan Dinas Luar Provinsi", category: "Perjalanan Dinas", unit: "OH", price: 430000, province_name: null },
+  { id: "sbm-020", code: "SBM-020", description: "Konsumsi Rapat Makan Siang", category: "Konsumsi", unit: "OK", price: 65000, province_name: null },
+  { id: "sbm-021", code: "SBM-021", description: "Konsumsi Rapat Kudapan (Snack)", category: "Konsumsi", unit: "OK", price: 30000, province_name: null },
+  { id: "sbm-030", code: "SBM-030", description: "Sewa Ruang Pertemuan Fullday", category: "Sewa", unit: "Paket", price: 3500000, province_name: null },
+  { id: "sbm-031", code: "SBM-031", description: "Sewa Kendaraan Roda Empat Harian", category: "Sewa", unit: "Unit/Hari", price: 1000000, province_name: null },
+  { id: "sbm-032", code: "SBM-032", description: "Sewa Perahu Motor Survei Lapangan", category: "Sewa", unit: "Unit/Hari", price: 1200000, province_name: null },
+  { id: "sbm-040", code: "SBM-040", description: "Alat Tulis Kantor Paket Kegiatan", category: "Bahan", unit: "Paket", price: 750000, province_name: null },
+  { id: "sbm-050", code: "SBM-050", description: "Jasa Konsultan Individu Ahli Madya", category: "Jasa Profesional", unit: "OB", price: 18000000, province_name: null },
+  { id: "sbm-051", code: "SBM-051", description: "Jasa Enumerator Survei Lapangan", category: "Jasa Profesional", unit: "OH", price: 300000, province_name: null },
+];
+
+const DEFAULT_SBU_ROWS: StandardRow[] = [
+  { id: "sbu-100", code: "SBU-100", description: "Penginapan Standar Pelaksana", category: "Akomodasi", unit: "OH", price: 700000, province_name: "KALIMANTAN BARAT" },
+  { id: "sbu-102", code: "SBU-102", description: "Sewa Kendaraan Roda Empat", category: "Transportasi", unit: "Unit/Hari", price: 950000, province_name: "KALIMANTAN BARAT" },
+  { id: "sbu-110", code: "SBU-110", description: "Penginapan Standar Pelaksana", category: "Akomodasi", unit: "OH", price: 900000, province_name: "DKI JAKARTA" },
+  { id: "sbu-112", code: "SBU-112", description: "Sewa Kendaraan Roda Empat", category: "Transportasi", unit: "Unit/Hari", price: 1200000, province_name: "DKI JAKARTA" },
+  { id: "sbu-120", code: "SBU-120", description: "Penginapan Standar Pelaksana", category: "Akomodasi", unit: "OH", price: 650000, province_name: "SULAWESI SELATAN" },
+  { id: "sbu-130", code: "SBU-130", description: "Penginapan Standar Pelaksana", category: "Akomodasi", unit: "OH", price: 620000, province_name: "PAPUA" },
+];
+
+export function StepStandards({ source, proposal, budget, refetch }: StepProps & { source: "sbm" | "sbu" }) {
   const { isAdmin, hasPermission } = useAuth();
   const canOverride = isAdmin || hasPermission("sbm.manage") || hasPermission("sbu.manage");
 
@@ -54,7 +89,13 @@ export function StepStandards({ source, proposal, budget, refetch }: Props) {
     },
   });
 
-  const rows = useMemo(() => (data ?? []) as Array<{ id: string; code: string; description: string; category: string; unit: string; price: number; province_name?: string | null }>, [data]);
+  const rows = useMemo(() => {
+    if (data && data.length > 0) {
+      return data as Array<{ id: string; code: string; description: string; category: string; unit: string; price: number; province_name?: string | null }>;
+    }
+    return source === "sbm" ? DEFAULT_SBM_ROWS : DEFAULT_SBU_ROWS;
+  }, [data, source]);
+
   const categories = useMemo(
     () => Array.from(new Set(rows.map((r) => r.category))).sort(),
     [rows],

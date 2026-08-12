@@ -30,6 +30,94 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { StepProps } from "./shared";
 
+const DEFAULT_DONORS: DonorRow[] = [
+  {
+    id: "donor-bpdlh-001",
+    name: "Dana Indonesia untuk Iklim dan Lingkungan (BPDLH)",
+    category: "Pemerintah",
+    country: "Indonesia",
+    website: "https://bpdlh.id",
+    email: "info@bpdlh.id",
+    phone: "+62 21 3512300",
+    funding_fields: ["Mitigasi dan Adaptasi Iklim", "Restorasi Gambut", "Kehutanan Berkelanjutan"],
+    priorities: ["Kalimantan", "Penurunan emisi terukur", "Perhutanan Sosial"],
+    requirements: ["Legalitas lembaga", "Rekening khusus program", "RAB sesuai SBM", "Sistem MRV emisi"],
+    min_grant: 100000000,
+    max_grant: 2000000000,
+    currency: "IDR",
+    deadline: "2026-12-31",
+    is_active: true,
+  },
+  {
+    id: "donor-tfca-002",
+    name: "Tropical Forest Conservation Action Kalimantan (TFCA)",
+    category: "Bilateral",
+    country: "Indonesia",
+    website: "https://tfcakalimantan.org",
+    email: "info@tfcakalimantan.org",
+    phone: "+62 561 733123",
+    funding_fields: ["Konservasi Hutan Tropis", "Restorasi Ekosistem", "Ekonomi Masyarakat Hutan"],
+    priorities: ["Kalimantan", "Perhutanan sosial", "Pengelolaan kawasan konservasi"],
+    requirements: ["Legalitas lembaga", "Pengalaman program sejenis", "Logical Framework Matrix"],
+    min_grant: 150000000,
+    max_grant: 1500000000,
+    currency: "IDR",
+    deadline: "2026-09-30",
+    is_active: true,
+  },
+  {
+    id: "donor-gef-003",
+    name: "Global Environment Facility SGP (GEF-SGP UNDP)",
+    category: "Multilateral",
+    country: "Amerika Serikat",
+    website: "https://sgp.undp.org",
+    email: "sgp.indonesia@undp.org",
+    phone: "+62 21 3141308",
+    funding_fields: ["Konservasi Keanekaragaman Hayati", "Mitigasi Perubahan Iklim", "Degradasi Lahan"],
+    priorities: ["Organisasi berbasis masyarakat", "Pelibatan masyarakat adat", "Kesetaraan gender"],
+    requirements: ["Akta pendirian", "Laporan keuangan 2 tahun", "Surat dukungan pemda"],
+    min_grant: 200000000,
+    max_grant: 750000000,
+    currency: "IDR",
+    deadline: "2026-11-30",
+    is_active: true,
+  },
+  {
+    id: "donor-kehati-004",
+    name: "Yayasan KEHATI (Keanekaragaman Hayati Indonesia)",
+    category: "Yayasan Nasional",
+    country: "Indonesia",
+    website: "https://kehati.or.id",
+    email: "info@kehati.or.id",
+    phone: "+62 21 7183185",
+    funding_fields: ["Keanekaragaman Hayati", "Pertanian Berkelanjutan", "Ekosistem Pesisir"],
+    priorities: ["Konservasi berbasis masyarakat", "Ekonomi hijau", "Riset terapan"],
+    requirements: ["NPWP lembaga", "Proposal teknis", "RAB sesuai standar biaya"],
+    min_grant: 50000000,
+    max_grant: 500000000,
+    currency: "IDR",
+    deadline: "2026-08-31",
+    is_active: true,
+  },
+  {
+    id: "donor-ford-005",
+    name: "Ford Foundation Indonesia",
+    category: "Yayasan Filantropi",
+    country: "Amerika Serikat",
+    website: "https://www.fordfoundation.org",
+    email: "indonesia@fordfoundation.org",
+    phone: "+62 21 2358 6900",
+    funding_fields: ["Keadilan Sosial", "Tata Kelola Sumber Daya Alam", "Pemberdayaan Masyarakat Adat"],
+    priorities: ["Advokasi kebijakan", "Penguatan kelembagaan", "Inklusi sosial"],
+    requirements: ["Profil organisasi", "Teori perubahan", "Audit keuangan"],
+    min_grant: 500000000,
+    max_grant: 3000000000,
+    currency: "IDR",
+    deadline: "2026-12-15",
+    is_active: true,
+  },
+];
+
 export function StepDonor({ proposal, save }: StepProps) {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("semua");
@@ -49,7 +137,7 @@ export function StepDonor({ proposal, save }: StepProps) {
   });
 
   const ranked = useMemo(() => {
-    const donors = data ?? [];
+    const donors = data && data.length > 0 ? data : DEFAULT_DONORS;
     return donors
       .map((donor) => ({ donor, match: scoreDonor(donor, proposal) }))
       .filter(({ donor }) => {

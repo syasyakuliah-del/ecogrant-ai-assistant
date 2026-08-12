@@ -57,7 +57,8 @@ RETURNS BOOLEAN LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public AS
     LEFT JOIN public.roles r ON ur.role_id = r.id
     WHERE ur.user_id = _user_id AND (r.name = _role OR ur.role::text = _role)
   );
-$$;
+GRANT EXECUTE ON FUNCTION public.has_permission(UUID, TEXT) TO authenticated, anon, public;
+GRANT EXECUTE ON FUNCTION public.has_role(UUID, TEXT) TO authenticated, anon, public;
 
 -- ----------------------------------------------------------------------------
 -- 3. CORE TABLES

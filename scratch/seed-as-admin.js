@@ -1,0 +1,193 @@
+import { createClient } from "@supabase/supabase-js";
+
+const url = "https://ozxdpagxumfxveqyfene.supabase.co";
+const key = "sb_publishable_GG-5HRci4QU04snfZ4kamQ_IJ1JuSR9";
+
+const supabase = createClient(url, key, {
+  auth: { persistSession: false },
+});
+
+async function seedAsAdmin() {
+  console.log("🔑 Authenticating Admin user for Remote Seed...");
+
+  const email = "admin@ecogrant.ai";
+  const password = "EcoGrant2026!#StrongSecurePass";
+
+  let { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (authErr) {
+    console.log("Signing up new admin user:", email);
+    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: "Administrator Utama",
+          organization_name: "EcoGrant AI Admin",
+        },
+      },
+    });
+
+    if (signUpErr) {
+      console.error("SignUp error:", signUpErr.message);
+      return;
+    }
+    authData = signUpData;
+  }
+
+  console.log("Logged in user ID:", authData.user?.id);
+
+  // Now seed master tables as authenticated admin!
+
+  // 1. Seed Donors
+  console.log("Seeding Donors...");
+  const donors = [
+    {
+      name: "Global Environment Facility Small Grants Programme",
+      category: "Multilateral",
+      country: "Amerika Serikat",
+      website: "https://sgp.undp.org",
+      email: "sgp.indonesia@undp.org",
+      phone: "+62 21 3141308",
+      funding_fields: ["Konservasi Keanekaragaman Hayati", "Mitigasi Perubahan Iklim", "Degradasi Lahan"],
+      priorities: ["Organisasi berbasis masyarakat", "Pelibatan masyarakat adat", "Kesetaraan gender"],
+      requirements: ["Akta pendirian organisasi", "Laporan keuangan dua tahun terakhir", "Surat dukungan pemerintah daerah", "Logical Framework Matrix", "Rencana Anggaran Biaya rinci"],
+      min_grant: 200000000,
+      max_grant: 750000000,
+      currency: "IDR",
+      deadline: "2026-11-30"
+    },
+    {
+      name: "Tropical Forest Conservation Action Kalimantan",
+      category: "Bilateral",
+      country: "Indonesia",
+      website: "https://tfcakalimantan.org",
+      email: "info@tfcakalimantan.org",
+      phone: "+62 561 733123",
+      funding_fields: ["Konservasi Hutan Tropis", "Restorasi Ekosistem", "Ekonomi Masyarakat Hutan"],
+      priorities: ["Kalimantan", "Perhutanan sosial", "Pengelolaan kawasan konservasi"],
+      requirements: ["Legalitas lembaga", "Pengalaman program sejenis", "Rencana keberlanjutan", "Kerangka monitoring dan evaluasi"],
+      min_grant: 150000000,
+      max_grant: 1500000000,
+      currency: "IDR",
+      deadline: "2026-09-30"
+    },
+    {
+      name: "Ford Foundation Indonesia",
+      category: "Yayasan Filantropi",
+      country: "Amerika Serikat",
+      website: "https://www.fordfoundation.org",
+      email: "indonesia@fordfoundation.org",
+      phone: "+62 21 2358 6900",
+      funding_fields: ["Keadilan Sosial", "Tata Kelola Sumber Daya Alam", "Pemberdayaan Masyarakat Adat"],
+      priorities: ["Advokasi kebijakan", "Penguatan kelembagaan", "Inklusi sosial"],
+      requirements: ["Profil organisasi", "Teori perubahan", "Anggaran multi tahun", "Audit keuangan"],
+      min_grant: 500000000,
+      max_grant: 3000000000,
+      currency: "IDR",
+      deadline: "2026-12-15"
+    },
+    {
+      name: "Kehati Foundation",
+      category: "Yayasan Nasional",
+      country: "Indonesia",
+      website: "https://kehati.or.id",
+      email: "info@kehati.or.id",
+      phone: "+62 21 7183185",
+      funding_fields: ["Keanekaragaman Hayati", "Pertanian Berkelanjutan", "Ekosistem Pesisir"],
+      priorities: ["Konservasi berbasis masyarakat", "Ekonomi hijau", "Riset terapan"],
+      requirements: ["NPWP lembaga", "Rekening lembaga", "Proposal teknis", "RAB sesuai standar biaya"],
+      min_grant: 50000000,
+      max_grant: 500000000,
+      currency: "IDR",
+      deadline: "2026-08-31"
+    },
+    {
+      name: "Dana Indonesia untuk Iklim dan Lingkungan (BPDLH)",
+      category: "Pemerintah",
+      country: "Indonesia",
+      website: "https://bpdlh.id",
+      email: "info@bpdlh.id",
+      phone: "+62 21 3512300",
+      funding_fields: ["Mitigasi dan Adaptasi Iklim", "Energi Terbarukan", "Restorasi Gambut"],
+      priorities: ["Penurunan emisi terukur", "Pemberdayaan ekonomi lokal", "Kesiapan kelembagaan"],
+      requirements: ["Legalitas lembaga", "Rekening khusus program", "RAB sesuai SBM", "Sistem MRV emisi"],
+      min_grant: 100000000,
+      max_grant: 2000000000,
+      currency: "IDR",
+      deadline: "2026-12-31"
+    }
+  ];
+
+  const { error: donorErr } = await supabase.from("donors").insert(donors);
+  if (donorErr) console.error("Donors Seed Error:", donorErr.message);
+  else console.log("✅ Donors Seeded");
+
+  // 2. Seed SBM 2026
+  console.log("Seeding SBM 2026...");
+  const sbm = [
+    { year: 2026, version: "1.0", code: "SBM-001", category: "Honorarium", description: "Honorarium Narasumber Pejabat Eselon II", unit: "OJ", price: 1000000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-002", category: "Honorarium", description: "Honorarium Narasumber Praktisi atau Ahli", unit: "OJ", price: 900000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-003", category: "Honorarium", description: "Honorarium Moderator", unit: "OK", price: 700000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-004", category: "Honorarium", description: "Honorarium Panitia Kegiatan", unit: "OK", price: 400000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-005", category: "Honorarium", description: "Honorarium Fasilitator Pelatihan Masyarakat", unit: "OJ", price: 600000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-010", category: "Perjalanan Dinas", description: "Uang Harian Perjalanan Dinas Dalam Provinsi", unit: "OH", price: 380000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-011", category: "Perjalanan Dinas", description: "Uang Harian Perjalanan Dinas Luar Provinsi", unit: "OH", price: 430000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-020", category: "Konsumsi", description: "Konsumsi Rapat Makan Siang", unit: "OK", price: 65000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-021", category: "Konsumsi", description: "Konsumsi Rapat Kudapan", unit: "OK", price: 30000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-030", category: "Sewa", description: "Sewa Ruang Pertemuan Fullday", unit: "Paket", price: 3500000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-031", category: "Sewa", description: "Sewa Kendaraan Roda Empat Harian", unit: "Unit/Hari", price: 1000000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-032", category: "Sewa", description: "Sewa Perahu Motor Survei Lapangan", unit: "Unit/Hari", price: 1200000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-040", category: "Bahan", description: "Alat Tulis Kantor Paket Kegiatan", unit: "Paket", price: 750000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-050", category: "Jasa Profesional", description: "Jasa Konsultan Individu Ahli Madya", unit: "OB", price: 18000000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" },
+    { year: 2026, version: "1.0", code: "SBM-051", category: "Jasa Profesional", description: "Jasa Enumerator Survei Lapangan", unit: "OH", price: 300000, region_code: "NASIONAL", regulation_source: "PMK Standar Biaya Masukan 2026", effective_from: "2026-01-01", effective_until: "2026-12-31" }
+  ];
+
+  const { error: sbmErr } = await supabase.from("sbm").insert(sbm);
+  if (sbmErr) console.error("SBM Seed Error:", sbmErr.message);
+  else console.log("✅ SBM Seeded");
+
+  // 3. Seed SBU 2026
+  console.log("Seeding SBU 2026...");
+  const sbu = [
+    { year: 2026, version: "1.0", code: "SBU-100", category: "Akomodasi", description: "Penginapan Standar Pelaksana", unit: "OH", price: 700000, province_code: "KALIMANTAN BARAT", city_code: "KOTA PONTIANAK", source: "Peraturan Gubernur Kalimantan Barat", effective_from: "2026-01-01" },
+    { year: 2026, version: "1.0", code: "SBU-102", category: "Transportasi", description: "Sewa Kendaraan Roda Empat", unit: "Unit/Hari", price: 950000, province_code: "KALIMANTAN BARAT", city_code: "SEMUA", source: "Peraturan Gubernur Kalimantan Barat", effective_from: "2026-01-01" },
+    { year: 2026, version: "1.0", code: "SBU-110", category: "Akomodasi", description: "Penginapan Standar Pelaksana", unit: "OH", price: 900000, province_code: "DKI JAKARTA", city_code: "SEMUA", source: "Peraturan Gubernur DKI Jakarta", effective_from: "2026-01-01" },
+    { year: 2026, version: "1.0", code: "SBU-112", category: "Transportasi", description: "Sewa Kendaraan Roda Empat", unit: "Unit/Hari", price: 1200000, province_code: "DKI JAKARTA", city_code: "SEMUA", source: "Peraturan Gubernur DKI Jakarta", effective_from: "2026-01-01" },
+    { year: 2026, version: "1.0", code: "SBU-120", category: "Akomodasi", description: "Penginapan Standar Pelaksana", unit: "OH", price: 650000, province_code: "SULAWESI SELATAN", city_code: "KOTA MAKASSAR", source: "Peraturan Gubernur Sulawesi Selatan", effective_from: "2026-01-01" },
+    { year: 2026, version: "1.0", code: "SBU-130", category: "Akomodasi", description: "Penginapan Standar Pelaksana", unit: "OH", price: 620000, province_code: "PAPUA", city_code: "SEMUA", source: "Peraturan Gubernur Papua", effective_from: "2026-01-01" }
+  ];
+
+  const { error: sbuErr } = await supabase.from("sbu").insert(sbu);
+  if (sbuErr) console.error("SBU Seed Error:", sbuErr.message);
+  else console.log("✅ SBU Seeded");
+
+  // 4. Seed Activities
+  console.log("Seeding Activities...");
+  const activities = [
+    { category: "Rehabilitasi Hutan", sub_category: "Penanaman", name: "Penanaman Pohon Multiguna", description: "Kegiatan penanaman bibit pohon multiguna pada lahan kritis.", default_output: "Lahan kritis terehabilitasi", default_indicator: "Jumlah hektare lahan tertanam", target_unit: "hektare", lfa_level: "output", budget_category: "Bahan" },
+    { category: "Pemberdayaan Masyarakat", sub_category: "Pelatihan", name: "Pelatihan Kelompok Tani Hutan", description: "Peningkatan kapasitas kelompok tani hutan.", default_output: "Kapasitas kelompok meningkat", default_indicator: "Jumlah peserta terlatih", target_unit: "orang", lfa_level: "activity", budget_category: "Honorarium" },
+    { category: "Konservasi", sub_category: "Patroli", name: "Patroli Partisipatif Kawasan", description: "Patroli pengamanan kawasan bersama masyarakat.", default_output: "Kawasan terjaga", default_indicator: "Jumlah patroli terlaksana", target_unit: "kegiatan", lfa_level: "activity", budget_category: "Perjalanan" },
+    { category: "Monitoring dan Evaluasi", sub_category: "Monitoring", name: "Monitoring dan Evaluasi Program", description: "Pemantauan capaian indikator program secara berkala.", default_output: "Laporan monitoring tersusun", default_indicator: "Jumlah laporan monitoring", target_unit: "laporan", lfa_level: "activity", budget_category: "Operasional" }
+  ];
+
+  const { error: actErr } = await supabase.from("activities").insert(activities);
+  if (actErr) console.error("Activities Seed Error:", actErr.message);
+  else console.log("✅ Activities Seeded");
+
+  // 5. Seed Help Articles
+  console.log("Seeding Help Articles...");
+  const helpArticles = [
+    { category: "Memulai", title: "Panduan Memulai Wizard Proposal", slug: "panduan-memulai", excerpt: "Langkah pertama menggunakan EcoGrant AI.", content: "1. Lengkapi profil dan nama organisasi pada menu Profil.\n2. Buka menu Proposal Saya lalu pilih Buat Proposal.\n3. Ikuti wizard sepuluh langkah dari informasi dasar hingga ekspor dokumen.\n4. Seluruh perubahan tersimpan otomatis.", sort_order: 1 },
+    { category: "Panduan", title: "Panduan Wizard Proposal 10 Langkah", slug: "panduan-wizard", excerpt: "Penjelasan sepuluh langkah penyusunan proposal.", content: "Langkah 1 Informasi Proposal, Langkah 2 Penyusunan Narasi, Langkah 3 Executive Summary, Langkah 4 Pemilihan Donor, Langkah 5 Logical Framework Matrix, Langkah 6 Sinkronisasi SBM, Langkah 7 Sinkronisasi SBU, Langkah 8 Rencana Anggaran Biaya, Langkah 9 Review, Langkah 10 Export.", sort_order: 2 }
+  ];
+
+  const { error: helpErr } = await supabase.from("help_articles").insert(helpArticles);
+  if (helpErr) console.error("Help Articles Seed Error:", helpErr.message);
+  else console.log("✅ Help Articles Seeded");
+}
+
+seedAsAdmin();
