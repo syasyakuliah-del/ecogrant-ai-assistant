@@ -64,7 +64,11 @@ function AuthPage() {
     });
     setBusy(false);
     if (error) {
-      toast.error("Email atau kata sandi tidak sesuai.");
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        toast.error("Email belum dikonfirmasi. Di Supabase Dashboard, buka Authentication -> Providers -> Email dan nonaktifkan 'Confirm email' (atau klik confirm user pada tab Users).");
+      } else {
+        toast.error(error.message || "Email atau kata sandi tidak sesuai.");
+      }
       return;
     }
     await logAudit({ action: "login.success", entityType: "auth" });
