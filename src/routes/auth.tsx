@@ -68,6 +68,14 @@ function AuthPage() {
       return;
     }
     await logAudit({ action: "login.success", entityType: "auth" });
+    const { data: u } = await supabase.auth.getUser();
+    if (u.user) {
+      await supabase.from("login_histories").insert({
+        user_id: u.user.id,
+        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+      });
+      await supabase.from("profiles").update({ last_login_at: new Date().toISOString() }).eq("id", u.user.id);
+    }
     toast.success("Berhasil masuk.");
     void navigate({ to: search.redirect ?? "/dashboard", replace: true });
   }
