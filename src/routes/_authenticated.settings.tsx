@@ -50,15 +50,17 @@ function SettingsPage() {
   // Active Sessions / Login Histories
   const { data: history = [] } = useQuery({
     queryKey: ["login-histories-me", user?.id],
+    enabled: Boolean(user?.id),
     queryFn: async () => {
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from("login_histories")
         .select("*")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(10);
-      if (error) throw error;
-      return data;
+      if (error) return [];
+      return data ?? [];
     },
   });
 

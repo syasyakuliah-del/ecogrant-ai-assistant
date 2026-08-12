@@ -245,19 +245,45 @@ export function EmptyState({
   title,
   description,
   action,
+  icon: Icon = FileText,
 }: {
   title: string;
   description: string;
   action?: ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="surface-panel flex flex-col items-center gap-3 px-6 py-14 text-center">
-      <span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <FileText className="size-5" />
+    <div className="surface-panel flex flex-col items-center gap-3 px-6 py-14 text-center rounded-xl border border-dashed">
+      <span className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
+        <Icon className="size-6" />
       </span>
-      <p className="font-display text-base font-semibold">{title}</p>
-      <p className="max-w-md text-sm text-muted-foreground">{description}</p>
-      {action}
+      <p className="font-display text-base font-semibold text-foreground">{title}</p>
+      <p className="max-w-md text-sm text-muted-foreground leading-relaxed">{description}</p>
+      {action && <div className="mt-2">{action}</div>}
     </div>
   );
 }
+
+export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) {
+  return (
+    <div className="w-full space-y-3 p-4">
+      {Array.from({ length: rows }).map((_, r) => (
+        <div key={r} className="flex items-center gap-4 py-2 border-b last:border-0">
+          {Array.from({ length: cols }).map((_, c) => (
+            <div key={c} className="h-4 bg-muted/60 animate-pulse rounded flex-1" />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function CardSkeleton({ count = 3 }: { count?: number }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="h-32 rounded-xl bg-muted/60 animate-pulse p-4 border" />
+      ))}
+    </div>
+  );
+}

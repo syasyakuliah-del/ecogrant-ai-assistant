@@ -76,7 +76,7 @@ type ProposalRow = {
   donors?: { name: string } | null;
 };
 
-export function ProposalsPage() {
+function ProposalsPage() {
   const { user, isAdmin, hasPermission } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();

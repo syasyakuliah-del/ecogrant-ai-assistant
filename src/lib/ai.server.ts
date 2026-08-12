@@ -2,18 +2,40 @@ import { streamText, Output } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider, AI_MODEL } from "./ai-gateway.server";
 
-const ContextSchema = z.object({
+export const ContextSchema = z.object({
   title: z.string().default(""),
   organization: z.string().default(""),
+  organizationType: z.string().default("NGO"),
+  organizationRegNumber: z.string().default(""),
   location: z.string().default(""),
+  city: z.string().default(""),
   province: z.string().default(""),
   category: z.string().default(""),
   ideaSummary: z.string().default(""),
   durationMonths: z.number().default(0),
+  startDate: z.string().default(""),
+  endDate: z.string().default(""),
   grantAmount: z.number().default(0),
+  currency: z.string().default("IDR"),
   donorName: z.string().default(""),
+  donorCountry: z.string().default(""),
   donorPriorities: z.array(z.string()).default([]),
+  donorRequirements: z.array(z.string()).default([]),
+  existingNarratives: z.array(z.object({ label: z.string(), content: z.string() })).default([]),
+  lfaSummary: z.string().default(""),
+  rabSummary: z.string().default(""),
 });
+
+export const StructuredAiOutputSchema = z.object({
+  sectionType: z.string(),
+  content: z.string(),
+  assumptions: z.array(z.string()).default([]),
+  missingInformation: z.array(z.string()).default([]),
+  warnings: z.array(z.string()).default([]),
+  aiGenerated: z.literal(true).default(true),
+});
+
+export type StructuredAiOutput = z.infer<typeof StructuredAiOutputSchema>;
 
 export const NarrativeInput = z.object({
   context: ContextSchema,
@@ -61,22 +83,27 @@ function gateway() {
 
 function handleError(error: unknown): never {
   const message = error instanceof Error ? error.message : String(error);
-  if (message.includes("429")) throw new Error("Batas permintaan AI tercapai. Silakan coba beberapa saat lagi.");
+  if (message.includes("429")) throw new Error("Batas permintaan AI tercapai. Silakan coba 1 menit lagi.");
   if (message.includes("402")) throw new Error("Kuota AI habis. Silakan tambahkan kredit pada workspace.");
   throw new Error(`Permintaan AI gagal: ${message}`);
 }
 
 function contextBlock(c: z.infer<typeof ContextSchema>) {
   return [
+    `=== KONTEKS PROPOSAL & ORGANISASI ===`,
     `Judul program: ${c.title || "-"}`,
-    `Organisasi pelaksana: ${c.organization || "-"}`,
-    `Lokasi: ${c.location || "-"}${c.province ? `, Provinsi ${c.province}` : ""}`,
+    `Organisasi pelaksana: ${c.organization || "-"} (${c.organizationType || "NGO"})${c.organizationRegNumber ? ` Reg: ${c.organizationRegNumber}` : ""}`,
+    `Lokasi pelaksanaan: ${[c.location, c.city, c.province].filter(Boolean).join(", ") || "-"}`,
     `Kategori program: ${c.category || "-"}`,
-    `Durasi: ${c.durationMonths} bulan`,
-    `Nilai hibah yang diajukan: Rp ${c.grantAmount.toLocaleString("id-ID")}`,
-    `Lembaga donor: ${c.donorName || "belum dipilih"}`,
-    c.donorPriorities.length ? `Prioritas donor: ${c.donorPriorities.join("; ")}` : "",
+    `Durasi pelaksanaan: ${c.durationMonths} bulan${c.startDate ? ` (${c.startDate} s.d ${c.endDate})` : ""}`,
+    `Nilai hibah yang diajukan: ${c.currency} ${c.grantAmount.toLocaleString("id-ID")}`,
+    `Lembaga donor target: ${c.donorName || "Belum dipilih"}${c.donorCountry ? ` (${c.donorCountry})` : ""}`,
+    c.donorPriorities.length ? `Prioritas strategis donor: ${c.donorPriorities.join("; ")}` : "",
+    c.donorRequirements.length ? `Persyaratan utama donor: ${c.donorRequirements.join("; ")}` : "",
     `Ringkasan ide lapangan: ${c.ideaSummary || "-"}`,
+    c.existingNarratives.length ? `\n=== NARASI SEBELUMNYA ===\n` + c.existingNarratives.map((n) => `[${n.label}]\n${n.content}`).join("\n\n") : "",
+    c.lfaSummary ? `\n=== LOGICAL FRAMEWORK (LFA) ===\n${c.lfaSummary}` : "",
+    c.rabSummary ? `\n=== RENCANA ANGGARAN BIAYA (RAB) ===\n${c.rabSummary}` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -84,8 +111,9 @@ function contextBlock(c: z.infer<typeof ContextSchema>) {
 
 const SYSTEM = `Anda adalah penulis proposal hibah profesional di sektor kehutanan, lingkungan hidup, dan pemberdayaan masyarakat di Indonesia.
 Tulis dalam Bahasa Indonesia formal, lugas, dan faktual sesuai kaidah dokumen resmi lembaga donor.
-Jangan menggunakan kata sapaan, jangan menggunakan emoji, jangan menggunakan penanda markdown seperti tanda pagar atau tanda bintang.
-Gunakan paragraf utuh. Hindari klaim data statistik spesifik yang tidak diberikan pengguna; gunakan rumusan kualitatif bila data tidak tersedia.`;
+Jangan mengarang nomor regulasi, angka SBM/SBU, donor, atau deadline yang tidak tersedia di dalam konteks.
+Jika ada informasi penting yang belum tersedia di dalam konteks, cantumkan secara eksplisit dalam bagian kekurangan informasi.
+Jangan menggunakan emoji atau kata sapaan. Gunakan paragraf utuh.`;
 
 const MODE_INSTRUCTION: Record<string, string> = {
   generate: "Susun isi bagian tersebut dari awal berdasarkan konteks proposal.",
@@ -98,18 +126,25 @@ const MODE_INSTRUCTION: Record<string, string> = {
 
 export async function runNarrative(data: z.infer<typeof NarrativeInput>) {
   try {
-    const result = streamText({
+    const parsed = NarrativeInput.parse(data);
+    const instruction = MODE_INSTRUCTION[parsed.mode] ?? MODE_INSTRUCTION["generate"];
+    const prompt = `${contextBlock(parsed.context)}
+
+Tugas: ${instruction}
+Bagian proposal: ${parsed.sectionLabel}
+
+${parsed.currentContent ? `Naskah saat ini:\n${parsed.currentContent}\n` : ""}
+
+Hasil narasi wajib formal dan dapat diubah pengguna secara bebas:`;
+
+    const response = streamText({
       model: gateway()(AI_MODEL),
       system: SYSTEM,
-      prompt: `${contextBlock(data.context)}
-
-Bagian yang ditulis: ${data.sectionLabel}
-Instruksi: ${MODE_INSTRUCTION[data.mode]}
-Panjang: 3 sampai 5 paragraf, kecuali bagian bersifat daftar seperti Tujuan, Sasaran, Output, dan Outcome yang boleh ditulis sebagai paragraf pengantar diikuti butir bernomor.
-${data.currentContent ? `\nNaskah saat ini:\n${data.currentContent}` : ""}`,
+      prompt,
+      temperature: 0.4,
     });
-    const text = await result.text;
-    return { content: text.trim() };
+
+    return response.toDataStreamResponse();
   } catch (error) {
     handleError(error);
   }
@@ -117,105 +152,68 @@ ${data.currentContent ? `\nNaskah saat ini:\n${data.currentContent}` : ""}`,
 
 export async function runSummary(data: z.infer<typeof SummaryInput>) {
   try {
-    const result = streamText({
+    const parsed = SummaryInput.parse(data);
+    const prompt = `${contextBlock(parsed.context)}
+
+Mata anggaran total: Rp ${parsed.budgetTotal.toLocaleString("id-ID")}
+Ringkasan LFA: ${parsed.lfaSummary || "-"}
+
+Tugas: Hasikan ringkasan eksekutif proposal hibah secara komprehensif dalam maksimal ${parsed.maxWords} kata.`;
+
+    const response = streamText({
       model: gateway()(AI_MODEL),
       system: SYSTEM,
-      prompt: `${contextBlock(data.context)}
-
-Ringkasan Logical Framework:
-${data.lfaSummary || "belum tersedia"}
-
-Total Rencana Anggaran Biaya: Rp ${data.budgetTotal.toLocaleString("id-ID")}
-
-Naskah proposal:
-${data.narratives.map((n) => `${n.label}:\n${n.content}`).join("\n\n").slice(0, 12000)}
-
-Tugas: susun Executive Summary proposal maksimal ${data.maxWords} kata yang memuat konteks masalah, tujuan, pendekatan, keluaran utama, indikator keberhasilan, kebutuhan anggaran, dan keberlanjutan.`,
+      prompt,
+      temperature: 0.3,
     });
-    const text = await result.text;
-    return { content: text.trim() };
+
+    return response.toDataStreamResponse();
   } catch (error) {
     handleError(error);
   }
 }
-
-const LfaSchema = z.object({
-  rows: z
-    .array(
-      z.object({
-        row_type: z.enum(["goal", "outcome", "output", "activity"]),
-        goal: z.string().default(""),
-        outcome: z.string().default(""),
-        output: z.string().default(""),
-        activity: z.string().default(""),
-        indicator: z.string().default(""),
-        baseline: z.string().default(""),
-        target: z.string().default(""),
-        means_of_verification: z.string().default(""),
-        assumption: z.string().default(""),
-      }),
-    )
-    .min(4),
-});
 
 export async function runLfa(data: z.infer<typeof LfaInput>) {
   try {
-    const result = streamText({
+    const parsed = LfaInput.parse(data);
+    const prompt = `${contextBlock(parsed.context)}
+
+Tugas: Hasilkan matriks kerangka logis (LFA) terstruktur.`;
+
+    const response = streamText({
       model: gateway()(AI_MODEL),
       system: SYSTEM,
-      output: Output.object({ schema: LfaSchema }),
-      prompt: `${contextBlock(data.context)}
-
-Naskah proposal:
-${data.narratives.map((n) => `${n.label}:\n${n.content}`).join("\n\n").slice(0, 10000)}
-
-Tugas: susun Logical Framework Matrix. Hasilkan satu baris bertipe goal, satu sampai dua baris bertipe outcome, dua sampai empat baris bertipe output, dan empat sampai sepuluh baris bertipe activity.
-Setiap baris wajib memiliki indikator terukur, baseline, target, alat verifikasi, dan asumsi. Isi kolom yang tidak relevan dengan string kosong.`,
+      prompt,
+      temperature: 0.3,
     });
-    const output = await result.output;
-    return output;
+
+    return response.toDataStreamResponse();
   } catch (error) {
     handleError(error);
   }
 }
 
-const BudgetSchema = z.object({
-  items: z
-    .array(
-      z.object({
-        category: z.string(),
-        activity_name: z.string().default(""),
-        description: z.string(),
-        unit: z.string(),
-        volume: z.number().default(1),
-        frequency: z.number().default(1),
-        unit_price: z.number().default(0),
-        standard_code: z.string().default(""),
-      }),
-    )
-    .min(3),
-});
-
 export async function runBudget(data: z.infer<typeof BudgetInput>) {
   try {
-    const result = streamText({
+    const parsed = BudgetInput.parse(data);
+    const prompt = `${contextBlock(parsed.context)}
+
+Daftar Kegiatan Utama:
+${parsed.activities.map((a, i) => `${i + 1}. ${a}`).join("\n") || "-"}
+
+Standar Biaya SBM/SBU Terkait:
+${parsed.standards.map((s) => `[${s.source}] ${s.code} - ${s.description}: Rp ${s.price.toLocaleString("id-ID")}/${s.unit}`).join("\n") || "-"}
+
+Tugas: Susun rekomendasi rincian Rencana Anggaran Biaya (RAB).`;
+
+    const response = streamText({
       model: gateway()(AI_MODEL),
       system: SYSTEM,
-      output: Output.object({ schema: BudgetSchema }),
-      prompt: `${contextBlock(data.context)}
-
-Daftar aktivitas dari Logical Framework:
-${data.activities.map((a, i) => `${i + 1}. ${a}`).join("\n") || "belum tersedia"}
-
-Daftar standar biaya yang berlaku (gunakan harga satuan dan kode ini bila relevan):
-${data.standards.map((s) => `${s.source} ${s.code} | ${s.category} | ${s.description} | ${s.unit} | ${s.price}`).join("\n").slice(0, 8000)}
-
-Tugas: susun rekomendasi item Rencana Anggaran Biaya yang realistis untuk seluruh aktivitas.
-Gunakan kode standar biaya pada kolom standard_code bila item mengacu pada daftar di atas, dan kosongkan bila tidak.
-Harga satuan tidak boleh melebihi standar biaya yang tersedia. Total keseluruhan sebaiknya mendekati namun tidak melebihi nilai hibah yang diajukan.`,
+      prompt,
+      temperature: 0.3,
     });
-    const output = await result.output;
-    return output;
+
+    return response.toDataStreamResponse();
   } catch (error) {
     handleError(error);
   }
