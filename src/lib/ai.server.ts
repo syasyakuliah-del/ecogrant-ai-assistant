@@ -329,7 +329,7 @@ export async function runLfa(data: z.infer<typeof LfaInput>): Promise<LfaRespons
     const json = await generateJson(prompt, 0.3);
     const content = (json["content"] ?? {}) as JsonRecord;
     const rawRows = Array.isArray(content["rows"]) ? content["rows"] : [];
-    const rows: LfaRowResult[] = rawRows.map((r: Record<string, unknown>) => ({
+    const rows: LfaRowResult[] = rawRows.map((r: any) => ({
       row_type: String(r.row_type || "activity"),
       goal: r.goal ? String(r.goal) : undefined,
       outcome: r.outcome ? String(r.outcome) : undefined,
@@ -360,7 +360,7 @@ export async function runBudget(data: z.infer<typeof BudgetInput>): Promise<Budg
     const json = await generateJson(prompt, 0.3);
     const content = (json["content"] ?? {}) as JsonRecord;
     const rawItems = Array.isArray(content["items"]) ? content["items"] : [];
-    const items: BudgetItemResult[] = rawItems.map((item: Record<string, unknown>) => ({
+    const items: BudgetItemResult[] = rawItems.map((item: any) => ({
       category: item.category ? String(item.category) : undefined,
       activity_name: item.activity_name ? String(item.activity_name) : undefined,
       description: item.description ? String(item.description) : undefined,
@@ -386,11 +386,8 @@ export async function runActivities(
     const parsed = ActivityInput.parse(data);
     const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives })}\n\nMODULE: GENERATE_ACTIVITY\nOutputs:\n${parsed.outputs.map((o, i) => `${i + 1}. ${o}`).join("\n") || "belum tersedia"}\ncontent.activities fields: activity_id, output_id, activity_name, description, location, duration, frequency, participants, responsible_party, expected_result. Jangan membuat activity tanpa hubungan output.`;
     const json = await generateJson(prompt, 0.3);
-    const rawActs = ((json["content"] as JsonRecord | undefined)?.["activities"] ?? []) as Record<
-      string,
-      unknown
-    >[];
-    const activities: ActivityResult[] = rawActs.map((a: Record<string, unknown>) => ({
+    const rawActs = ((json["content"] as JsonRecord | undefined)?.["activities"] ?? []) as any[];
+    const activities: ActivityResult[] = rawActs.map((a: any) => ({
       activity_id: a.activity_id ? String(a.activity_id) : undefined,
       output_id: a.output_id ? String(a.output_id) : undefined,
       activity_name: a.activity_name ? String(a.activity_name) : undefined,
