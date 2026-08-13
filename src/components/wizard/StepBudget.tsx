@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Download,
   FileSpreadsheet,
+  HelpCircle,
   Layers,
   Loader2,
   PieChart,
@@ -30,8 +31,19 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { aiErrorMessage, buildContext, type StepProps } from "./shared";
 import type { BudgetItem } from "@/hooks/useProposalData";
+
+const CATEGORY_TOOLTIPS: Record<string, string> = {
+  "Honorarium": "SBM PMK: Honorarium pengelola, narasumber, atau pakar sesuai batas jam/orang.",
+  "Perjalanan Dinas": "SBM PMK: Uang harian & tiket perjalanan dinas per orang/hari per kota.",
+  "Penginapan": "SBM PMK: Pagu kamar hotel per malam sesuai golongan & kota tujuan.",
+  "Konsumsi": "SBM PMK: Pagu rapat & kudapan (snack) per porsi/peserta.",
+  "Sewa Equipment & Tempat": "SBU: Sewa lokasi, venue, atau alat teknis sesuai harga pasar.",
+  "Bahan & Operasional": "SBU/SBM: ATK, perlengkapan lapangan, pencetakan, & komunikasi.",
+  "Lainnya": "Biaya operasional pendukung yang tetap harus mematuhi aturan 15-20% pagu.",
+};
 
 export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps) {
   const run = useServerFn(generateBudgetPlan);
@@ -356,112 +368,144 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
                   Belum ada item anggaran RAB. Susun otomatis dari aktivitas LFA dengan tombol AI di atas atau tambah item manual.
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-lg border">
-                  <Table>
-                    <TableHeader className="bg-muted/40">
-                      <TableRow className="text-xs">
-                        <TableHead className="w-36">Kategori</TableHead>
-                        <TableHead className="min-w-48">Uraian Biaya</TableHead>
-                        <TableHead className="w-24">Satuan</TableHead>
-                        <TableHead className="w-16">Vol</TableHead>
-                        <TableHead className="w-16">Frek</TableHead>
-                        <TableHead className="w-32">Harga Satuan</TableHead>
-                        <TableHead className="w-32 text-right">Subtotal</TableHead>
-                        <TableHead className="w-32 text-right">Total (+PPN)</TableHead>
-                        <TableHead className="w-28">Status</TableHead>
-                        <TableHead className="w-10" />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {budget.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell>
-                            <Select value={item.category} onValueChange={(v) => void update(item, { category: v })}>
-                              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {BUDGET_CATEGORIES.map((c) => (
-                                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              className="h-7 text-xs"
-                              defaultValue={item.description}
-                              onBlur={(e) => void update(item, { description: e.target.value })}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Select value={item.unit} onValueChange={(v) => void update(item, { unit: v })}>
-                              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {UNITS.map((u) => (
-                                  <SelectItem key={u} value={u}>{u}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              className="h-7 text-xs"
-                              type="number"
-                              min={1}
-                              defaultValue={Number(item.volume)}
-                              onBlur={(e) => void update(item, { volume: Number(e.target.value) })}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              className="h-7 text-xs"
-                              type="number"
-                              min={1}
-                              defaultValue={Number(item.frequency)}
-                              onBlur={(e) => void update(item, { frequency: Number(e.target.value) })}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              className="h-7 text-xs font-mono"
-                              type="number"
-                              min={0}
-                              defaultValue={Number(item.unit_price)}
-                              onBlur={(e) => void update(item, { unit_price: Number(e.target.value) })}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right text-xs font-mono">
-                            {formatCurrency(item.subtotal ?? 0, proposal.currency)}
-                          </TableCell>
-                          <TableCell className="text-right text-xs font-mono font-bold text-primary">
-                            {formatCurrency(item.total ?? 0, proposal.currency)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                item.validation_status === "valid" || item.validation_status === "sesuai"
-                                  ? "default"
-                                  : "destructive"
-                              }
-                              className="text-[10px]"
-                            >
-                              {item.validation_status || "Valid"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-6 text-muted-foreground hover:text-destructive"
-                              onClick={() => void removeItem(item.id)}
-                            >
-                              <Trash2 className="size-3.5" />
-                            </Button>
-                          </TableCell>
+                <TooltipProvider>
+                  <div className="overflow-x-auto rounded-lg border max-h-[600px] overflow-y-auto">
+                    <Table>
+                      <TableHeader className="bg-muted/90 backdrop-blur sticky top-0 z-10">
+                        <TableRow className="text-xs">
+                          <TableHead className="w-36">
+                            <div className="flex items-center gap-1">
+                              <span>Kategori</span>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <HelpCircle className="size-3 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs text-xs">
+                                  Kategori pengeluaran RAB terikat aturan acuan SBM/SBU PMK Kemenkeu.
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TableHead>
+                          <TableHead className="min-w-48">Uraian Biaya</TableHead>
+                          <TableHead className="w-24">Satuan</TableHead>
+                          <TableHead className="w-16">Vol</TableHead>
+                          <TableHead className="w-16">Frek</TableHead>
+                          <TableHead className="w-32">Harga Satuan</TableHead>
+                          <TableHead className="w-32 text-right">Subtotal</TableHead>
+                          <TableHead className="w-32 text-right">Total (+PPN)</TableHead>
+                          <TableHead className="w-28">Status SBM</TableHead>
+                          <TableHead className="w-10" />
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {budget.map((item) => {
+                          const statusStr = (item.validation_status || "valid").toLowerCase();
+                          const isInvalid = statusStr.includes("melebihi") || statusStr.includes("invalid") || statusStr.includes("tidak") || statusStr.includes("override");
+                          const tooltipText = CATEGORY_TOOLTIPS[item.category] ?? CATEGORY_TOOLTIPS["Lainnya"];
+
+                          return (
+                            <TableRow
+                              key={item.id}
+                              className={
+                                isInvalid
+                                  ? "bg-destructive/10 dark:bg-destructive/20 border-l-4 border-l-destructive"
+                                  : undefined
+                              }
+                            >
+                              <TableCell>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div>
+                                      <Select value={item.category} onValueChange={(v) => void update(item, { category: v })}>
+                                        <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                          {BUDGET_CATEGORIES.map((c) => (
+                                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-xs text-xs">
+                                    {tooltipText}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  className="h-7 text-xs"
+                                  defaultValue={item.description}
+                                  onBlur={(e) => void update(item, { description: e.target.value })}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Select value={item.unit} onValueChange={(v) => void update(item, { unit: v })}>
+                                  <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    {UNITS.map((u) => (
+                                      <SelectItem key={u} value={u}>{u}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  className="h-7 text-xs"
+                                  type="number"
+                                  min={1}
+                                  defaultValue={Number(item.volume)}
+                                  onBlur={(e) => void update(item, { volume: Number(e.target.value) })}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  className="h-7 text-xs"
+                                  type="number"
+                                  min={1}
+                                  defaultValue={Number(item.frequency)}
+                                  onBlur={(e) => void update(item, { frequency: Number(e.target.value) })}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  className="h-7 text-xs font-mono"
+                                  type="number"
+                                  min={0}
+                                  defaultValue={Number(item.unit_price)}
+                                  onBlur={(e) => void update(item, { unit_price: Number(e.target.value) })}
+                                />
+                              </TableCell>
+                              <TableCell className="text-right text-xs font-mono">
+                                {formatCurrency(item.subtotal ?? 0, proposal.currency)}
+                              </TableCell>
+                              <TableCell className="text-right text-xs font-mono font-bold text-primary">
+                                {formatCurrency(item.total ?? 0, proposal.currency)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={isInvalid ? "destructive" : "default"}
+                                  className="text-[10px]"
+                                >
+                                  {item.validation_status || "Valid"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-6 text-muted-foreground hover:text-destructive"
+                                  onClick={() => void removeItem(item.id)}
+                                >
+                                  <Trash2 className="size-3.5" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TooltipProvider>
               )}
             </TabsContent>
 

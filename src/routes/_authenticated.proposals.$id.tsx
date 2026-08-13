@@ -21,6 +21,7 @@ import { StepStandards } from "@/components/wizard/StepStandards";
 import { StepBudget } from "@/components/wizard/StepBudget";
 import { StepReview } from "@/components/wizard/StepReview";
 import { StepExport } from "@/components/wizard/StepExport";
+import { ProposalMembersModal } from "@/components/ProposalMembersModal";
 
 export const Route = createFileRoute("/_authenticated/proposals/$id")({
   head: () => ({
@@ -80,7 +81,8 @@ function WizardPage() {
         title={p.title || "Proposal Tanpa Judul"}
         description={`Wizard Penyusunan Proposal — Step ${currentStepInfo.step}: ${currentStepInfo.title}`}
         actions={
-          <div className="flex items-center gap-2">
+            <ProposalMembersModal proposalId={p.id} proposalTitle={p.title} />
+
             <Badge
               variant={
                 autosaveState === "saving"
@@ -99,7 +101,7 @@ function WizardPage() {
               {autosaveState === "conflict" && <AlertTriangle className="size-3" />}
 
               {autosaveState === "saving"
-                ? "Menyimpan (Autosave 1.5s)..."
+                ? "Menyimpan (Autosave 3s)..."
                 : autosaveState === "saved"
                 ? "Tersimpan"
                 : autosaveState === "error"

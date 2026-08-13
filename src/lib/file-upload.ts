@@ -5,8 +5,20 @@ export const ALLOWED_DOC_EXTENSIONS = ["pdf", "doc", "docx", "xls", "xlsx"];
 export const ALLOWED_IMG_EXTENSIONS = ["png", "jpg", "jpeg"];
 export const ALLOWED_ALL_EXTENSIONS = [...ALLOWED_DOC_EXTENSIONS, ...ALLOWED_IMG_EXTENSIONS];
 
-export const MAX_DOC_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
-export const MAX_IMG_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+export const ALLOWED_MIME_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+];
+
+export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB Universal Cap
+export const MAX_DOC_SIZE_BYTES = MAX_FILE_SIZE_BYTES;
+export const MAX_IMG_SIZE_BYTES = MAX_FILE_SIZE_BYTES;
 
 export type FileValidationResult = {
   valid: boolean;
@@ -39,15 +51,21 @@ export function validateFile(file: File): FileValidationResult {
     };
   }
 
-  const isImage = ALLOWED_IMG_EXTENSIONS.includes(extension);
-  const category = isImage ? "image" : "document";
-  const maxSize = isImage ? MAX_IMG_SIZE_BYTES : MAX_DOC_SIZE_BYTES;
-
-  if (sizeBytes > maxSize) {
-    const limitMB = isImage ? 10 : 20;
+  if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
     return {
       valid: false,
-      error: `Ukuran file (${(sizeBytes / 1024 / 1024).toFixed(1)} MB) melebihi batas maksimum ${limitMB} MB.`,
+      error: `Tipe MIME (${file.type}) tidak valid atau berpotensi tidak aman.`,
+      sanitizedName, extension, mimeType, sizeBytes, category: "document",
+    };
+  }
+
+  const isImage = ALLOWED_IMG_EXTENSIONS.includes(extension);
+  const category = isImage ? "image" : "document";
+
+  if (sizeBytes > MAX_FILE_SIZE_BYTES) {
+    return {
+      valid: false,
+      error: `Ukuran file (${(sizeBytes / 1024 / 1024).toFixed(1)} MB) melebihi batas maksimum 10 MB.`,
       sanitizedName, extension, mimeType, sizeBytes, category,
     };
   }

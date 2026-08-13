@@ -52,6 +52,15 @@ export function useAutosave(id: string, currentVersion = 1) {
     lastFailedPayload.current = payload;
     pending.current = {};
 
+    // Backup pending to LocalStorage before network attempt
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`ecogrant_draft_${id}`, JSON.stringify(payload));
+      }
+    } catch {
+      // LocalStorage quota/access fallback
+    }
+
     // Optimistic locking: Increment version_number on update
     const updatePayload = {
       ...payload,
@@ -82,6 +91,15 @@ export function useAutosave(id: string, currentVersion = 1) {
       return;
     }
 
+    // Clear local backup draft on successful server sync
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(`ecogrant_draft_${id}`);
+      }
+    } catch {
+      // Ignore
+    }
+
     setState("saved");
     setSavedAt(new Date());
     void queryClient.invalidateQueries({ queryKey: ["proposal", id] });
@@ -90,15 +108,24 @@ export function useAutosave(id: string, currentVersion = 1) {
   const save = useCallback(
     (patch: TablesUpdate<"proposals">, immediate = false) => {
       pending.current = { ...pending.current, ...patch };
+      // Save draft immediately to LocalStorage on edit
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`ecogrant_draft_${id}`, JSON.stringify(pending.current));
+        }
+      } catch {
+        // Ignore
+      }
+
       if (timer.current) clearTimeout(timer.current);
       if (immediate) {
         void flush();
         return;
       }
-      // PRD 11: Debounce 1.500 milliseconds
-      timer.current = setTimeout(() => void flush(), 1500);
+      // Debounce 3.000 milliseconds for network efficiency & LocalStorage fallback
+      timer.current = setTimeout(() => void flush(), 3000);
     },
-    [flush],
+    [flush, id],
   );
 
   const retrySave = useCallback(() => {

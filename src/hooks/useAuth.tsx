@@ -100,14 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn("[useAuth] user_roles query failed — tables may not exist yet");
       }
 
-      // Fallback: detect admin by known admin email if no roles found
-      const currentEmail = p?.email ?? "";
-      const ADMIN_EMAILS = ["syasyakuliah@gmail.com"];
-      const emailIsAdmin = ADMIN_EMAILS.includes(currentEmail.toLowerCase());
-
-      const adminFlag = assignedRoles.includes("admin") || (assignedRoles.length === 0 && emailIsAdmin);
+      const adminFlag = assignedRoles.includes("admin");
       setIsAdmin(adminFlag);
-      setRoles(assignedRoles.length > 0 ? assignedRoles : emailIsAdmin ? ["admin"] : ["user"]);
+      setRoles(assignedRoles.length > 0 ? assignedRoles : ["user"]);
 
       // Fetch permissions from role_permissions
       let fetchedPerms: string[] = [];

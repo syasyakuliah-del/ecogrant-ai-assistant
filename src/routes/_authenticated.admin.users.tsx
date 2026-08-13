@@ -83,12 +83,22 @@ function AdminUsers() {
   // Login history dialog
   const [loginHistoryUserId, setLoginHistoryUserId] = useState<string | null>(null);
 
-  // Fetch users & roles
+  // Fetch users & roles with server-side search & pagination
   const { data: userData, isLoading: isUsersLoading } = useQuery({
-    queryKey: ["admin-users"],
+    queryKey: ["admin-users", q, page],
     queryFn: async () => {
+      let profilesQuery = supabase
+        .from("profiles")
+        .select("*")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+
+      if (q.trim()) {
+        profilesQuery = profilesQuery.or(`full_name.ilike.%${q.trim()}%,email.ilike.%${q.trim()}%`);
+      }
+
       const [{ data: profiles, error }, { data: roles }, { data: proposals }] = await Promise.all([
-        supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+        profilesQuery.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1),
         supabase.from("user_roles").select("user_id, role, role_id, roles(name)"),
         supabase.from("proposals").select("owner_id").is("deleted_at", null),
       ]);

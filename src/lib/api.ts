@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { logAudit, notify } from "@/lib/audit";
 
 export const API_BASE_PATH = "/api/v1";
@@ -105,8 +106,10 @@ export const api = {
 
   // 27.3 Proposals
   proposals: {
-    list: async () => {
-      const { data, error } = await supabase.from("proposals").select("*").is("deleted_at", null).order("updated_at", { ascending: false });
+    list: async (page: number = 0, pageSize: number = 50) => {
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+      const { data, error } = await supabase.from("proposals").select("*").is("deleted_at", null).order("updated_at", { ascending: false }).range(from, to);
       if (error) throw error;
       return data;
     },
@@ -126,7 +129,7 @@ export const api = {
       return data;
     },
     getById: async (id: string) => {
-      const { data, error } = await supabase.from("proposals").select("*, donors(*)").eq("id", id).maybeSingle();
+      const { data, error } = await supabase.from("proposals").select("*, donors(*)").eq("id", id).is("deleted_at", null).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -137,12 +140,12 @@ export const api = {
       return data;
     },
     delete: async (id: string) => {
-      const { error } = await supabase.from("proposals").update({ deleted_at: new Date().toISOString() } as never).eq("id", id);
+      const { error } = await supabase.from("proposals").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
       await logAudit({ action: "proposal.archive", entityType: "proposal", entityId: id });
     },
     restore: async (id: string) => {
-      const { error } = await supabase.from("proposals").update({ deleted_at: null } as never).eq("id", id);
+      const { error } = await supabase.from("proposals").update({ deleted_at: null }).eq("id", id);
       if (error) throw error;
       await logAudit({ action: "proposal.restore", entityType: "proposal", entityId: id });
     },
@@ -172,7 +175,7 @@ export const api = {
         approved_at: new Date().toISOString(),
         approved_by: userRes.user?.id ?? null,
         review_note: reviewNote ?? null,
-      } as never).eq("id", id).select().single();
+      }).eq("id", id).select().single();
       if (error) throw error;
       await logAudit({ action: "proposal.approve", entityType: "proposal", entityId: id, newValues: { reviewNote } });
       return data;
@@ -181,7 +184,7 @@ export const api = {
       const { data, error } = await supabase.from("proposals").update({
         status: "perlu_revisi",
         review_note: reviewNote,
-      } as never).eq("id", id).select().single();
+      }).eq("id", id).select().single();
       if (error) throw error;
       await logAudit({ action: "proposal.request_revision", entityType: "proposal", entityId: id, newValues: { reviewNote } });
       return data;
@@ -201,6 +204,33 @@ export const api = {
       if (!ver || !ver.snapshot_json) throw new Error("Version snapshot not found");
       await api.proposals.update(proposalId, ver.snapshot_json as Record<string, unknown>);
       await logAudit({ action: "proposal.version.restore", entityType: "proposal_version", entityId: versionId });
+    },
+    members: {
+      list: async (proposalId: string) => {
+        const { data, error } = await supabase
+          .from("proposal_members")
+          .select("*, profiles:user_id(id, full_name, email, avatar_url)")
+          .eq("proposal_id", proposalId);
+        if (error) throw error;
+        return data;
+      },
+      invite: async (proposalId: string, userId: string, role: "editor" | "viewer" = "editor") => {
+        const { data: userRes } = await supabase.auth.getUser();
+        const { data, error } = await supabase.from("proposal_members").insert({
+          proposal_id: proposalId,
+          user_id: userId,
+          role,
+          invited_by: userRes.user?.id ?? null,
+        }).select().single();
+        if (error) throw error;
+        await logAudit({ action: "proposal.member.invite", entityType: "proposal_member", entityId: data.id, newValues: { userId, role } });
+        return data;
+      },
+      remove: async (proposalId: string, userId: string) => {
+        const { error } = await supabase.from("proposal_members").delete().eq("proposal_id", proposalId).eq("user_id", userId);
+        if (error) throw error;
+        await logAudit({ action: "proposal.member.remove", entityType: "proposal_member", entityId: userId });
+      },
     },
   },
 
@@ -238,7 +268,7 @@ export const api = {
       return { rewrittenText: `${text} (Diperhalus AI dengan gaya ${tone})` };
     },
     donorMatch: async (proposalId: string) => {
-      const { data: donors } = await supabase.from("donors").select("*").eq("is_active", true);
+      const { data: donors } = await supabase.from("donors").select("*").eq("is_active", true).is("deleted_at", null);
       const matches = (donors ?? []).map((d) => ({ donorId: d.id, donorName: d.name, score: 85, isMatch: true }));
       await logAudit({ action: "ai.donor_match", entityType: "proposal", entityId: proposalId });
       return matches;
@@ -252,25 +282,25 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    create: async (payload: Record<string, unknown>) => {
-      const { data, error } = await supabase.from("donors").insert(payload as never).select().single();
+    create: async (payload: TablesInsert<"donors">) => {
+      const { data, error } = await supabase.from("donors").insert(payload).select().single();
       if (error) throw error;
-      await logAudit({ action: "admin.donor.create", entityType: "donor", entityId: data.id, newValues: payload });
+      await logAudit({ action: "admin.donor.create", entityType: "donor", entityId: data.id, newValues: payload as Record<string, unknown> });
       return data;
     },
     getById: async (id: string) => {
-      const { data, error } = await supabase.from("donors").select("*").eq("id", id).single();
+      const { data, error } = await supabase.from("donors").select("*").eq("id", id).is("deleted_at", null).single();
       if (error) throw error;
       return data;
     },
-    update: async (id: string, payload: Record<string, unknown>) => {
-      const { data, error } = await supabase.from("donors").update(payload as never).eq("id", id).select().single();
+    update: async (id: string, payload: TablesUpdate<"donors">) => {
+      const { data, error } = await supabase.from("donors").update(payload).eq("id", id).select().single();
       if (error) throw error;
-      await logAudit({ action: "admin.donor.update", entityType: "donor", entityId: id, newValues: payload });
+      await logAudit({ action: "admin.donor.update", entityType: "donor", entityId: id, newValues: payload as Record<string, unknown> });
       return data;
     },
     delete: async (id: string) => {
-      const { error } = await supabase.from("donors").update({ deleted_at: new Date().toISOString() } as never).eq("id", id);
+      const { error } = await supabase.from("donors").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
       await logAudit({ action: "admin.donor.archive", entityType: "donor", entityId: id });
     },
@@ -495,8 +525,10 @@ export const api = {
       ]);
       return { userCount: userCount ?? 0, proposalCount: proposalCount ?? 0, donorCount: donorCount ?? 0 };
     },
-    listUsers: async () => {
-      const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
+    listUsers: async (page: number = 0, pageSize: number = 50) => {
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+      const { data, error } = await supabase.from("profiles").select("*").is("deleted_at", null).order("created_at", { ascending: false }).range(from, to);
       if (error) throw error;
       return data;
     },
