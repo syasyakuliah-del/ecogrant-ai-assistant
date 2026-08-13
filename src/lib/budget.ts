@@ -65,3 +65,18 @@ export function groupBy<T>(rows: T[], key: (row: T) => string) {
   }
   return map;
 }
+
+/** RAB Formula: Subtotal = Volume × Frequency × Unit Price */
+export function calculateRowSubtotal(volume: number, frequency: number, unitPrice: number): number {
+  return volume * frequency * unitPrice;
+}
+
+/** RAB Formula: Tax = Subtotal × Tax Rate */
+export function calculateRowTax(subtotal: number, taxRate: number): number {
+  return Math.round(subtotal * taxRate);
+}
+
+/** RAB Formula: Total = Subtotal + Tax */
+export function calculateRowTotal(subtotal: number, tax: number): number {
+  return subtotal + tax;
+}

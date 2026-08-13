@@ -59,9 +59,15 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const { isAdmin, hasPermission } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const visibleUserNav = USER_NAV.filter(
-    (item) => !("permission" in item) || !item.permission || hasPermission(item.permission),
-  );
+  // For User role: hide "/settings" (Pengaturan Akun).
+  // For Admin role: hide all User Workspace menus completely.
+  const visibleUserNav = isAdmin
+    ? []
+    : USER_NAV.filter(
+        (item) =>
+          item.to !== "/settings" &&
+          (!("permission" in item) || !item.permission || hasPermission(item.permission)),
+      );
 
   const visibleAdminNav = ADMIN_NAV.filter(
     (item) => !item.permission || hasPermission(item.permission),
@@ -69,25 +75,27 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <nav className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-4">
-      <div className="space-y-1">
-        <p className="px-3 pb-2 text-[11px] font-semibold tracking-widest text-sidebar-foreground/50 uppercase">
-          Ruang Kerja
-        </p>
-        {visibleUserNav.map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              pathname === item.to && "bg-sidebar-accent text-sidebar-accent-foreground",
-            )}
-          >
-            <item.icon className="size-4" />
-            {item.label}
-          </Link>
-        ))}
-      </div>
+      {!isAdmin && visibleUserNav.length > 0 ? (
+        <div className="space-y-1">
+          <p className="px-3 pb-2 text-[11px] font-semibold tracking-widest text-sidebar-foreground/50 uppercase">
+            Ruang Kerja
+          </p>
+          {visibleUserNav.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              onClick={onNavigate}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                pathname === item.to && "bg-sidebar-accent text-sidebar-accent-foreground",
+              )}
+            >
+              <item.icon className="size-4" />
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      ) : null}
 
       {isAdmin || visibleAdminNav.length > 0 ? (
         <div className="space-y-1">

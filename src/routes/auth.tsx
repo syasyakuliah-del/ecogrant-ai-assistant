@@ -30,7 +30,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/auth" });
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const [busy, setBusy] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState("");
@@ -42,9 +42,9 @@ function AuthPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      void navigate({ to: search.redirect ?? "/dashboard", replace: true });
+      void navigate({ to: search.redirect ?? (isAdmin ? "/admin" : "/dashboard"), replace: true });
     }
-  }, [user, loading, navigate, search.redirect]);
+  }, [user, loading, navigate, search.redirect, isAdmin]);
 
   function validatePassword(pw: string) {
     if (pw.length < 10) return "Kata sandi minimal 10 karakter.";
@@ -81,7 +81,7 @@ function AuthPage() {
       await supabase.from("profiles").update({ last_login_at: new Date().toISOString() }).eq("id", u.user.id);
     }
     toast.success("Berhasil masuk.");
-    void navigate({ to: search.redirect ?? "/dashboard", replace: true });
+    void navigate({ to: search.redirect ?? (isAdmin ? "/admin" : "/dashboard"), replace: true });
   }
 
   async function handleRegister(e: React.FormEvent) {

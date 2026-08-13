@@ -140,3 +140,34 @@ export function scoreDonor(donor: DonorRow, proposal: ProposalContext): MatchRes
     risks,
   };
 }
+
+/**
+ * Convenience wrapper: calculates a donor match score from minimal proposal/donor objects.
+ * Used by tests and simplified matching flows.
+ */
+export function calculateDonorMatchScore(
+  proposal: { title?: string; grant_amount?: number; category?: string; province?: string },
+  donor: { name?: string; min_grant?: number; max_grant?: number; category?: string; priorities?: string[] },
+): MatchResult {
+  const donorRow: DonorRow = {
+    id: "match-calc",
+    name: donor.name ?? "",
+    category: donor.category ?? "",
+    country: null,
+    funding_fields: donor.category ? [donor.category] : [],
+    priorities: donor.priorities ?? [],
+    requirements: [],
+    min_grant: donor.min_grant ?? 0,
+    max_grant: donor.max_grant ?? 0,
+    currency: "IDR",
+    deadline: null,
+    is_active: true,
+  };
+  const proposalCtx: ProposalContext = {
+    title: proposal.title ?? null,
+    category: proposal.category ?? null,
+    province: proposal.province ?? null,
+    grant_amount: proposal.grant_amount ?? null,
+  };
+  return scoreDonor(donorRow, proposalCtx);
+}

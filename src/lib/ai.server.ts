@@ -81,10 +81,214 @@ async function generateJson(prompt: string, temperature = 0.3): Promise<JsonReco
 function stringArray(value: unknown): string[] { return Array.isArray(value) ? value.filter((x): x is string => typeof x === "string") : []; }
 function envelopeText(json: JsonRecord, fallbackKey = "text") { const content = json["content"]; if (typeof content === "string") return content; if (content && typeof content === "object") { const record = content as JsonRecord; const direct = record[fallbackKey] ?? record["content"] ?? record["narrative"] ?? record["summary"]; if (typeof direct === "string") return direct; } return ""; }
 
-export async function runNarrative(data: z.infer<typeof NarrativeInput>) { try { const parsed = NarrativeInput.parse(data); const instruction = MODE_INSTRUCTION[parsed.mode] ?? MODE_INSTRUCTION.generate; const prompt = `${contextBlock(parsed.context)}\n\nMODULE: GENERATE_SECTION\nSection key: ${parsed.sectionKey}\nSection label: ${parsed.sectionLabel}\nMode instruction: ${instruction}\n${parsed.currentContent ? `\nNaskah saat ini:\n${parsed.currentContent}` : ""}\n\nOutput content: {"section_key":"${parsed.sectionKey}","section_label":"${parsed.sectionLabel}","text":"..."}. Tulis hanya bagian ini. Jangan membuat angka, baseline, target, penerima manfaat, harga, atau regulasi yang tidak tersedia.`; const json = await generateJson(prompt, 0.4); return { content: envelopeText(json), assumptions: stringArray(json["assumptions"]), missingInformation: stringArray(json["missing_information"]), warnings: stringArray(json["warnings"]), raw: json }; } catch (error) { handleError(error); } }
-export async function runSummary(data: z.infer<typeof SummaryInput>) { try { const parsed = SummaryInput.parse(data); const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives })}\n\nMODULE: GENERATE_EXECUTIVE_SUMMARY\nMata anggaran total: ${parsed.budgetTotal > 0 ? `${parsed.context.currency} ${parsed.budgetTotal.toLocaleString("id-ID")}` : "belum tersedia"}\nRingkasan LFA: ${parsed.lfaSummary || "belum tersedia"}\nMaksimal ${parsed.maxWords} kata. content harus {"summary":"..."}. Jangan memperkenalkan fakta baru.`; const json = await generateJson(prompt, 0.3); return { content: envelopeText(json, "summary"), raw: json }; } catch (error) { handleError(error); } }
-export async function runLfa(data: z.infer<typeof LfaInput>) { try { const parsed = LfaInput.parse(data); const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives })}\n\nMODULE: GENERATE_LFA\nHasilkan content.rows array dengan row_type, goal, outcome, output, activity, indicator, baseline, target, means_of_verification, assumption. Gunakan TBD jika baseline/target tidak tersedia. Pastikan GOAL → OUTCOME → OUTPUT → ACTIVITY.`; const json = await generateJson(prompt, 0.3); const content = (json["content"] ?? {}) as JsonRecord; return { rows: Array.isArray(content["rows"]) ? content["rows"] : [], raw: json }; } catch (error) { handleError(error); } }
-export async function runBudget(data: z.infer<typeof BudgetInput>) { try { const parsed = BudgetInput.parse(data); const standardsText = parsed.standards.map((s) => `[${s.source}] ${s.code} | ${s.category} | ${s.description} | ${s.unit} | ${parsed.context.currency} ${s.price.toLocaleString("id-ID")}`).join("\n"); const prompt = `${contextBlock(parsed.context)}\n\nMODULE: GENERATE_RAB\nActivities:\n${parsed.activities.map((a, i) => `${i + 1}. ${a}`).join("\n") || "belum tersedia"}\n\nReferensi SBM/SBU:\n${standardsText || "DATA_NOT_AVAILABLE"}\n\ncontent.items array: category, activity_name, description, standard_source, standard_code, volume, unit, frequency, unit_price, validation_status, notes. Jangan membuat harga jika tidak berasal dari referensi. Jika standar tidak cocok, unit_price 0 dan validation_status STANDARD_NOT_FOUND/MISSING_SOURCE.`; const json = await generateJson(prompt, 0.3); const content = (json["content"] ?? {}) as JsonRecord; return { items: Array.isArray(content["items"]) ? content["items"] : [], raw: json }; } catch (error) { handleError(error); } }
-export async function runActivities(data: z.infer<typeof ActivityInput>) { try { const parsed = ActivityInput.parse(data); const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives })}\n\nMODULE: GENERATE_ACTIVITY\nOutputs:\n${parsed.outputs.map((o, i) => `${i + 1}. ${o}`).join("\n") || "belum tersedia"}\ncontent.activities fields: activity_id, output_id, activity_name, description, location, duration, frequency, participants, responsible_party, expected_result. Jangan membuat activity tanpa hubungan output.`; const json = await generateJson(prompt, 0.3); return { activities: ((json["content"] as JsonRecord | undefined)?.["activities"] ?? []), raw: json }; } catch (error) { handleError(error); } }
-export async function runConsistencyCheck(data: z.infer<typeof ConsistencyInput>) { try { const parsed = ConsistencyInput.parse(data); const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives, lfaSummary: parsed.lfaSummary, rabSummary: parsed.rabSummary })}\n\nMODULE: CHECK_CONSISTENCY\nChanged module: ${parsed.changedModule || "belum tersedia"}\nActivities: ${parsed.activities.join("; ") || "belum tersedia"}\nPeriksa consistency dan kembalikan content.consistency_status, issues, change_impact_analysis.`; return await generateJson(prompt, 0.2); } catch (error) { handleError(error); } }
-export async function runQualityReview(data: z.infer<typeof QualityReviewInput>) { try { const parsed = QualityReviewInput.parse(data); const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives, lfaSummary: parsed.lfaSummary, rabSummary: parsed.rabSummary })}\n\nMODULE: QUALITY_REVIEW\nBudget total: ${parsed.budgetTotal > 0 ? parsed.budgetTotal : "belum tersedia"}\nBerikan skor 0-100 sesuai bobot master prompt. content: score, breakdown, strengths, weaknesses, priority_fixes. Jangan menyatakan peluang pendanaan pasti.`; return await generateJson(prompt, 0.2); } catch (error) { handleError(error); } }
+export interface NarrativeResponse {
+  content: string;
+  assumptions: string[];
+  missingInformation: string[];
+  warnings: string[];
+}
+
+export interface SummaryResponse {
+  content: string;
+}
+
+export interface LfaRowResult {
+  row_type: string;
+  goal?: string | undefined;
+  outcome?: string | undefined;
+  output?: string | undefined;
+  activity?: string | undefined;
+  indicator?: string | undefined;
+  baseline?: string | undefined;
+  target?: string | undefined;
+  means_of_verification?: string | undefined;
+  assumption?: string | undefined;
+}
+
+export interface LfaResponse {
+  rows: LfaRowResult[];
+}
+
+export interface BudgetItemResult {
+  category?: string | undefined;
+  activity_name?: string | undefined;
+  description?: string | undefined;
+  standard_source?: string | undefined;
+  standard_code?: string | undefined;
+  volume?: number | undefined;
+  unit?: string | undefined;
+  frequency?: number | undefined;
+  unit_price?: number | undefined;
+  validation_status?: string | undefined;
+  notes?: string | undefined;
+}
+
+export interface BudgetResponse {
+  items: BudgetItemResult[];
+}
+
+export interface ActivityResult {
+  activity_id?: string | undefined;
+  output_id?: string | undefined;
+  activity_name?: string | undefined;
+  description?: string | undefined;
+  location?: string | undefined;
+  duration?: string | undefined;
+  frequency?: string | undefined;
+  participants?: string | undefined;
+  responsible_party?: string | undefined;
+  expected_result?: string | undefined;
+}
+
+export interface ActivitiesResponse {
+  activities: ActivityResult[];
+}
+
+export interface ConsistencyResponse {
+  status: string;
+  issues: string[];
+  warnings: string[];
+}
+
+export interface QualityReviewResponse {
+  score: number;
+  strengths: string[];
+  weaknesses: string[];
+  priorityFixes: string[];
+}
+
+export async function runNarrative(data: z.infer<typeof NarrativeInput>): Promise<NarrativeResponse> {
+  try {
+    const parsed = NarrativeInput.parse(data);
+    const instruction = MODE_INSTRUCTION[parsed.mode] ?? MODE_INSTRUCTION['generate'];
+    const prompt = `${contextBlock(parsed.context)}\n\nMODULE: GENERATE_SECTION\nSection key: ${parsed.sectionKey}\nSection label: ${parsed.sectionLabel}\nMode instruction: ${instruction}\n${parsed.currentContent ? `\nNaskah saat ini:\n${parsed.currentContent}` : ""}\n\nOutput content: {"section_key":"${parsed.sectionKey}","section_label":"${parsed.sectionLabel}","text":"..."}. Tulis hanya bagian ini. Jangan membuat angka, baseline, target, penerima manfaat, harga, atau regulasi yang tidak tersedia.`;
+    const json = await generateJson(prompt, 0.4);
+    return {
+      content: envelopeText(json),
+      assumptions: stringArray(json["assumptions"]),
+      missingInformation: stringArray(json["missing_information"]),
+      warnings: stringArray(json["warnings"]),
+    };
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+export async function runSummary(data: z.infer<typeof SummaryInput>): Promise<SummaryResponse> {
+  try {
+    const parsed = SummaryInput.parse(data);
+    const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives })}\n\nMODULE: GENERATE_EXECUTIVE_SUMMARY\nMata anggaran total: ${parsed.budgetTotal > 0 ? `${parsed.context.currency} ${parsed.budgetTotal.toLocaleString("id-ID")}` : "belum tersedia"}\nRingkasan LFA: ${parsed.lfaSummary || "belum tersedia"}\nMaksimal ${parsed.maxWords} kata. content harus {"summary":"..."}. Jangan memperkenalkan fakta baru.`;
+    const json = await generateJson(prompt, 0.3);
+    return { content: envelopeText(json, "summary") };
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+export async function runLfa(data: z.infer<typeof LfaInput>): Promise<LfaResponse> {
+  try {
+    const parsed = LfaInput.parse(data);
+    const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives })}\n\nMODULE: GENERATE_LFA\nHasilkan content.rows array dengan row_type, goal, outcome, output, activity, indicator, baseline, target, means_of_verification, assumption. Gunakan TBD jika baseline/target tidak tersedia. Pastikan GOAL → OUTCOME → OUTPUT → ACTIVITY.`;
+    const json = await generateJson(prompt, 0.3);
+    const content = (json["content"] ?? {}) as JsonRecord;
+    const rawRows = Array.isArray(content["rows"]) ? content["rows"] : [];
+    const rows: LfaRowResult[] = rawRows.map((r: any) => ({
+      row_type: String(r.row_type || "activity"),
+      goal: r.goal ? String(r.goal) : undefined,
+      outcome: r.outcome ? String(r.outcome) : undefined,
+      output: r.output ? String(r.output) : undefined,
+      activity: r.activity ? String(r.activity) : undefined,
+      indicator: r.indicator ? String(r.indicator) : undefined,
+      baseline: r.baseline ? String(r.baseline) : undefined,
+      target: r.target ? String(r.target) : undefined,
+      means_of_verification: r.means_of_verification ? String(r.means_of_verification) : undefined,
+      assumption: r.assumption ? String(r.assumption) : undefined,
+    }));
+    return { rows };
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+export async function runBudget(data: z.infer<typeof BudgetInput>): Promise<BudgetResponse> {
+  try {
+    const parsed = BudgetInput.parse(data);
+    const standardsText = parsed.standards.map((s) => `[${s.source}] ${s.code} | ${s.category} | ${s.description} | ${s.unit} | ${parsed.context.currency} ${s.price.toLocaleString("id-ID")}`).join("\n");
+    const prompt = `${contextBlock(parsed.context)}\n\nMODULE: GENERATE_RAB\nActivities:\n${parsed.activities.map((a, i) => `${i + 1}. ${a}`).join("\n") || "belum tersedia"}\n\nReferensi SBM/SBU:\n${standardsText || "DATA_NOT_AVAILABLE"}\n\ncontent.items array: category, activity_name, description, standard_source, standard_code, volume, unit, frequency, unit_price, validation_status, notes. Jangan membuat harga jika tidak berasal dari referensi. Jika standar tidak cocok, unit_price 0 dan validation_status STANDARD_NOT_FOUND/MISSING_SOURCE.`;
+    const json = await generateJson(prompt, 0.3);
+    const content = (json["content"] ?? {}) as JsonRecord;
+    const rawItems = Array.isArray(content["items"]) ? content["items"] : [];
+    const items: BudgetItemResult[] = rawItems.map((item: any) => ({
+      category: item.category ? String(item.category) : undefined,
+      activity_name: item.activity_name ? String(item.activity_name) : undefined,
+      description: item.description ? String(item.description) : undefined,
+      standard_source: item.standard_source ? String(item.standard_source) : undefined,
+      standard_code: item.standard_code ? String(item.standard_code) : undefined,
+      volume: typeof item.volume === "number" ? item.volume : 1,
+      unit: item.unit ? String(item.unit) : undefined,
+      frequency: typeof item.frequency === "number" ? item.frequency : 1,
+      unit_price: typeof item.unit_price === "number" ? item.unit_price : 0,
+      validation_status: item.validation_status ? String(item.validation_status) : undefined,
+      notes: item.notes ? String(item.notes) : undefined,
+    }));
+    return { items };
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+export async function runActivities(data: z.infer<typeof ActivityInput>): Promise<ActivitiesResponse> {
+  try {
+    const parsed = ActivityInput.parse(data);
+    const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives })}\n\nMODULE: GENERATE_ACTIVITY\nOutputs:\n${parsed.outputs.map((o, i) => `${i + 1}. ${o}`).join("\n") || "belum tersedia"}\ncontent.activities fields: activity_id, output_id, activity_name, description, location, duration, frequency, participants, responsible_party, expected_result. Jangan membuat activity tanpa hubungan output.`;
+    const json = await generateJson(prompt, 0.3);
+    const rawActs = ((json["content"] as JsonRecord | undefined)?.["activities"] ?? []) as any[];
+    const activities: ActivityResult[] = rawActs.map((a: any) => ({
+      activity_id: a.activity_id ? String(a.activity_id) : undefined,
+      output_id: a.output_id ? String(a.output_id) : undefined,
+      activity_name: a.activity_name ? String(a.activity_name) : undefined,
+      description: a.description ? String(a.description) : undefined,
+      location: a.location ? String(a.location) : undefined,
+      duration: a.duration ? String(a.duration) : undefined,
+      frequency: a.frequency ? String(a.frequency) : undefined,
+      participants: a.participants ? String(a.participants) : undefined,
+      responsible_party: a.responsible_party ? String(a.responsible_party) : undefined,
+      expected_result: a.expected_result ? String(a.expected_result) : undefined,
+    }));
+    return { activities };
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+export async function runConsistencyCheck(data: z.infer<typeof ConsistencyInput>): Promise<ConsistencyResponse> {
+  try {
+    const parsed = ConsistencyInput.parse(data);
+    const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives, lfaSummary: parsed.lfaSummary, rabSummary: parsed.rabSummary })}\n\nMODULE: CHECK_CONSISTENCY\nChanged module: ${parsed.changedModule || "belum tersedia"}\nActivities: ${parsed.activities.join("; ") || "belum tersedia"}\nPeriksa consistency dan kembalikan content.consistency_status, issues, change_impact_analysis.`;
+    const json = await generateJson(prompt, 0.2);
+    return {
+      status: String(json["status"] || "success"),
+      issues: stringArray(json["issues"]),
+      warnings: stringArray(json["warnings"]),
+    };
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+export async function runQualityReview(data: z.infer<typeof QualityReviewInput>): Promise<QualityReviewResponse> {
+  try {
+    const parsed = QualityReviewInput.parse(data);
+    const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives, lfaSummary: parsed.lfaSummary, rabSummary: parsed.rabSummary })}\n\nMODULE: QUALITY_REVIEW\nBudget total: ${parsed.budgetTotal > 0 ? parsed.budgetTotal : "belum tersedia"}\nBerikan skor 0-100 sesuai bobot master prompt. content: score, breakdown, strengths, weaknesses, priority_fixes. Jangan menyatakan peluang pendanaan pasti.`;
+    const json = await generateJson(prompt, 0.2);
+    const content = (json["content"] ?? {}) as JsonRecord;
+    return {
+      score: typeof content["score"] === "number" ? content["score"] : 0,
+      strengths: stringArray(content["strengths"]),
+      weaknesses: stringArray(content["weaknesses"]),
+      priorityFixes: stringArray(content["priority_fixes"]),
+    };
+  } catch (error) {
+    handleError(error);
+  }
+}
