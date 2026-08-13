@@ -185,10 +185,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               </SheetContent>
             </Sheet>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">
-                {profile?.full_name || "Pengguna"}
+              <div className="truncate text-sm font-semibold flex items-center">
+                <span>{profile?.full_name || "Pengguna"}</span>
                 {isAdmin ? <Badge className="ml-2 align-middle">Administrator</Badge> : null}
-              </p>
+              </div>
               <p className="truncate text-xs text-muted-foreground">
                 {profile?.organization_name || "Organisasi belum diisi"}
               </p>

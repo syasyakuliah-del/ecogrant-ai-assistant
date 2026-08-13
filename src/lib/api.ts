@@ -49,11 +49,15 @@ export const api = {
       return data;
     },
     getSessions: async () => {
-      const { data: userRes } = await supabase.auth.getUser();
-      if (!userRes.user) return [];
-      const { data, error } = await supabase.from("login_histories").select("*").eq("user_id", userRes.user.id).order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      try {
+        const { data: userRes } = await supabase.auth.getUser();
+        if (!userRes.user) return [];
+        const { data, error } = await supabase.from("login_histories").select("*").eq("user_id", userRes.user.id).order("created_at", { ascending: false });
+        if (error) return [];
+        return data ?? [];
+      } catch {
+        return [];
+      }
     },
     revokeSession: async (sessionId: string) => {
       const { error } = await supabase.from("login_histories").delete().eq("id", sessionId);

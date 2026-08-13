@@ -81,6 +81,7 @@ function WizardPage() {
         title={p.title || "Proposal Tanpa Judul"}
         description={`Wizard Penyusunan Proposal — Step ${currentStepInfo.step}: ${currentStepInfo.title}`}
         actions={
+          <div className="flex items-center gap-2">
             <ProposalMembersModal proposalId={p.id} proposalTitle={p.title} />
 
             <Badge
