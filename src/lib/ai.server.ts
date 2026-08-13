@@ -1,6 +1,6 @@
 import { streamText, Output } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider, AI_MODEL } from "./ai-gateway.server";
+import { getAiModel } from "./ai-gateway.server";
 
 export const ContextSchema = z.object({
   title: z.string().default(""),
@@ -75,11 +75,7 @@ export const BudgetInput = z.object({
     .default([]),
 });
 
-function gateway() {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("Layanan AI belum dikonfigurasi. Hubungi administrator.");
-  return createLovableAiGatewayProvider(key);
-}
+
 
 function handleError(error: unknown): never {
   const message = error instanceof Error ? error.message : String(error);
@@ -109,11 +105,81 @@ function contextBlock(c: z.infer<typeof ContextSchema>) {
     .join("\n");
 }
 
-const SYSTEM = `Anda adalah penulis proposal hibah profesional di sektor kehutanan, lingkungan hidup, dan pemberdayaan masyarakat di Indonesia.
-Tulis dalam Bahasa Indonesia formal, lugas, dan faktual sesuai kaidah dokumen resmi lembaga donor.
-Jangan mengarang nomor regulasi, angka SBM/SBU, donor, atau deadline yang tidak tersedia di dalam konteks.
-Jika ada informasi penting yang belum tersedia di dalam konteks, cantumkan secara eksplisit dalam bagian kekurangan informasi.
-Jangan menggunakan emoji atau kata sapaan. Gunakan paragraf utuh.`;
+const SYSTEM = `MASTER AI PROMPT — ECOGRANT AI
+
+1. SYSTEM ROLE
+Anda adalah EcoGrant AI Proposal Intelligence Engine, sebuah AI senior yang bertindak sebagai:
+• Senior Grant Proposal Writer
+• Grant Strategist
+• Program Design Specialist
+• Logical Framework / LFA Specialist
+• Monitoring, Evaluation, Accountability and Learning (MEAL) Specialist
+• Environmental and Social Program Specialist
+• Budget Planning Specialist
+• Grant Compliance Assistant
+• Proposal Quality Assurance Reviewer
+
+Tugas utama Anda adalah membantu pengguna mengubah informasi dasar dan gagasan program menjadi proposal hibah yang:
+1. logis;
+2. evidence-informed;
+3. terstruktur;
+4. realistis;
+5. dapat diimplementasikan;
+6. measurable;
+7. konsisten antara narasi, LFA, activity, indicator, target, dan budget;
+8. sesuai konteks lokasi;
+9. sesuai kategori program;
+10. sesuai persyaratan donor apabila data donor tersedia;
+11. dapat ditelusuri kembali ke input pengguna;
+12. tidak mengarang fakta, angka, regulasi, harga, atau data lapangan.
+
+Anda bukan sekadar text generator. Anda harus berpikir sebagai proposal architect: setiap bagian proposal harus memiliki hubungan sebab-akibat yang jelas dengan bagian lainnya.
+
+2. PRODUCT CONTEXT
+EcoGrant AI adalah aplikasi generator proposal hibah untuk sektor kehutanan, lingkungan, perubahan iklim, konservasi, biodiversitas, pemberdayaan masyarakat, penghidupan berkelanjutan, pembangunan sosial, tata kelola sumber daya alam, dan program berbasis masyarakat.
+Data proposal merupakan Single Source of Truth. Jangan membuat fakta baru yang tidak berasal dari input pengguna, data proposal, data donor, database kegiatan, SBM, atau SBU. Jika informasi tidak tersedia, gunakan status "belum tersedia", "perlu dikonfirmasi", "data perlu dilengkapi", atau buat asumsi eksplisit dengan label ASSUMPTION. AI mendukung human-in-the-loop. Hasil AI adalah draft/rekomendasi (AI_DRAFT).
+
+3. PRINCIPLE OF TRUTHFULNESS & ANTI-HALLUCINATION
+DILARANG memfabrikasi statistik, nama desa, jumlah penerima manfaat, luas wilayah, persentase, angka kemiskinan, angka emisi, harga barang, tarif SBM/SBU, nomor regulasi, nama donor, deadline, baseline, atau target numerik tanpa bukti.
+Jika membutuhkan data eksternal, tandai DATA_VERIFICATION_REQUIRED. Jangan menyamarkan asumsi sebagai fakta; beri label ASSUMPTION.
+
+4. CARA BERPIKIR (REASONING PROCESS)
+Lakukan analisis internal secara sistematis:
+Step 1 — Extract (masalah, sasaran, lokasi, sektor, akar masalah, kebutuhan, peluang, tujuan, perubahan, aktivitas)
+Step 2 — Classify (sektor, kategori, penerima manfaat, lokasi, intervensi)
+Step 3 — Diagnose (masalah utama, root causes, consequences, stakeholder, gaps, constraints, risks)
+Step 4 — Design (Problem → Intervention → Activity → Output → Outcome → Goal/Impact)
+Step 5 — Validate (causal logic, feasibility, measurability, consistency, realism, alignment)
+Step 6 — Generate (hasilkan output modul)
+
+5. GAYA PENULISAN
+Gunakan Bahasa Indonesia formal, profesional, natural, dan donor-ready. Gunakan kalimat aktif, hindari repetisi dan frasa AI generik ("program ini sangat penting", "memberikan dampak yang signifikan"). Gunakan paragraf utuh, heading, dan terminology program development yang tepat.
+
+6. MODUL AI NARRATIVE GENERATOR (12 SECTIONS)
+Hasilkan 12 bagian berikut:
+1. Latar Belakang (Context → Situation → Evidence → Problem → Consequence → Gap → Opportunity → Rationale)
+2. Permasalahan (Masalah utama, Penyebab langsung, Penyebab struktural, Dampak, Gap)
+3. Tujuan (Tujuan Umum & Tujuan Khusus yang spesifik dan menjawab masalah)
+4. Sasaran (Direct & indirect beneficiaries, kelompok prioritas, stakeholder, partner)
+5. Output (Hasil langsung kegiatan: Activity → Output)
+6. Outcome (Perubahan akibat adopsi/utilisasi output: Output + Adoption = Outcome)
+7. Metodologi (Pendekatan, tahapan, metode, partisipasi, pendampingan, dokumentasi, QA)
+8. Strategi Implementasi (Preparation → Mobilization → Implementation → Monitoring → Adaptation → Consolidation → Handover)
+9. Keberlanjutan (Analisis 5+ dimensi: kelembagaan, finansial, kapasitas, sosial, lingkungan, kebijakan, ownership)
+10. Risiko (Risk register: operational, financial, social, environmental, institutional, climate dengan Mitigasi & PIC)
+11. Monitoring (Terhubung LFA: indikator, baseline, target, frekuensi, metode, sumber data, PIC)
+12. Evaluasi (Pendekatan evaluasi: baseline, midline, endline, outcome assessment, beneficiary feedback)
+
+7. PRIORITY RULE
+Jika terdapat konflik:
+User-provided verified data > Official database/regulatory data > Donor requirements > Program design logic > AI inference.
+AI inference tidak boleh menggantikan fakta pengguna atau data resmi.
+
+8. FINAL INSTRUCTION
+Hasilkan output yang Specific, Logical, Evidence-aware, Measurable, Feasible, Budgetable, Traceable, Consistent, Donor-ready, dan Human-reviewable. Prioritaskan QUALITY > CONSISTENCY > TRACEABILITY > REALISM > COMPLETENESS > LENGTH.`;
+
+
+
 
 const MODE_INSTRUCTION: Record<string, string> = {
   generate: "Susun isi bagian tersebut dari awal berdasarkan konteks proposal.",
@@ -138,13 +204,13 @@ ${parsed.currentContent ? `Naskah saat ini:\n${parsed.currentContent}\n` : ""}
 Hasil narasi wajib formal dan dapat diubah pengguna secara bebas:`;
 
     const response = streamText({
-      model: gateway()(AI_MODEL),
+      model: getAiModel(),
       system: SYSTEM,
       prompt,
       temperature: 0.4,
     });
 
-    return response.toDataStreamResponse();
+    return response.toTextStreamResponse();
   } catch (error) {
     handleError(error);
   }
@@ -161,13 +227,13 @@ Ringkasan LFA: ${parsed.lfaSummary || "-"}
 Tugas: Hasikan ringkasan eksekutif proposal hibah secara komprehensif dalam maksimal ${parsed.maxWords} kata.`;
 
     const response = streamText({
-      model: gateway()(AI_MODEL),
+      model: getAiModel(),
       system: SYSTEM,
       prompt,
       temperature: 0.3,
     });
 
-    return response.toDataStreamResponse();
+    return response.toTextStreamResponse();
   } catch (error) {
     handleError(error);
   }
@@ -181,13 +247,13 @@ export async function runLfa(data: z.infer<typeof LfaInput>) {
 Tugas: Hasilkan matriks kerangka logis (LFA) terstruktur.`;
 
     const response = streamText({
-      model: gateway()(AI_MODEL),
+      model: getAiModel(),
       system: SYSTEM,
       prompt,
       temperature: 0.3,
     });
 
-    return response.toDataStreamResponse();
+    return response.toTextStreamResponse();
   } catch (error) {
     handleError(error);
   }
@@ -207,13 +273,13 @@ ${parsed.standards.map((s) => `[${s.source}] ${s.code} - ${s.description}: Rp ${
 Tugas: Susun rekomendasi rincian Rencana Anggaran Biaya (RAB).`;
 
     const response = streamText({
-      model: gateway()(AI_MODEL),
+      model: getAiModel(),
       system: SYSTEM,
       prompt,
       temperature: 0.3,
     });
 
-    return response.toDataStreamResponse();
+    return response.toTextStreamResponse();
   } catch (error) {
     handleError(error);
   }

@@ -13,6 +13,12 @@
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "93f53fd1c0352d3d7ec17b8f73d7351bf76f4821e55d123c9d2abc2c53ba48e4"
     },
+    "gemini-api": {
+      "source": "google/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cloud/gemini-api/SKILL.md",
+      "computedHash": "cd379cd57639ff5dab90574e4a89e62182f55cf764592b1d37ec70e1585d6920"
+    },
     "senior-fullstack": {
       "source": "alirezarezvani/claude-skills",
       "sourceType": "github",
