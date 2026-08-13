@@ -16,14 +16,21 @@ export const Route = createFileRoute("/_authenticated/community/$slug")({
   head: () => ({
     meta: [
       { title: "Artikel Community — EcoGrant AI" },
-      { name: "description", content: "Bacaan komunitas mengenai penyusunan proposal hibah lingkungan dan kehutanan." },
+      {
+        name: "description",
+        content: "Bacaan komunitas mengenai penyusunan proposal hibah lingkungan dan kehutanan.",
+      },
     ],
   }),
   component: PostDetail,
 });
 
 function initials(name: string) {
-  return name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 function PostDetail() {
@@ -36,12 +43,20 @@ function PostDetail() {
   const { data: post, isLoading } = useQuery({
     queryKey: ["community-post", slug],
     queryFn: async () => {
-      const { data, error } = await supabase.from("community_posts").select("*").eq("slug", slug).maybeSingle();
+      const { data, error } = await supabase
+        .from("community_posts")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle();
       if (error) throw error;
       if (!data) return null;
       let author = null;
       if (data.author_id) {
-        const { data: prof } = await supabase.from("profiles").select("id, full_name, avatar_url, organization_name").eq("id", data.author_id).maybeSingle();
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url, organization_name")
+          .eq("id", data.author_id)
+          .maybeSingle();
         author = prof;
       }
       return { ...data, author };
@@ -83,7 +98,10 @@ function PostDetail() {
     });
     setIsSubmitting(false);
 
-    if (error) { toast.error("Komentar gagal dikirim: " + error.message); return; }
+    if (error) {
+      toast.error("Komentar gagal dikirim: " + error.message);
+      return;
+    }
 
     setCommentText("");
     void qc.invalidateQueries({ queryKey: ["community-comments", post.id] });
@@ -103,9 +121,20 @@ function PostDetail() {
 
   async function toggleModeration(commentId: string, currentStatus: string) {
     const nextStatus = currentStatus === "tampil" ? "disembunyikan" : "tampil";
-    const { error } = await supabase.from("community_comments").update({ status: nextStatus } as never).eq("id", commentId);
-    if (error) { toast.error("Gagal memoderasi komentar."); return; }
-    await logAudit({ action: "community.comment.moderate", entityType: "community_comment", entityId: commentId, newValues: { status: nextStatus } });
+    const { error } = await supabase
+      .from("community_comments")
+      .update({ status: nextStatus } as never)
+      .eq("id", commentId);
+    if (error) {
+      toast.error("Gagal memoderasi komentar.");
+      return;
+    }
+    await logAudit({
+      action: "community.comment.moderate",
+      entityType: "community_comment",
+      entityId: commentId,
+      newValues: { status: nextStatus },
+    });
     void qc.invalidateQueries({ queryKey: ["community-comments", post?.id] });
     toast.success(`Komentar ${nextStatus}.`);
   }
@@ -113,19 +142,32 @@ function PostDetail() {
   async function removeComment(commentId: string) {
     if (!window.confirm("Hapus komentar ini secara permanen?")) return;
     await supabase.from("community_comments").delete().eq("id", commentId);
-    await logAudit({ action: "community.comment.delete", entityType: "community_comment", entityId: commentId });
+    await logAudit({
+      action: "community.comment.delete",
+      entityType: "community_comment",
+      entityId: commentId,
+    });
     void qc.invalidateQueries({ queryKey: ["community-comments", post?.id] });
     toast.success("Komentar dihapus.");
   }
 
-  if (isLoading) return <p className="py-12 text-center text-sm text-muted-foreground">Memuat artikel…</p>;
-  if (!post) return <p className="py-12 text-center text-sm text-muted-foreground">Artikel tidak ditemukan.</p>;
+  if (isLoading)
+    return <p className="py-12 text-center text-sm text-muted-foreground">Memuat artikel…</p>;
+  if (!post)
+    return (
+      <p className="py-12 text-center text-sm text-muted-foreground">Artikel tidak ditemukan.</p>
+    );
 
-  const visibleComments = comments.filter((c) => isAdmin || c.status === "tampil" || c.user_id === user?.id);
+  const visibleComments = comments.filter(
+    (c) => isAdmin || c.status === "tampil" || c.user_id === user?.id,
+  );
 
   return (
     <article className="mx-auto max-w-3xl space-y-6">
-      <Link to="/community" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:underline">
+      <Link
+        to="/community"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:underline"
+      >
         <ArrowLeft className="size-4" /> Kembali ke Community
       </Link>
 
@@ -139,13 +181,19 @@ function PostDetail() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold text-sm">{post.author?.full_name || "Penulis Komunitas"}</p>
-              <p className="text-xs text-muted-foreground">{post.author?.organization_name || "Pengelola Program"}</p>
+              <p className="font-semibold text-sm">
+                {post.author?.full_name || "Penulis Komunitas"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {post.author?.organization_name || "Pengelola Program"}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary">{post.category}</Badge>
-            <span className="text-xs text-muted-foreground">{formatDateTime(post.published_at ?? post.created_at)}</span>
+            <span className="text-xs text-muted-foreground">
+              {formatDateTime(post.published_at ?? post.created_at)}
+            </span>
           </div>
         </div>
 
@@ -173,7 +221,11 @@ function PostDetail() {
             className="text-sm"
           />
           <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitting || !commentText.trim()} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button
+              type="submit"
+              disabled={isSubmitting || !commentText.trim()}
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
               <Send className="size-3.5" /> {isSubmitting ? "Mengirim…" : "Kirim Komentar"}
             </Button>
           </div>
@@ -182,10 +234,15 @@ function PostDetail() {
         {/* Comment list */}
         <div className="space-y-4 pt-2">
           {visibleComments.length === 0 ? (
-            <p className="py-6 text-center text-xs text-muted-foreground">Belum ada komentar. Jadi yang pertama berkomentar!</p>
+            <p className="py-6 text-center text-xs text-muted-foreground">
+              Belum ada komentar. Jadi yang pertama berkomentar!
+            </p>
           ) : (
             visibleComments.map((c) => (
-              <div key={c.id} className={`p-4 rounded-xl border transition-colors ${c.status === "disembunyikan" ? "bg-amber-500/5 border-amber-500/20" : "bg-card"}`}>
+              <div
+                key={c.id}
+                className={`p-4 rounded-xl border transition-colors ${c.status === "disembunyikan" ? "bg-amber-500/5 border-amber-500/20" : "bg-card"}`}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5">
                     <Avatar className="size-7">
@@ -195,8 +252,12 @@ function PostDetail() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <span className="font-semibold text-xs text-foreground">{c.author?.full_name || "Pengguna"}</span>
-                      <span className="text-[10px] text-muted-foreground ml-2">{formatDateTime(c.created_at)}</span>
+                      <span className="font-semibold text-xs text-foreground">
+                        {c.author?.full_name || "Pengguna"}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground ml-2">
+                        {formatDateTime(c.created_at)}
+                      </span>
                     </div>
                   </div>
                   {isAdmin && (
@@ -205,12 +266,24 @@ function PostDetail() {
                         variant="ghost"
                         size="icon"
                         className="size-7"
-                        title={c.status === "tampil" ? "Sembunyikan komentar" : "Tampilkan komentar"}
+                        title={
+                          c.status === "tampil" ? "Sembunyikan komentar" : "Tampilkan komentar"
+                        }
                         onClick={() => void toggleModeration(c.id, c.status)}
                       >
-                        {c.status === "tampil" ? <EyeOff className="size-3.5 text-amber-600" /> : <Eye className="size-3.5 text-emerald-600" />}
+                        {c.status === "tampil" ? (
+                          <EyeOff className="size-3.5 text-amber-600" />
+                        ) : (
+                          <Eye className="size-3.5 text-emerald-600" />
+                        )}
                       </Button>
-                      <Button variant="ghost" size="icon" className="size-7" title="Hapus komentar" onClick={() => void removeComment(c.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7"
+                        title="Hapus komentar"
+                        onClick={() => void removeComment(c.id)}
+                      >
                         <Trash2 className="size-3.5 text-red-500" />
                       </Button>
                     </div>
@@ -218,7 +291,12 @@ function PostDetail() {
                 </div>
                 <p className="mt-2 text-sm text-foreground/90 leading-normal pl-9">{c.content}</p>
                 {c.status === "disembunyikan" && (
-                  <Badge variant="outline" className="mt-2 ml-9 text-[10px] border-amber-400 text-amber-600">Disembunyikan Moderator</Badge>
+                  <Badge
+                    variant="outline"
+                    className="mt-2 ml-9 text-[10px] border-amber-400 text-amber-600"
+                  >
+                    Disembunyikan Moderator
+                  </Badge>
                 )}
               </div>
             ))

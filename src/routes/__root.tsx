@@ -89,7 +89,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "EcoGrant AI — Generator Proposal Hibah" },
       {
         property: "og:description",
-        content: "Susun proposal hibah lingkungan secara cepat, konsisten, dan sesuai standar biaya.",
+        content:
+          "Susun proposal hibah lingkungan secara cepat, konsisten, dan sesuai standar biaya.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

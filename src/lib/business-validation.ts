@@ -18,12 +18,15 @@ export function validateProposalCompleteness(
   lfaRows: LfaRow[] = [],
   budgetItems: BudgetItem[] = [],
   donor: Donor | null = null,
-  isAdminOverride: boolean = false
+  isAdminOverride: boolean = false,
 ): ProposalSubmissionValidation {
   const issues: ValidationIssue[] = [];
 
   if (!proposal) {
-    return { canSubmit: false, issues: [{ field: "proposal", message: "Data proposal tidak ditemukan.", severity: "error" }] };
+    return {
+      canSubmit: false,
+      issues: [{ field: "proposal", message: "Data proposal tidak ditemukan.", severity: "error" }],
+    };
   }
 
   // Rule 1: Completeness
@@ -33,7 +36,11 @@ export function validateProposalCompleteness(
 
   // Rule 2: Mandatory Donor
   if (!proposal.donor_id || !donor) {
-    issues.push({ field: "donor_id", message: "Lembaga donor wajib dipilih sebelum mengajukan proposal.", severity: "error" });
+    issues.push({
+      field: "donor_id",
+      message: "Lembaga donor wajib dipilih sebelum mengajukan proposal.",
+      severity: "error",
+    });
   }
 
   // Rule 3: Donor Deadline Check
@@ -61,18 +68,30 @@ export function validateProposalCompleteness(
 
   // LFA Matrix Check
   if (lfaRows.length === 0) {
-    issues.push({ field: "lfa", message: "Matriks Kerangka Logis (LFA) belum berisi indikator kegiatan.", severity: "error" });
+    issues.push({
+      field: "lfa",
+      message: "Matriks Kerangka Logis (LFA) belum berisi indikator kegiatan.",
+      severity: "error",
+    });
   }
 
   // RAB Budget Check
   if (budgetItems.length === 0) {
-    issues.push({ field: "budget", message: "Rencana Anggaran Biaya (RAB) belum berisi rincian item.", severity: "error" });
+    issues.push({
+      field: "budget",
+      message: "Rencana Anggaran Biaya (RAB) belum berisi rincian item.",
+      severity: "error",
+    });
   }
 
   // Rule 4: Non-negative Grand Total
   const grandTotal = budgetItems.reduce((acc, item) => acc + Number(item.total ?? 0), 0);
   if (grandTotal < 0) {
-    issues.push({ field: "grand_total", message: "Grand Total RAB tidak boleh bernilai negatif.", severity: "error" });
+    issues.push({
+      field: "grand_total",
+      message: "Grand Total RAB tidak boleh bernilai negatif.",
+      severity: "error",
+    });
   }
 
   // Rule 5: Grand Total vs Grant Amount
@@ -86,7 +105,9 @@ export function validateProposalCompleteness(
   }
 
   // Rule 6: RAB SBM/SBU Exceeded Status Check
-  const unvalidatedExceeded = budgetItems.filter((i) => i.validation_status === "melebihi" && !i.override_reason);
+  const unvalidatedExceeded = budgetItems.filter(
+    (i) => i.validation_status === "melebihi" && !i.override_reason,
+  );
   if (unvalidatedExceeded.length > 0) {
     issues.push({
       field: "sbm_sbu_validation",
@@ -99,7 +120,8 @@ export function validateProposalCompleteness(
   if (proposal.status === "disetujui") {
     issues.push({
       field: "status",
-      message: "Proposal yang sudah disetujui hanya dapat diedit setelah dikembalikan ke status 'Perlu Revisi'.",
+      message:
+        "Proposal yang sudah disetujui hanya dapat diedit setelah dikembalikan ke status 'Perlu Revisi'.",
       severity: "error",
     });
   }
@@ -117,8 +139,15 @@ export function validateUniqueStandardsConstraint(
   version: string,
   code: string,
   regionOrProvince: string,
-  existingItems: Array<{ year: number; version: string; code: string; region_code?: string; province_code?: string; id?: string }>,
-  currentId?: string
+  existingItems: Array<{
+    year: number;
+    version: string;
+    code: string;
+    region_code?: string;
+    province_code?: string;
+    id?: string;
+  }>,
+  currentId?: string,
 ): { isDuplicate: boolean; message?: string } {
   const isDuplicate = existingItems.some(
     (item) =>
@@ -126,7 +155,8 @@ export function validateUniqueStandardsConstraint(
       item.year === year &&
       item.version.toLowerCase() === version.toLowerCase() &&
       item.code.toUpperCase() === code.toUpperCase() &&
-      (item.region_code?.toUpperCase() === regionOrProvince.toUpperCase() || item.province_code?.toUpperCase() === regionOrProvince.toUpperCase())
+      (item.region_code?.toUpperCase() === regionOrProvince.toUpperCase() ||
+        item.province_code?.toUpperCase() === regionOrProvince.toUpperCase()),
   );
 
   if (isDuplicate) {

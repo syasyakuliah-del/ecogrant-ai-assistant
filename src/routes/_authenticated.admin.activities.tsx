@@ -2,8 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useCallback } from "react";
 import {
-  ArrowUpDown, ChevronLeft, ChevronRight, Download, Leaf, Link2,
-  Pencil, Plus, Trash2, Upload,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Leaf,
+  Link2,
+  Pencil,
+  Plus,
+  Trash2,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -13,11 +21,30 @@ import { PageHeader } from "@/components/app-shell";
 import { AdminToolbar, EmptyRow } from "@/components/admin/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { BUDGET_CATEGORIES, PROGRAM_CATEGORIES, UNITS } from "@/lib/constants";
 
@@ -25,7 +52,10 @@ export const Route = createFileRoute("/_authenticated/admin/activities")({
   head: () => ({
     meta: [
       { title: "Kelola Kegiatan — Admin EcoGrant AI" },
-      { name: "description", content: "Katalog kegiatan standar beserta pemetaan ke LFA dan kategori anggaran RAB." },
+      {
+        name: "description",
+        content: "Katalog kegiatan standar beserta pemetaan ke LFA dan kategori anggaran RAB.",
+      },
     ],
   }),
   component: AdminActivities,
@@ -83,20 +113,29 @@ function AdminActivities() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["admin-activities-full"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("activities").select("*").order("category").limit(1000);
+      const { data, error } = await supabase
+        .from("activities")
+        .select("*")
+        .order("category")
+        .limit(1000);
       if (error) throw error;
       return data;
     },
   });
 
-  const categories = useMemo(() => Array.from(new Set(data.map((d) => d.category).filter(Boolean))), [data]);
+  const categories = useMemo(
+    () => Array.from(new Set(data.map((d) => d.category).filter(Boolean))),
+    [data],
+  );
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    let result = data.filter((a) => {
+    const result = data.filter((a) => {
       if (categoryFilter !== "semua" && a.category !== categoryFilter) return false;
       if (!term) return true;
-      return [a.name, a.category, a.sub_category, a.description, a.default_output].some((f) => (f ?? "").toLowerCase().includes(term));
+      return [a.name, a.category, a.sub_category, a.description, a.default_output].some((f) =>
+        (f ?? "").toLowerCase().includes(term),
+      );
     });
     result.sort((a, b) => {
       const av = a[sortKey] ?? "";
@@ -110,10 +149,16 @@ function AdminActivities() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const rows = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  const toggleSort = useCallback((key: SortKey) => {
-    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(key); setSortDir("asc"); }
-  }, [sortKey]);
+  const toggleSort = useCallback(
+    (key: SortKey) => {
+      if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      else {
+        setSortKey(key);
+        setSortDir("asc");
+      }
+    },
+    [sortKey],
+  );
 
   function openCreate() {
     setForm(EMPTY_FORM);
@@ -139,7 +184,10 @@ function AdminActivities() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim()) { toast.error("Nama kegiatan wajib diisi."); return; }
+    if (!form.name.trim()) {
+      toast.error("Nama kegiatan wajib diisi.");
+      return;
+    }
 
     setIsSaving(true);
     const payload = {
@@ -161,9 +209,17 @@ function AdminActivities() {
 
     setIsSaving(false);
 
-    if (error) { toast.error("Gagal menyimpan kegiatan: " + error.message); return; }
+    if (error) {
+      toast.error("Gagal menyimpan kegiatan: " + error.message);
+      return;
+    }
 
-    await logAudit({ action: form.id ? "admin.activity.update" : "admin.activity.create", entityType: "activity", entityId: form.id ?? null, newValues: payload });
+    await logAudit({
+      action: form.id ? "admin.activity.update" : "admin.activity.create",
+      entityType: "activity",
+      entityId: form.id ?? null,
+      newValues: payload,
+    });
     void qc.invalidateQueries({ queryKey: ["admin-activities-full"] });
     toast.success(form.id ? "Data kegiatan diperbarui." : "Kegiatan baru berhasil ditambahkan.");
     setFormOpen(false);
@@ -188,7 +244,10 @@ function AdminActivities() {
         const wsName = wb.SheetNames[0];
         const ws = wb.Sheets[wsName];
         const parsed = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
-        if (parsed.length === 0) { toast.error("File Excel kosong."); return; }
+        if (parsed.length === 0) {
+          toast.error("File Excel kosong.");
+          return;
+        }
         setImportRows(parsed);
         setImportOpen(true);
       } catch (err) {
@@ -202,25 +261,34 @@ function AdminActivities() {
   async function processImport() {
     if (importRows.length === 0) return;
     setIsImporting(true);
-    const toInsert = importRows.map((r) => ({
-      category: String(r["Kategori"] || r["category"] || "Umum").trim(),
-      sub_category: String(r["Sub Kategori"] || r["sub_category"] || "").trim() || null,
-      name: String(r["Nama Kegiatan"] || r["Nama"] || r["name"] || "").trim(),
-      description: String(r["Deskripsi"] || r["description"] || "").trim(),
-      default_output: r["Default Output"] ? String(r["Default Output"]) : null,
-      default_indicator: r["Default Indikator"] ? String(r["Default Indikator"]) : null,
-      target_unit: String(r["Satuan"] || r["target_unit"] || "kegiatan").trim(),
-      lfa_level: String(r["Level LFA"] || r["lfa_level"] || "activity").trim(),
-      budget_category: String(r["Kategori RAB"] || r["budget_category"] || "Operasional").trim(),
-      is_active: true,
-    })).filter((x) => x.name.length > 0);
+    const toInsert = importRows
+      .map((r) => ({
+        category: String(r["Kategori"] || r["category"] || "Umum").trim(),
+        sub_category: String(r["Sub Kategori"] || r["sub_category"] || "").trim() || null,
+        name: String(r["Nama Kegiatan"] || r["Nama"] || r["name"] || "").trim(),
+        description: String(r["Deskripsi"] || r["description"] || "").trim(),
+        default_output: r["Default Output"] ? String(r["Default Output"]) : null,
+        default_indicator: r["Default Indikator"] ? String(r["Default Indikator"]) : null,
+        target_unit: String(r["Satuan"] || r["target_unit"] || "kegiatan").trim(),
+        lfa_level: String(r["Level LFA"] || r["lfa_level"] || "activity").trim(),
+        budget_category: String(r["Kategori RAB"] || r["budget_category"] || "Operasional").trim(),
+        is_active: true,
+      }))
+      .filter((x) => x.name.length > 0);
 
     const { error } = await supabase.from("activities").insert(toInsert);
     setIsImporting(false);
 
-    if (error) { toast.error("Gagal mengimpor kegiatan: " + error.message); return; }
+    if (error) {
+      toast.error("Gagal mengimpor kegiatan: " + error.message);
+      return;
+    }
 
-    await logAudit({ action: "admin.activity.import", entityType: "activity", newValues: { count: toInsert.length } });
+    await logAudit({
+      action: "admin.activity.import",
+      entityType: "activity",
+      newValues: { count: toInsert.length },
+    });
     void qc.invalidateQueries({ queryKey: ["admin-activities-full"] });
     toast.success(`${toInsert.length} data kegiatan berhasil diimpor.`);
     setImportOpen(false);
@@ -248,30 +316,67 @@ function AdminActivities() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Kelola Kegiatan" description="Katalog kegiatan standar untuk otomatisasi penyusunan LFA dan RAB." />
+      <PageHeader
+        title="Kelola Kegiatan"
+        description="Katalog kegiatan standar untuk otomatisasi penyusunan LFA dan RAB."
+      />
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex-1 min-w-56">
-          <AdminToolbar query={q} onQueryChange={(v) => { setQ(v); setPage(0); }} placeholder="Cari nama kegiatan, kategori, atau deskripsi…" />
+          <AdminToolbar
+            query={q}
+            onQueryChange={(v) => {
+              setQ(v);
+              setPage(0);
+            }}
+            placeholder="Cari nama kegiatan, kategori, atau deskripsi…"
+          />
         </div>
-        <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(0); }}>
-          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+        <Select
+          value={categoryFilter}
+          onValueChange={(v) => {
+            setCategoryFilter(v);
+            setPage(0);
+          }}
+        >
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="semua">Semua Kategori</SelectItem>
-            {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {categories.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <div className="relative">
-          <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="hidden" id="act-excel-upload" />
+          <input
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="act-excel-upload"
+          />
           <Label htmlFor="act-excel-upload">
             <Button variant="outline" size="sm" className="gap-1.5 cursor-pointer" asChild>
-              <span><Upload className="size-3.5" /> Import Excel</span>
+              <span>
+                <Upload className="size-3.5" /> Import Excel
+              </span>
             </Button>
           </Label>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={exportXLSX}><Download className="size-3.5" /> Export</Button>
-        <Button onClick={openCreate} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"><Plus className="size-4" /> Tambah Kegiatan</Button>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={exportXLSX}>
+          <Download className="size-3.5" /> Export
+        </Button>
+        <Button
+          onClick={openCreate}
+          className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+        >
+          <Plus className="size-4" /> Tambah Kegiatan
+        </Button>
       </div>
 
       {/* Table */}
@@ -279,17 +384,37 @@ function AdminActivities() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="cursor-pointer hover:text-foreground" onClick={() => toggleSort("name")}>
-                <span className="flex items-center gap-1">Nama Kegiatan <ArrowUpDown className="size-3 opacity-40" /></span>
+              <TableHead
+                className="cursor-pointer hover:text-foreground"
+                onClick={() => toggleSort("name")}
+              >
+                <span className="flex items-center gap-1">
+                  Nama Kegiatan <ArrowUpDown className="size-3 opacity-40" />
+                </span>
               </TableHead>
-              <TableHead className="cursor-pointer hover:text-foreground" onClick={() => toggleSort("category")}>
-                <span className="flex items-center gap-1">Kategori <ArrowUpDown className="size-3 opacity-40" /></span>
+              <TableHead
+                className="cursor-pointer hover:text-foreground"
+                onClick={() => toggleSort("category")}
+              >
+                <span className="flex items-center gap-1">
+                  Kategori <ArrowUpDown className="size-3 opacity-40" />
+                </span>
               </TableHead>
-              <TableHead className="cursor-pointer hover:text-foreground" onClick={() => toggleSort("lfa_level")}>
-                <span className="flex items-center gap-1">Mapping LFA <ArrowUpDown className="size-3 opacity-40" /></span>
+              <TableHead
+                className="cursor-pointer hover:text-foreground"
+                onClick={() => toggleSort("lfa_level")}
+              >
+                <span className="flex items-center gap-1">
+                  Mapping LFA <ArrowUpDown className="size-3 opacity-40" />
+                </span>
               </TableHead>
-              <TableHead className="cursor-pointer hover:text-foreground" onClick={() => toggleSort("budget_category")}>
-                <span className="flex items-center gap-1">Mapping RAB <ArrowUpDown className="size-3 opacity-40" /></span>
+              <TableHead
+                className="cursor-pointer hover:text-foreground"
+                onClick={() => toggleSort("budget_category")}
+              >
+                <span className="flex items-center gap-1">
+                  Mapping RAB <ArrowUpDown className="size-3 opacity-40" />
+                </span>
               </TableHead>
               <TableHead>Satuan</TableHead>
               <TableHead>Status</TableHead>
@@ -306,21 +431,47 @@ function AdminActivities() {
                 <TableRow key={a.id}>
                   <TableCell className="font-medium max-w-64 truncate">
                     <div>{a.name}</div>
-                    {a.sub_category && <span className="text-[11px] text-muted-foreground">{a.sub_category}</span>}
+                    {a.sub_category && (
+                      <span className="text-[11px] text-muted-foreground">{a.sub_category}</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm">{a.category}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="capitalize text-xs"><Link2 className="size-2.5 mr-1" /> {a.lfa_level}</Badge>
+                    <Badge variant="outline" className="capitalize text-xs">
+                      <Link2 className="size-2.5 mr-1" /> {a.lfa_level}
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="text-xs">{a.budget_category}</Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {a.budget_category}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{a.target_unit}</TableCell>
-                  <TableCell><Badge variant={a.is_active ? "default" : "secondary"}>{a.is_active ? "Aktif" : "Nonaktif"}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant={a.is_active ? "default" : "secondary"}>
+                      {a.is_active ? "Aktif" : "Nonaktif"}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="size-8" title="Edit kegiatan" onClick={() => openEdit(a)}><Pencil className="size-4" /></Button>
-                      <Button variant="ghost" size="icon" className="size-8" title="Hapus kegiatan" onClick={() => void softDelete(a.id)}><Trash2 className="size-4 text-red-500" /></Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        title="Edit kegiatan"
+                        onClick={() => openEdit(a)}
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        title="Hapus kegiatan"
+                        onClick={() => void softDelete(a.id)}
+                      >
+                        <Trash2 className="size-4 text-red-500" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -333,10 +484,26 @@ function AdminActivities() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Halaman {page + 1} dari {totalPages} ({filtered.length} kegiatan)</span>
+          <span>
+            Halaman {page + 1} dari {totalPages} ({filtered.length} kegiatan)
+          </span>
           <div className="flex gap-1">
-            <Button variant="outline" size="icon" disabled={page === 0} onClick={() => setPage(page - 1)}><ChevronLeft className="size-4" /></Button>
-            <Button variant="outline" size="icon" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}><ChevronRight className="size-4" /></Button>
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={page === 0}
+              onClick={() => setPage(page - 1)}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage(page + 1)}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
           </div>
         </div>
       )}
@@ -345,31 +512,58 @@ function AdminActivities() {
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{form.id ? "Edit Master Kegiatan" : "Tambah Master Kegiatan Baru"}</DialogTitle>
+            <DialogTitle>
+              {form.id ? "Edit Master Kegiatan" : "Tambah Master Kegiatan Baru"}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-3 py-2">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1 sm:col-span-2">
-                <Label>Nama Kegiatan <span className="text-red-500">*</span></Label>
-                <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Pelatihan Kelompok Tani Hutan" />
+                <Label>
+                  Nama Kegiatan <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Pelatihan Kelompok Tani Hutan"
+                />
               </div>
               <div className="space-y-1">
                 <Label>Kategori Program</Label>
-                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={form.category}
+                  onValueChange={(v) => setForm({ ...form, category: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {PROGRAM_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {PROGRAM_CATEGORIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
                 <Label>Sub Kategori</Label>
-                <Input value={form.sub_category} onChange={(e) => setForm({ ...form, sub_category: e.target.value })} placeholder="Pelatihan / Penanaman / Patroli" />
+                <Input
+                  value={form.sub_category}
+                  onChange={(e) => setForm({ ...form, sub_category: e.target.value })}
+                  placeholder="Pelatihan / Penanaman / Patroli"
+                />
               </div>
               <div className="space-y-1">
                 <Label>Mapping Level LFA</Label>
-                <Select value={form.lfa_level} onValueChange={(v) => setForm({ ...form, lfa_level: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={form.lfa_level}
+                  onValueChange={(v) => setForm({ ...form, lfa_level: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="goal">Goal (Dampak Utama)</SelectItem>
                     <SelectItem value="outcome">Outcome (Capaian Hasil)</SelectItem>
@@ -380,38 +574,74 @@ function AdminActivities() {
               </div>
               <div className="space-y-1">
                 <Label>Mapping Kategori RAB</Label>
-                <Select value={form.budget_category} onValueChange={(v) => setForm({ ...form, budget_category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={form.budget_category}
+                  onValueChange={(v) => setForm({ ...form, budget_category: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {BUDGET_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {BUDGET_CATEGORIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <Label>Deskripsi Kegiatan</Label>
-                <Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Penjelasan singkat aktivitas lapangan…" />
+                <Textarea
+                  rows={2}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Penjelasan singkat aktivitas lapangan…"
+                />
               </div>
               <div className="space-y-1">
                 <Label>Default Output</Label>
-                <Input value={form.default_output} onChange={(e) => setForm({ ...form, default_output: e.target.value })} placeholder="Kapasitas peserta meningkat" />
+                <Input
+                  value={form.default_output}
+                  onChange={(e) => setForm({ ...form, default_output: e.target.value })}
+                  placeholder="Kapasitas peserta meningkat"
+                />
               </div>
               <div className="space-y-1">
                 <Label>Default Indikator</Label>
-                <Input value={form.default_indicator} onChange={(e) => setForm({ ...form, default_indicator: e.target.value })} placeholder="Jumlah peserta terlatih" />
+                <Input
+                  value={form.default_indicator}
+                  onChange={(e) => setForm({ ...form, default_indicator: e.target.value })}
+                  placeholder="Jumlah peserta terlatih"
+                />
               </div>
               <div className="space-y-1">
                 <Label>Satuan Target</Label>
-                <Select value={form.target_unit} onValueChange={(v) => setForm({ ...form, target_unit: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={form.target_unit}
+                  onValueChange={(v) => setForm({ ...form, target_unit: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                    {UNITS.map((u) => (
+                      <SelectItem key={u} value={u}>
+                        {u}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1">
                 <Label>Status</Label>
-                <Select value={form.is_active ? "aktif" : "nonaktif"} onValueChange={(v) => setForm({ ...form, is_active: v === "aktif" })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={form.is_active ? "aktif" : "nonaktif"}
+                  onValueChange={(v) => setForm({ ...form, is_active: v === "aktif" })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="aktif">Aktif</SelectItem>
                     <SelectItem value="nonaktif">Nonaktif</SelectItem>
@@ -420,8 +650,16 @@ function AdminActivities() {
               </div>
             </div>
             <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>Batal</Button>
-              <Button type="submit" disabled={isSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white">{isSaving ? "Menyimpan…" : "Simpan Kegiatan"}</Button>
+              <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSaving}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {isSaving ? "Menyimpan…" : "Simpan Kegiatan"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -431,21 +669,38 @@ function AdminActivities() {
       <Dialog open={importOpen} onOpenChange={setImportOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Leaf className="size-5 text-emerald-600" /> Preview Impor Kegiatan ({importRows.length} baris)</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Leaf className="size-5 text-emerald-600" /> Preview Impor Kegiatan (
+              {importRows.length} baris)
+            </DialogTitle>
           </DialogHeader>
           <div className="max-h-56 overflow-y-auto rounded border p-2 text-xs space-y-1">
             {importRows.slice(0, 5).map((r, i) => (
-              <div key={i} className="p-2 border-b last:border-none flex justify-between items-center">
+              <div
+                key={i}
+                className="p-2 border-b last:border-none flex justify-between items-center"
+              >
                 <div>
-                  <span className="font-semibold">{String(r["Nama Kegiatan"] || r["Nama"] || r["name"] || "")}</span>
-                  <p className="text-muted-foreground">{String(r["Kategori"] || r["category"] || "")} · LFA: {String(r["Level LFA"] || r["lfa_level"] || "activity")}</p>
+                  <span className="font-semibold">
+                    {String(r["Nama Kegiatan"] || r["Nama"] || r["name"] || "")}
+                  </span>
+                  <p className="text-muted-foreground">
+                    {String(r["Kategori"] || r["category"] || "")} · LFA:{" "}
+                    {String(r["Level LFA"] || r["lfa_level"] || "activity")}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setImportOpen(false)}>Batal</Button>
-            <Button onClick={() => void processImport()} disabled={isImporting} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button variant="outline" onClick={() => setImportOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              onClick={() => void processImport()}
+              disabled={isImporting}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
               {isImporting ? "Mengimpor…" : `Impor ${importRows.length} Data`}
             </Button>
           </DialogFooter>

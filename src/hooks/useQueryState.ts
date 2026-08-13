@@ -45,11 +45,11 @@ export function useQueryState(options: QueryStateOptions = {}): QueryState {
   const [debouncedQ, setDebouncedQ] = useState<string>(initialParams.get("q") ?? "");
   const [page, setPageState] = useState<number>(Number(initialParams.get("page") ?? 0));
   const [perPage, setPerPageState] = useState<number>(
-    Math.min(Math.max(Number(initialParams.get("perPage") ?? defaultPerPage), 10), 100)
+    Math.min(Math.max(Number(initialParams.get("perPage") ?? defaultPerPage), 10), 100),
   );
   const [sortBy, setSortByState] = useState<string>(initialParams.get("sortBy") ?? defaultSortBy);
   const [sortOrder, setSortOrderState] = useState<"asc" | "desc">(
-    (initialParams.get("sortOrder") as "asc" | "desc") ?? defaultSortOrder
+    (initialParams.get("sortOrder") as "asc" | "desc") ?? defaultSortOrder,
   );
   const [status, setStatusState] = useState<string>(initialParams.get("status") ?? defaultStatus);
   const [dateFrom, setDateFromState] = useState<string>(initialParams.get("dateFrom") ?? "");
@@ -80,7 +80,20 @@ export function useQueryState(options: QueryStateOptions = {}): QueryState {
     const queryString = params.toString();
     const newUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ""}`;
     window.history.replaceState(null, "", newUrl);
-  }, [debouncedQ, page, perPage, sortBy, sortOrder, status, dateFrom, dateTo, defaultPerPage, defaultSortBy, defaultSortOrder, defaultStatus]);
+  }, [
+    debouncedQ,
+    page,
+    perPage,
+    sortBy,
+    sortOrder,
+    status,
+    dateFrom,
+    dateTo,
+    defaultPerPage,
+    defaultSortBy,
+    defaultSortOrder,
+    defaultStatus,
+  ]);
 
   const setQ = useCallback((v: string) => setQState(v), []);
   const setPage = useCallback((v: number) => setPageState(v), []);
@@ -89,11 +102,26 @@ export function useQueryState(options: QueryStateOptions = {}): QueryState {
     setPerPageState(valid);
     setPageState(0);
   }, []);
-  const setSortBy = useCallback((v: string) => { setSortByState(v); setPageState(0); }, []);
-  const setSortOrder = useCallback((v: "asc" | "desc") => { setSortOrderState(v); setPageState(0); }, []);
-  const setStatus = useCallback((v: string) => { setStatusState(v); setPageState(0); }, []);
-  const setDateFrom = useCallback((v: string) => { setDateFromState(v); setPageState(0); }, []);
-  const setDateTo = useCallback((v: string) => { setDateToState(v); setPageState(0); }, []);
+  const setSortBy = useCallback((v: string) => {
+    setSortByState(v);
+    setPageState(0);
+  }, []);
+  const setSortOrder = useCallback((v: "asc" | "desc") => {
+    setSortOrderState(v);
+    setPageState(0);
+  }, []);
+  const setStatus = useCallback((v: string) => {
+    setStatusState(v);
+    setPageState(0);
+  }, []);
+  const setDateFrom = useCallback((v: string) => {
+    setDateFromState(v);
+    setPageState(0);
+  }, []);
+  const setDateTo = useCallback((v: string) => {
+    setDateToState(v);
+    setPageState(0);
+  }, []);
 
   const resetFilters = useCallback(() => {
     setQState("");
@@ -128,6 +156,25 @@ export function useQueryState(options: QueryStateOptions = {}): QueryState {
       setDateTo,
       resetFilters,
     }),
-    [q, debouncedQ, page, perPage, sortBy, sortOrder, status, dateFrom, dateTo, setQ, setPage, setPerPage, setSortBy, setSortOrder, setStatus, setDateFrom, setDateTo, resetFilters]
+    [
+      q,
+      debouncedQ,
+      page,
+      perPage,
+      sortBy,
+      sortOrder,
+      status,
+      dateFrom,
+      dateTo,
+      setQ,
+      setPage,
+      setPerPage,
+      setSortBy,
+      setSortOrder,
+      setStatus,
+      setDateFrom,
+      setDateTo,
+      resetFilters,
+    ],
   );
 }

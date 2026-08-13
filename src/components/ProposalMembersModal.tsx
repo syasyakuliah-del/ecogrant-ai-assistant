@@ -17,7 +17,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ProposalMembersModalProps = {
   proposalId: string;
@@ -41,7 +47,11 @@ type MemberRow = {
   profiles?: ProfileOption | null;
 };
 
-export function ProposalMembersModal({ proposalId, proposalTitle, trigger }: ProposalMembersModalProps) {
+export function ProposalMembersModal({
+  proposalId,
+  proposalTitle,
+  trigger,
+}: ProposalMembersModalProps) {
   const [open, setOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedRole, setSelectedRole] = useState<"editor" | "viewer">("editor");
@@ -63,9 +73,15 @@ export function ProposalMembersModal({ proposalId, proposalTitle, trigger }: Pro
     queryKey: ["all-users-simple", searchUser],
     enabled: open,
     queryFn: async () => {
-      let query = supabase.from("profiles").select("id, full_name, email, avatar_url").is("deleted_at", null).limit(20);
+      let query = supabase
+        .from("profiles")
+        .select("id, full_name, email, avatar_url")
+        .is("deleted_at", null)
+        .limit(20);
       if (searchUser.trim()) {
-        query = query.or(`full_name.ilike.%${searchUser.trim()}%,email.ilike.%${searchUser.trim()}%`);
+        query = query.or(
+          `full_name.ilike.%${searchUser.trim()}%,email.ilike.%${searchUser.trim()}%`,
+        );
       }
       const { data } = await query;
       return (data as ProfileOption[]) ?? [];
@@ -150,13 +166,20 @@ export function ProposalMembersModal({ proposalId, proposalTitle, trigger }: Pro
             <div className="flex items-center gap-2">
               <div className="w-1/2 space-y-1">
                 <Label className="text-[11px]">Peran Akses</Label>
-                <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as "editor" | "viewer")}>
+                <Select
+                  value={selectedRole}
+                  onValueChange={(v) => setSelectedRole(v as "editor" | "viewer")}
+                >
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="editor" className="text-xs">Editor (Dapat Mengubah)</SelectItem>
-                    <SelectItem value="viewer" className="text-xs">Viewer (Hanya Melihat)</SelectItem>
+                    <SelectItem value="editor" className="text-xs">
+                      Editor (Dapat Mengubah)
+                    </SelectItem>
+                    <SelectItem value="viewer" className="text-xs">
+                      Viewer (Hanya Melihat)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -167,7 +190,11 @@ export function ProposalMembersModal({ proposalId, proposalTitle, trigger }: Pro
                   disabled={!selectedUserId || inviteMutation.isPending}
                   onClick={() => inviteMutation.mutate()}
                 >
-                  {inviteMutation.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <UserPlus className="size-3.5" />}
+                  {inviteMutation.isPending ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <UserPlus className="size-3.5" />
+                  )}
                   Tambah Anggota
                 </Button>
               </div>
@@ -190,7 +217,10 @@ export function ProposalMembersModal({ proposalId, proposalTitle, trigger }: Pro
             ) : (
               <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                 {members.map((m) => (
-                  <div key={m.id} className="flex items-center justify-between p-2 rounded-md border text-xs bg-card">
+                  <div
+                    key={m.id}
+                    className="flex items-center justify-between p-2 rounded-md border text-xs bg-card"
+                  >
                     <div className="flex items-center gap-2">
                       <Avatar className="size-7">
                         <AvatarImage src={m.profiles?.avatar_url ?? undefined} />
@@ -199,14 +229,25 @@ export function ProposalMembersModal({ proposalId, proposalTitle, trigger }: Pro
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium leading-none">{m.profiles?.full_name || "Pengguna"}</p>
-                        <p className="text-[10px] text-muted-foreground">{m.profiles?.email || m.user_id}</p>
+                        <p className="font-medium leading-none">
+                          {m.profiles?.full_name || "Pengguna"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {m.profiles?.email || m.user_id}
+                        </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Badge variant={m.role === "editor" ? "default" : "secondary"} className="text-[10px] gap-1">
-                        {m.role === "editor" ? <Shield className="size-2.5" /> : <Eye className="size-2.5" />}
+                      <Badge
+                        variant={m.role === "editor" ? "default" : "secondary"}
+                        className="text-[10px] gap-1"
+                      >
+                        {m.role === "editor" ? (
+                          <Shield className="size-2.5" />
+                        ) : (
+                          <Eye className="size-2.5" />
+                        )}
                         {m.role === "editor" ? "Editor" : "Viewer"}
                       </Badge>
 

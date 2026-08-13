@@ -65,7 +65,8 @@ export function scoreDonor(donor: DonorRow, proposal: ProposalContext): MatchRes
   }
   const themeScore = Math.min(40, themeHits * 14);
   score += themeScore;
-  if (themeHits === 0) risks.push("Tema program belum terlihat selaras dengan bidang pendanaan donor.");
+  if (themeHits === 0)
+    risks.push("Tema program belum terlihat selaras dengan bidang pendanaan donor.");
 
   // Nilai hibah (maks 30)
   const amount = Number(proposal.grant_amount ?? 0);
@@ -147,7 +148,13 @@ export function scoreDonor(donor: DonorRow, proposal: ProposalContext): MatchRes
  */
 export function calculateDonorMatchScore(
   proposal: { title?: string; grant_amount?: number; category?: string; province?: string },
-  donor: { name?: string; min_grant?: number; max_grant?: number; category?: string; priorities?: string[] },
+  donor: {
+    name?: string;
+    min_grant?: number;
+    max_grant?: number;
+    category?: string;
+    priorities?: string[];
+  },
 ): MatchResult {
   const donorRow: DonorRow = {
     id: "match-calc",
@@ -170,4 +177,4 @@ export function calculateDonorMatchScore(
     grant_amount: proposal.grant_amount ?? null,
   };
   return scoreDonor(donorRow, proposalCtx);
-}
+}

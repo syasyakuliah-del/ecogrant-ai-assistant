@@ -25,7 +25,7 @@ export function getAiModel(overrideModel?: string) {
   }
 
   throw new Error(
-    "Layanan AI belum dikonfigurasi. Harap isi GEMINI_API_KEY atau LOVABLE_API_KEY di file .env."
+    "Layanan AI belum dikonfigurasi. Harap isi GEMINI_API_KEY atau LOVABLE_API_KEY di file .env.",
   );
 }
 
@@ -37,4 +37,4 @@ export function createLovableAiGatewayProvider(apiKey: string) {
   });
 }
 
-export const AI_MODEL = "gemini-3.6-flash";
+export const AI_MODEL = "gemini-3.6-flash";

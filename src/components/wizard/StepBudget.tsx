@@ -28,21 +28,34 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { aiErrorMessage, buildContext, type StepProps } from "./shared";
 import type { BudgetItem } from "@/hooks/useProposalData";
 
 const CATEGORY_TOOLTIPS: Record<string, string> = {
-  "Honorarium": "SBM PMK: Honorarium pengelola, narasumber, atau pakar sesuai batas jam/orang.",
+  Honorarium: "SBM PMK: Honorarium pengelola, narasumber, atau pakar sesuai batas jam/orang.",
   "Perjalanan Dinas": "SBM PMK: Uang harian & tiket perjalanan dinas per orang/hari per kota.",
-  "Penginapan": "SBM PMK: Pagu kamar hotel per malam sesuai golongan & kota tujuan.",
-  "Konsumsi": "SBM PMK: Pagu rapat & kudapan (snack) per porsi/peserta.",
+  Penginapan: "SBM PMK: Pagu kamar hotel per malam sesuai golongan & kota tujuan.",
+  Konsumsi: "SBM PMK: Pagu rapat & kudapan (snack) per porsi/peserta.",
   "Sewa Equipment & Tempat": "SBU: Sewa lokasi, venue, atau alat teknis sesuai harga pasar.",
   "Bahan & Operasional": "SBU/SBM: ATK, perlengkapan lapangan, pencetakan, & komunikasi.",
-  "Lainnya": "Biaya operasional pendukung yang tetap harus mematuhi aturan 15-20% pagu.",
+  Lainnya: "Biaya operasional pendukung yang tetap harus mematuhi aturan 15-20% pagu.",
 };
 
 export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps) {
@@ -55,8 +68,14 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
     queryKey: ["standards", "all"],
     queryFn: async () => {
       const [sbm, sbu] = await Promise.all([
-        supabase.from("sbm").select("id,code,description,category,unit,price").eq("is_active", true),
-        supabase.from("sbu").select("id,code,description,category,unit,price").eq("is_active", true),
+        supabase
+          .from("sbm")
+          .select("id,code,description,category,unit,price")
+          .eq("is_active", true),
+        supabase
+          .from("sbu")
+          .select("id,code,description,category,unit,price")
+          .eq("is_active", true),
       ]);
       return { sbm: sbm.data ?? [], sbu: sbu.data ?? [] };
     },
@@ -192,14 +211,19 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
       const result = await run({
         data: {
           context: buildContext(proposal, donor),
-          activities: lfa.filter((r) => r.row_type === "activity").map((r) => r.activity ?? "").filter(Boolean),
+          activities: lfa
+            .filter((r) => r.row_type === "activity")
+            .map((r) => r.activity ?? "")
+            .filter(Boolean),
           standards: standardList.slice(0, 120),
         },
       });
 
       const byCode = new Map<string, { id: string; source: string; price: number }>();
-      for (const s of standards?.sbm ?? []) byCode.set(s.code, { id: s.id, source: "sbm", price: Number(s.price) });
-      for (const s of standards?.sbu ?? []) byCode.set(s.code, { id: s.id, source: "sbu", price: Number(s.price) });
+      for (const s of standards?.sbm ?? [])
+        byCode.set(s.code, { id: s.id, source: "sbm", price: Number(s.price) });
+      for (const s of standards?.sbu ?? [])
+        byCode.set(s.code, { id: s.id, source: "sbu", price: Number(s.price) });
 
       const rows = (result?.items ?? []).map((item, i) => {
         const std = item.standard_code ? byCode.get(item.standard_code) : undefined;
@@ -278,19 +302,40 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
                 <Calculator className="size-5 text-primary" /> Step 8: Rencana Anggaran Biaya (RAB)
               </CardTitle>
               <CardDescription>
-                Formulasi: Subtotal = Vol × Frek × Harga. Total = Subtotal + PPN. Terkunci validasi SBM & nilai hibah.
+                Formulasi: Subtotal = Vol × Frek × Harga. Total = Subtotal + PPN. Terkunci validasi
+                SBM & nilai hibah.
               </CardDescription>
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={exportRabXlsx} className="gap-1.5 text-xs">
-                <Download className="size-3.5 text-emerald-600 dark:text-emerald-400" /> Ekspor RAB XLSX
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportRabXlsx}
+                className="gap-1.5 text-xs"
+              >
+                <Download className="size-3.5 text-emerald-600 dark:text-emerald-400" /> Ekspor RAB
+                XLSX
               </Button>
-              <Button variant="outline" size="sm" onClick={() => void addItem()} className="gap-1.5 text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void addItem()}
+                className="gap-1.5 text-xs"
+              >
                 <Plus className="size-3.5" /> Tambah Item
               </Button>
-              <Button size="sm" onClick={() => void handleGenerate()} disabled={busy} className="gap-1.5 text-xs shadow-sm">
-                {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+              <Button
+                size="sm"
+                onClick={() => void handleGenerate()}
+                disabled={busy}
+                className="gap-1.5 text-xs shadow-sm"
+              >
+                {busy ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="size-3.5" />
+                )}
                 Rekomendasi AI RAB
               </Button>
             </div>
@@ -301,14 +346,25 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
           {/* Summary Cards */}
           <div className="grid gap-3 sm:grid-cols-4">
             <Card className="p-3">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Total Subtotal</span>
-              <p className="font-mono text-base font-bold text-foreground mt-0.5">{formatCurrency(totals.subtotal, proposal.currency)}</p>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                Total Subtotal
+              </span>
+              <p className="font-mono text-base font-bold text-foreground mt-0.5">
+                {formatCurrency(totals.subtotal, proposal.currency)}
+              </p>
             </Card>
             <Card className="p-3">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Total PPN</span>
-                <Select value={String(ppnRate)} onValueChange={(v) => void updateGlobalPpnRate(Number(v))}>
-                  <SelectTrigger className="w-16 h-6 text-[10px]"><SelectValue /></SelectTrigger>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                  Total PPN
+                </span>
+                <Select
+                  value={String(ppnRate)}
+                  onValueChange={(v) => void updateGlobalPpnRate(Number(v))}
+                >
+                  <SelectTrigger className="w-16 h-6 text-[10px]">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="0">0%</SelectItem>
                     <SelectItem value="11">11%</SelectItem>
@@ -316,14 +372,24 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
                   </SelectContent>
                 </Select>
               </div>
-              <p className="font-mono text-base font-bold text-foreground mt-0.5">{formatCurrency(totals.tax, proposal.currency)}</p>
+              <p className="font-mono text-base font-bold text-foreground mt-0.5">
+                {formatCurrency(totals.tax, proposal.currency)}
+              </p>
             </Card>
-            <Card className={`p-3 ${overBudget ? "border-2 border-destructive bg-destructive/5" : ""}`}>
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Grand Total RAB</span>
-              <p className="font-mono text-base font-bold text-primary mt-0.5">{formatCurrency(totals.grandTotal, proposal.currency)}</p>
+            <Card
+              className={`p-3 ${overBudget ? "border-2 border-destructive bg-destructive/5" : ""}`}
+            >
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                Grand Total RAB
+              </span>
+              <p className="font-mono text-base font-bold text-primary mt-0.5">
+                {formatCurrency(totals.grandTotal, proposal.currency)}
+              </p>
             </Card>
             <Card className="p-3">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">Target Pengajuan Hibah</span>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                Target Pengajuan Hibah
+              </span>
               <p className="font-mono text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {formatCurrency(grantAmount, proposal.currency)}
               </p>
@@ -334,17 +400,26 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
           {overBudget && (
             <Alert variant="destructive">
               <AlertTriangle className="size-4" />
-              <AlertTitle className="text-xs font-semibold">Grand Total RAB Melampaui Nilai Hibah!</AlertTitle>
+              <AlertTitle className="text-xs font-semibold">
+                Grand Total RAB Melampaui Nilai Hibah!
+              </AlertTitle>
               <AlertDescription className="text-xs mt-1">
-                Grand Total RAB ({formatCurrency(totals.grandTotal, proposal.currency)}) melampaui nilai target hibah ({formatCurrency(grantAmount, proposal.currency)}). Sesuaikan volume atau harga satuan.
+                Grand Total RAB ({formatCurrency(totals.grandTotal, proposal.currency)}) melampaui
+                nilai target hibah ({formatCurrency(grantAmount, proposal.currency)}). Sesuaikan
+                volume atau harga satuan.
               </AlertDescription>
             </Alert>
           )}
 
           {duplicateWarnings.length > 0 && (
-            <Alert variant="destructive" className="bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200">
+            <Alert
+              variant="destructive"
+              className="bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200"
+            >
               <AlertTriangle className="size-4 text-amber-500" />
-              <AlertTitle className="text-xs font-semibold">Peringatan Duplikasi Uraian Biaya</AlertTitle>
+              <AlertTitle className="text-xs font-semibold">
+                Peringatan Duplikasi Uraian Biaya
+              </AlertTitle>
               <AlertDescription className="text-xs mt-1">
                 Terdapat uraian biaya ganda: {duplicateWarnings.join(", ")}.
               </AlertDescription>
@@ -365,7 +440,8 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
             <TabsContent value="items" className="mt-4">
               {budget.length === 0 ? (
                 <div className="rounded-lg border border-dashed p-10 text-center text-xs text-muted-foreground">
-                  Belum ada item anggaran RAB. Susun otomatis dari aktivitas LFA dengan tombol AI di atas atau tambah item manual.
+                  Belum ada item anggaran RAB. Susun otomatis dari aktivitas LFA dengan tombol AI di
+                  atas atau tambah item manual.
                 </div>
               ) : (
                 <TooltipProvider>
@@ -381,7 +457,8 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
                                   <HelpCircle className="size-3 text-muted-foreground cursor-help" />
                                 </TooltipTrigger>
                                 <TooltipContent className="max-w-xs text-xs">
-                                  Kategori pengeluaran RAB terikat aturan acuan SBM/SBU PMK Kemenkeu.
+                                  Kategori pengeluaran RAB terikat aturan acuan SBM/SBU PMK
+                                  Kemenkeu.
                                 </TooltipContent>
                               </Tooltip>
                             </div>
@@ -400,8 +477,13 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
                       <TableBody>
                         {budget.map((item) => {
                           const statusStr = (item.validation_status || "valid").toLowerCase();
-                          const isInvalid = statusStr.includes("melebihi") || statusStr.includes("invalid") || statusStr.includes("tidak") || statusStr.includes("override");
-                          const tooltipText = CATEGORY_TOOLTIPS[item.category] ?? CATEGORY_TOOLTIPS["Lainnya"];
+                          const isInvalid =
+                            statusStr.includes("melebihi") ||
+                            statusStr.includes("invalid") ||
+                            statusStr.includes("tidak") ||
+                            statusStr.includes("override");
+                          const tooltipText =
+                            CATEGORY_TOOLTIPS[item.category] ?? CATEGORY_TOOLTIPS["Lainnya"];
 
                           return (
                             <TableRow
@@ -416,11 +498,18 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <div>
-                                      <Select value={item.category} onValueChange={(v) => void update(item, { category: v })}>
-                                        <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                                      <Select
+                                        value={item.category}
+                                        onValueChange={(v) => void update(item, { category: v })}
+                                      >
+                                        <SelectTrigger className="h-7 text-xs">
+                                          <SelectValue />
+                                        </SelectTrigger>
                                         <SelectContent>
                                           {BUDGET_CATEGORIES.map((c) => (
-                                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                                            <SelectItem key={c} value={c}>
+                                              {c}
+                                            </SelectItem>
                                           ))}
                                         </SelectContent>
                                       </Select>
@@ -439,11 +528,18 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
                                 />
                               </TableCell>
                               <TableCell>
-                                <Select value={item.unit} onValueChange={(v) => void update(item, { unit: v })}>
-                                  <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                                <Select
+                                  value={item.unit}
+                                  onValueChange={(v) => void update(item, { unit: v })}
+                                >
+                                  <SelectTrigger className="h-7 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
                                   <SelectContent>
                                     {UNITS.map((u) => (
-                                      <SelectItem key={u} value={u}>{u}</SelectItem>
+                                      <SelectItem key={u} value={u}>
+                                        {u}
+                                      </SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
@@ -454,7 +550,9 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
                                   type="number"
                                   min={1}
                                   defaultValue={Number(item.volume)}
-                                  onBlur={(e) => void update(item, { volume: Number(e.target.value) })}
+                                  onBlur={(e) =>
+                                    void update(item, { volume: Number(e.target.value) })
+                                  }
                                 />
                               </TableCell>
                               <TableCell>
@@ -463,7 +561,9 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
                                   type="number"
                                   min={1}
                                   defaultValue={Number(item.frequency)}
-                                  onBlur={(e) => void update(item, { frequency: Number(e.target.value) })}
+                                  onBlur={(e) =>
+                                    void update(item, { frequency: Number(e.target.value) })
+                                  }
                                 />
                               </TableCell>
                               <TableCell>
@@ -472,7 +572,9 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
                                   type="number"
                                   min={0}
                                   defaultValue={Number(item.unit_price)}
-                                  onBlur={(e) => void update(item, { unit_price: Number(e.target.value) })}
+                                  onBlur={(e) =>
+                                    void update(item, { unit_price: Number(e.target.value) })
+                                  }
                                 />
                               </TableCell>
                               <TableCell className="text-right text-xs font-mono">
@@ -512,7 +614,8 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
             <TabsContent value="recaps" className="mt-4">
               <div className="rounded-lg border p-4 space-y-4">
                 <h4 className="font-semibold text-xs text-foreground uppercase tracking-wider flex items-center gap-2">
-                  <PieChart className="size-4 text-primary" /> Rekapitulasi Rencana Anggaran Biaya Per Kategori
+                  <PieChart className="size-4 text-primary" /> Rekapitulasi Rencana Anggaran Biaya
+                  Per Kategori
                 </h4>
 
                 <div className="rounded-lg border overflow-hidden">
@@ -529,15 +632,26 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
                     </TableHeader>
                     <TableBody>
                       {categoryRecaps.map((cat) => {
-                        const proportion = totals.grandTotal > 0 ? Math.round((cat.total / totals.grandTotal) * 100) : 0;
+                        const proportion =
+                          totals.grandTotal > 0
+                            ? Math.round((cat.total / totals.grandTotal) * 100)
+                            : 0;
                         return (
                           <TableRow key={cat.category} className="text-xs">
                             <TableCell className="font-semibold">{cat.category}</TableCell>
                             <TableCell className="text-center font-mono">{cat.count}</TableCell>
-                            <TableCell className="text-right font-mono">{formatCurrency(cat.subtotal)}</TableCell>
-                            <TableCell className="text-right font-mono">{formatCurrency(cat.tax)}</TableCell>
-                            <TableCell className="text-right font-mono font-bold text-primary">{formatCurrency(cat.total)}</TableCell>
-                            <TableCell className="text-right font-mono font-semibold">{proportion}%</TableCell>
+                            <TableCell className="text-right font-mono">
+                              {formatCurrency(cat.subtotal)}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {formatCurrency(cat.tax)}
+                            </TableCell>
+                            <TableCell className="text-right font-mono font-bold text-primary">
+                              {formatCurrency(cat.total)}
+                            </TableCell>
+                            <TableCell className="text-right font-mono font-semibold">
+                              {proportion}%
+                            </TableCell>
                           </TableRow>
                         );
                       })}

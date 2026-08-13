@@ -19,7 +19,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { generateNarrative } from "@/lib/ai.functions";
 import { NARRATIVE_SECTIONS } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -189,7 +194,10 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
     if (!text) return;
     setComments((c) => ({
       ...c,
-      [key]: [...(c[key] || []), `${new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}: ${text}`],
+      [key]: [
+        ...(c[key] || []),
+        `${new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}: ${text}`,
+      ],
     }));
     setNewComment((n) => ({ ...n, [key]: "" }));
     toast.success("Komentar internal ditambahkan.");
@@ -203,10 +211,12 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border bg-muted/40 p-4">
         <div>
           <h3 className="text-base font-semibold flex items-center gap-2">
-            <FileText className="size-4 text-primary" /> Step 2: Penyusunan 12 Bagian Narasi Proposal
+            <FileText className="size-4 text-primary" /> Step 2: Penyusunan 12 Bagian Narasi
+            Proposal
           </h3>
           <p className="text-xs text-muted-foreground">
-            Gunakan Asisten AI untuk menyusun, memperbaiki struktur, atau menyunting teks secara manual.
+            Gunakan Asisten AI untuk menyusun, memperbaiki struktur, atau menyunting teks secara
+            manual.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -219,7 +229,11 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
             disabled={busy !== null}
             className="gap-1.5 shadow-sm"
           >
-            {busy === "all" ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />}
+            {busy === "all" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Wand2 className="size-4" />
+            )}
             Generate Seluruh Narasi AI
           </Button>
         </div>
@@ -234,7 +248,11 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
           const sectionComments = comments[section.key] || [];
 
           return (
-            <AccordionItem key={section.key} value={section.key} className="rounded-lg border px-4 bg-card">
+            <AccordionItem
+              key={section.key}
+              value={section.key}
+              className="rounded-lg border px-4 bg-card"
+            >
               <AccordionTrigger className="hover:no-underline py-3">
                 <div className="flex flex-1 items-center justify-between pr-4">
                   <span className="flex items-center gap-3 text-left">
@@ -272,7 +290,9 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
                         variant={mode.value === "generate" ? "default" : "outline"}
                         className="h-7 text-xs px-2.5"
                         disabled={busy !== null || (mode.value !== "generate" && !content.trim())}
-                        onClick={() => void handleAiRequest(section.key, section.label, index + 1, mode.value)}
+                        onClick={() =>
+                          void handleAiRequest(section.key, section.label, index + 1, mode.value)
+                        }
                       >
                         {busy === `${section.key}:${mode.value}` ? (
                           <Loader2 className="size-3 animate-spin mr-1" />
@@ -304,19 +324,25 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
                   />
                   <div className="flex justify-between items-center text-[11px] text-muted-foreground px-1 pt-1">
                     <span>Terakhir disimpan otomatis pada sesi aktif</span>
-                    <span>{words} Kata | {chars} Karakter</span>
+                    <span>
+                      {words} Kata | {chars} Karakter
+                    </span>
                   </div>
                 </div>
 
                 {/* Internal Comments Sub-section */}
                 <div className="rounded-md border bg-muted/20 p-3 space-y-2">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                    <MessageSquare className="size-3.5 text-primary" /> Catatan & Komentar Internal Tim
+                    <MessageSquare className="size-3.5 text-primary" /> Catatan & Komentar Internal
+                    Tim
                   </div>
                   {sectionComments.length > 0 && (
                     <div className="space-y-1.5 pl-2 border-l-2 border-primary/30">
                       {sectionComments.map((c, ci) => (
-                        <div key={ci} className="text-xs text-muted-foreground bg-background p-1.5 rounded border">
+                        <div
+                          key={ci}
+                          className="text-xs text-muted-foreground bg-background p-1.5 rounded border"
+                        >
                           {c}
                         </div>
                       ))}
@@ -325,12 +351,19 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
                   <div className="flex gap-2 pt-1">
                     <Input
                       value={newComment[section.key] || ""}
-                      onChange={(e) => setNewComment((n) => ({ ...n, [section.key]: e.target.value }))}
+                      onChange={(e) =>
+                        setNewComment((n) => ({ ...n, [section.key]: e.target.value }))
+                      }
                       placeholder="Tambah komentar atau catatan koreksi..."
                       className="text-xs h-8"
                       onKeyDown={(e) => e.key === "Enter" && addComment(section.key)}
                     />
-                    <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => addComment(section.key)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs"
+                      onClick={() => addComment(section.key)}
+                    >
                       Kirim
                     </Button>
                   </div>
@@ -353,7 +386,8 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
                 Saran AI untuk {aiPreview.sectionLabel} ({aiPreview.mode})
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Tinjau perbandingan antara konten awal dengan hasil AI sebelum menerapkan ke dokumen proposal Anda.
+                Tinjau perbandingan antara konten awal dengan hasil AI sebelum menerapkan ke dokumen
+                proposal Anda.
               </DialogDescription>
             </DialogHeader>
 
@@ -381,7 +415,10 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
               <Button variant="outline" onClick={() => setAiPreview(null)}>
                 Tolak & Batal
               </Button>
-              <Button onClick={() => void applyAiPreview()} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
+              <Button
+                onClick={() => void applyAiPreview()}
+                className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+              >
                 <CheckCircle2 className="size-4" /> Gunakan Hasil AI
               </Button>
             </DialogFooter>
@@ -397,15 +434,20 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
               <History className="size-5 text-primary" /> Riwayat Versi Narasi
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Daftar versi tersimpan untuk bagian ini. Anda dapat mengembalikan versi sebelumnya kapan saja.
+              Daftar versi tersimpan untuk bagian ini. Anda dapat mengembalikan versi sebelumnya
+              kapan saja.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 max-h-80 overflow-y-auto">
             {loadingVersions ? (
-              <div className="py-6 text-center text-xs text-muted-foreground">Memuat riwayat versi...</div>
+              <div className="py-6 text-center text-xs text-muted-foreground">
+                Memuat riwayat versi...
+              </div>
             ) : versions.length === 0 ? (
-              <div className="py-6 text-center text-xs text-muted-foreground">Belum ada riwayat versi tersimpan.</div>
+              <div className="py-6 text-center text-xs text-muted-foreground">
+                Belum ada riwayat versi tersimpan.
+              </div>
             ) : (
               versions.map((v) => (
                 <div key={v.id} className="rounded-lg border p-3 text-xs space-y-2 bg-muted/20">

@@ -25,7 +25,10 @@ export function parseExcelFile(arrayBuffer: ArrayBuffer): Record<string, unknown
   return XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
 }
 
-export function dryRunValidateImport(type: ImportType, rows: Record<string, unknown>[]): DryRunSummary {
+export function dryRunValidateImport(
+  type: ImportType,
+  rows: Record<string, unknown>[],
+): DryRunSummary {
   const results: RowValidationResult[] = [];
   const seenKeys = new Set<string>();
 
@@ -34,26 +37,39 @@ export function dryRunValidateImport(type: ImportType, rows: Record<string, unkn
     const errors: string[] = [];
 
     if (type === "sbm") {
-      const code = String(r["Kode"] || r["code"] || "").trim().toUpperCase();
+      const code = String(r["Kode"] || r["code"] || "")
+        .trim()
+        .toUpperCase();
       const year = Number(r["Tahun"] || r["year"] || 2026);
       const version = String(r["Versi"] || r["version"] || "1.0").trim();
-      const region = String(r["Wilayah"] || r["region_code"] || "NASIONAL").trim().toUpperCase();
+      const region = String(r["Wilayah"] || r["region_code"] || "NASIONAL")
+        .trim()
+        .toUpperCase();
       const price = Number(r["Harga"] || r["price"] || 0);
 
       if (!code) errors.push("Kode SBM wajib diisi.");
-      if (isNaN(year) || year < 2000 || year > 2100) errors.push(`Tahun (${r["Tahun"]}) tidak valid.`);
+      if (isNaN(year) || year < 2000 || year > 2100)
+        errors.push(`Tahun (${r["Tahun"]}) tidak valid.`);
       if (isNaN(price) || price < 0) errors.push(`Harga (${price}) tidak boleh negatif.`);
 
       const key = `${year}-${version}-${code}-${region}`;
-      if (seenKeys.has(key)) errors.push(`Duplikasi kombinasi (Tahun ${year}, Versi ${version}, Kode ${code}, Wilayah ${region}) dalam file.`);
+      if (seenKeys.has(key))
+        errors.push(
+          `Duplikasi kombinasi (Tahun ${year}, Versi ${version}, Kode ${code}, Wilayah ${region}) dalam file.`,
+        );
       seenKeys.add(key);
-
     } else if (type === "sbu") {
-      const code = String(r["Kode"] || r["code"] || "").trim().toUpperCase();
+      const code = String(r["Kode"] || r["code"] || "")
+        .trim()
+        .toUpperCase();
       const year = Number(r["Tahun"] || r["year"] || 2026);
       const version = String(r["Versi"] || r["version"] || "1.0").trim();
-      const prov = String(r["Provinsi"] || r["province_code"] || "").trim().toUpperCase();
-      const city = String(r["Kota"] || r["city_code"] || "SEMUA").trim().toUpperCase();
+      const prov = String(r["Provinsi"] || r["province_code"] || "")
+        .trim()
+        .toUpperCase();
+      const city = String(r["Kota"] || r["city_code"] || "SEMUA")
+        .trim()
+        .toUpperCase();
       const price = Number(r["Harga"] || r["price"] || 0);
 
       if (!code) errors.push("Kode SBU wajib diisi.");
@@ -61,9 +77,11 @@ export function dryRunValidateImport(type: ImportType, rows: Record<string, unkn
       if (isNaN(price) || price < 0) errors.push(`Harga (${price}) tidak boleh negatif.`);
 
       const key = `${year}-${version}-${code}-${prov}-${city}`;
-      if (seenKeys.has(key)) errors.push(`Duplikasi kombinasi (Tahun ${year}, Versi ${version}, Kode ${code}, Provinsi ${prov}) dalam file.`);
+      if (seenKeys.has(key))
+        errors.push(
+          `Duplikasi kombinasi (Tahun ${year}, Versi ${version}, Kode ${code}, Provinsi ${prov}) dalam file.`,
+        );
       seenKeys.add(key);
-
     } else if (type === "donors") {
       const name = String(r["Nama Donor"] || r["Nama"] || r["name"] || "").trim();
       const minGrant = Number(r["Nilai Min"] || r["min_grant"] || 0);
@@ -72,8 +90,8 @@ export function dryRunValidateImport(type: ImportType, rows: Record<string, unkn
       if (!name) errors.push("Nama lembaga donor wajib diisi.");
       if (minGrant < 0) errors.push("Nilai hibah minimum tidak boleh negatif.");
       if (maxGrant < 0) errors.push("Nilai hibah maksimum tidak boleh negatif.");
-      if (maxGrant > 0 && minGrant > maxGrant) errors.push("Nilai hibah minimum melebihi maksimum.");
-
+      if (maxGrant > 0 && minGrant > maxGrant)
+        errors.push("Nilai hibah minimum melebihi maksimum.");
     } else if (type === "activities") {
       const name = String(r["Nama Kegiatan"] || r["Nama"] || r["name"] || "").trim();
       if (!name) errors.push("Nama kegiatan wajib diisi.");
@@ -103,27 +121,33 @@ export async function processConfirmedImport(type: ImportType, summary: DryRunSu
   if (!userRes.user) throw new Error("Unauthenticated");
 
   // 1. Create Import Record
-  const { data: importRecord, error: impErr } = await supabase.from("imports").insert({
-    user_id: userRes.user.id,
-    import_type: type,
-    total_rows: summary.totalRows,
-    success_rows: summary.validRowsCount,
-    failed_rows: summary.invalidRowsCount,
-    status: summary.invalidRowsCount === 0 ? "completed" : "completed_with_errors",
-    started_at: new Date().toISOString(),
-    completed_at: new Date().toISOString(),
-  }).select().single();
+  const { data: importRecord, error: impErr } = await supabase
+    .from("imports")
+    .insert({
+      user_id: userRes.user.id,
+      import_type: type,
+      total_rows: summary.totalRows,
+      success_rows: summary.validRowsCount,
+      failed_rows: summary.invalidRowsCount,
+      status: summary.invalidRowsCount === 0 ? "completed" : "completed_with_errors",
+      started_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
 
   if (impErr) throw new Error("Gagal membuat data impor: " + impErr.message);
 
   // 2. Log Invalid Rows to `import_rows`
-  const invalidRowsToInsert = summary.results.filter((r) => !r.isValid).map((r) => ({
-    import_id: importRecord.id,
-    row_number: r.rowNumber,
-    data_json: r.data,
-    status: "failed",
-    error_message: r.errors.join("; "),
-  }));
+  const invalidRowsToInsert = summary.results
+    .filter((r) => !r.isValid)
+    .map((r) => ({
+      import_id: importRecord.id,
+      row_number: r.rowNumber,
+      data_json: r.data,
+      status: "failed",
+      error_message: r.errors.join("; "),
+    }));
 
   if (invalidRowsToInsert.length > 0) {
     await supabase.from("import_rows").insert(invalidRowsToInsert);
@@ -136,33 +160,43 @@ export async function processConfirmedImport(type: ImportType, summary: DryRunSu
     const toInsert = validRows.map((r) => ({
       year: Number(r["Tahun"] || r["year"] || 2026),
       version: String(r["Versi"] || r["version"] || "1.0").trim(),
-      code: String(r["Kode"] || r["code"] || "").trim().toUpperCase(),
+      code: String(r["Kode"] || r["code"] || "")
+        .trim()
+        .toUpperCase(),
       category: String(r["Kategori"] || r["category"] || "Honorarium").trim(),
       description: String(r["Uraian"] || r["description"] || "").trim(),
       unit: String(r["Satuan"] || r["unit"] || "OJ").trim(),
       price: Number(r["Harga"] || r["price"] || 0),
-      region_code: String(r["Wilayah"] || r["region_code"] || "NASIONAL").trim().toUpperCase(),
+      region_code: String(r["Wilayah"] || r["region_code"] || "NASIONAL")
+        .trim()
+        .toUpperCase(),
       regulation_source: r["Sumber Regulasi"] ? String(r["Sumber Regulasi"]) : null,
       is_active: true,
     }));
     await supabase.from("sbm").upsert(toInsert, { onConflict: "year,version,code,region_code" });
-
   } else if (type === "sbu" && validRows.length > 0) {
     const toInsert = validRows.map((r) => ({
       year: Number(r["Tahun"] || r["year"] || 2026),
       version: String(r["Versi"] || r["version"] || "1.0").trim(),
-      code: String(r["Kode"] || r["code"] || "").trim().toUpperCase(),
+      code: String(r["Kode"] || r["code"] || "")
+        .trim()
+        .toUpperCase(),
       category: String(r["Kategori"] || r["category"] || "Akomodasi").trim(),
       description: String(r["Uraian"] || r["description"] || "").trim(),
       unit: String(r["Satuan"] || r["unit"] || "OH").trim(),
       price: Number(r["Harga"] || r["price"] || 0),
-      province_code: String(r["Provinsi"] || r["province_code"] || "DKI JAKARTA").trim().toUpperCase(),
-      city_code: String(r["Kota"] || r["city_code"] || "SEMUA").trim().toUpperCase(),
+      province_code: String(r["Provinsi"] || r["province_code"] || "DKI JAKARTA")
+        .trim()
+        .toUpperCase(),
+      city_code: String(r["Kota"] || r["city_code"] || "SEMUA")
+        .trim()
+        .toUpperCase(),
       source: r["Sumber"] ? String(r["Sumber"]) : null,
       is_active: true,
     }));
-    await supabase.from("sbu").upsert(toInsert, { onConflict: "year,version,code,province_code,city_code" });
-
+    await supabase
+      .from("sbu")
+      .upsert(toInsert, { onConflict: "year,version,code,province_code,city_code" });
   } else if (type === "donors" && validRows.length > 0) {
     const toInsert = validRows.map((r) => ({
       name: String(r["Nama Donor"] || r["Nama"] || r["name"] || "").trim(),
@@ -178,7 +212,6 @@ export async function processConfirmedImport(type: ImportType, summary: DryRunSu
       is_active: true,
     }));
     await supabase.from("donors").insert(toInsert);
-
   } else if (type === "activities" && validRows.length > 0) {
     const toInsert = validRows.map((r) => ({
       category: String(r["Kategori"] || r["category"] || "Umum").trim(),

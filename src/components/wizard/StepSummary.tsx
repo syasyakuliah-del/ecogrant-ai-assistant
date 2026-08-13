@@ -8,9 +8,21 @@ import { formatCurrency } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { aiErrorMessage, buildContext, upsertSection, type StepProps } from "./shared";
 
@@ -70,17 +82,27 @@ export function StepSummary({ proposal, sections, lfa, budget, donor, refetch }:
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="size-5 text-primary" /> Step 3: Executive Summary (Ringkasan Eksekutif)
+                <FileText className="size-5 text-primary" /> Step 3: Executive Summary (Ringkasan
+                Eksekutif)
               </CardTitle>
               <CardDescription>
-                Ringkasan komprehensif dirangkum dari informasi dasar, 12 bagian narasi, LFA, dan anggaran RAB.
+                Ringkasan komprehensif dirangkum dari informasi dasar, 12 bagian narasi, LFA, dan
+                anggaran RAB.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant={words > 0 && words <= maxWords ? "default" : "outline"} className="font-mono text-xs">
+              <Badge
+                variant={words > 0 && words <= maxWords ? "default" : "outline"}
+                className="font-mono text-xs"
+              >
                 {words} / {maxWords} Kata
               </Badge>
-              <Button variant="outline" size="sm" onClick={() => setSourceModalOpen(true)} className="gap-1.5 text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSourceModalOpen(true)}
+                className="gap-1.5 text-xs"
+              >
                 <Database className="size-3.5 text-primary" /> Sumber Data
               </Button>
             </div>
@@ -90,7 +112,9 @@ export function StepSummary({ proposal, sections, lfa, budget, donor, refetch }:
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
             <div className="flex items-center gap-3">
-              <Label className="text-xs text-muted-foreground whitespace-nowrap">Target Maksimal Panjang:</Label>
+              <Label className="text-xs text-muted-foreground whitespace-nowrap">
+                Target Maksimal Panjang:
+              </Label>
               <Select value={String(maxWords)} onValueChange={(v) => setMaxWords(Number(v))}>
                 <SelectTrigger className="w-32 text-xs h-8">
                   <SelectValue />
@@ -104,8 +128,17 @@ export function StepSummary({ proposal, sections, lfa, budget, donor, refetch }:
             </div>
 
             <div className="flex items-center gap-2">
-              <Button onClick={() => void handleGenerate()} disabled={busy} size="sm" className="gap-1.5 shadow-sm text-xs">
-                {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+              <Button
+                onClick={() => void handleGenerate()}
+                disabled={busy}
+                size="sm"
+                className="gap-1.5 shadow-sm text-xs"
+              >
+                {busy ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="size-3.5" />
+                )}
                 {content.trim() ? "Regenerate AI Summary" : "Generate Executive Summary"}
               </Button>
             </div>
@@ -137,22 +170,34 @@ export function StepSummary({ proposal, sections, lfa, budget, donor, refetch }:
           <div className="space-y-3 py-2 text-xs">
             <div className="rounded-md border p-2.5 bg-muted/30 space-y-1">
               <span className="font-semibold text-foreground">1. Informasi Dasar Proposal:</span>
-              <p className="text-muted-foreground">{proposal.title || "Tanpa Judul"} ({proposal.organization_name || "Individu"})</p>
+              <p className="text-muted-foreground">
+                {proposal.title || "Tanpa Judul"} ({proposal.organization_name || "Individu"})
+              </p>
             </div>
 
             <div className="rounded-md border p-2.5 bg-muted/30 space-y-1">
               <span className="font-semibold text-foreground">2. Narasi Terisi:</span>
-              <p className="text-muted-foreground">{filledNarrativesCount} dari 12 Bagian Narasi Siap Rangkum</p>
+              <p className="text-muted-foreground">
+                {filledNarrativesCount} dari 12 Bagian Narasi Siap Rangkum
+              </p>
             </div>
 
             <div className="rounded-md border p-2.5 bg-muted/30 space-y-1">
-              <span className="font-semibold text-foreground">3. Logical Framework Matrix (LFA):</span>
-              <p className="text-muted-foreground">{lfa.length} Baris Matriks Logframe Dikalkulasi</p>
+              <span className="font-semibold text-foreground">
+                3. Logical Framework Matrix (LFA):
+              </span>
+              <p className="text-muted-foreground">
+                {lfa.length} Baris Matriks Logframe Dikalkulasi
+              </p>
             </div>
 
             <div className="rounded-md border p-2.5 bg-muted/30 space-y-1">
-              <span className="font-semibold text-foreground">4. Rencana Anggaran Biaya (RAB):</span>
-              <p className="font-mono font-bold text-primary">{formatCurrency(rabTotal, proposal.currency)} ({budget.length} Item)</p>
+              <span className="font-semibold text-foreground">
+                4. Rencana Anggaran Biaya (RAB):
+              </span>
+              <p className="font-mono font-bold text-primary">
+                {formatCurrency(rabTotal, proposal.currency)} ({budget.length} Item)
+              </p>
             </div>
           </div>
         </DialogContent>

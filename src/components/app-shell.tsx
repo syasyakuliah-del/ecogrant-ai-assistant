@@ -45,7 +45,12 @@ const USER_NAV = [
 
 const ADMIN_NAV = [
   { to: "/admin", label: "Dashboard Admin", icon: ShieldCheck, permission: "dashboard.admin.view" },
-  { to: "/admin/proposals", label: "Kelola Proposal", icon: ClipboardList, permission: "proposal.view.all" },
+  {
+    to: "/admin/proposals",
+    label: "Kelola Proposal",
+    icon: ClipboardList,
+    permission: "proposal.view.all",
+  },
   { to: "/admin/users", label: "Kelola User & RBAC", icon: Users, permission: "user.manage" },
   { to: "/admin/donors", label: "Kelola Donor", icon: Building2, permission: "donor.manage" },
   { to: "/admin/activities", label: "Kelola Kegiatan", icon: Leaf, permission: "activity.manage" },
@@ -217,7 +222,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </span>
               ) : null}
             </Link>
-            <Button variant="ghost" size="icon" onClick={handleSignOut} aria-label="Keluar" className="lg:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              aria-label="Keluar"
+              className="lg:hidden"
+            >
               <LogOut className="size-4" />
             </Button>
           </div>
@@ -294,4 +305,4 @@ export function CardSkeleton({ count = 3 }: { count?: number }) {
       ))}
     </div>
   );
-}
+}

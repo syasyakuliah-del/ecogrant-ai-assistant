@@ -19,13 +19,18 @@ import {
   Layers,
   Zap,
   PenTool,
-  Send
+  Send,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { SbmSimulator } from "@/components/SbmSimulator";
 
 import heroImg from "@/assets/hero.jpg";
@@ -46,10 +51,14 @@ export const Route = createFileRoute("/")({
         content:
           "Generator proposal berbasis AI (LLM) khusus sektor kehutanan, lingkungan, agroforestri & pemberdayaan masyarakat. Integrasi otomatis Rencana Anggaran Biaya (RAB) dengan Standar Biaya Masukan (SBM) regional.",
       },
-      { property: "og:title", content: "EcoGrant AI — Generator Proposal Hibah Kehutanan & SBM Regional" },
+      {
+        property: "og:title",
+        content: "EcoGrant AI — Generator Proposal Hibah Kehutanan & SBM Regional",
+      },
       {
         property: "og:description",
-        content: "Ubah ide lapangan jadi proposal formal dalam < 15 menit. Narasi AI, LFA, RAB SBM Kalimantan Selatan & daerah lainnya, Magic Link & E-Signature.",
+        content:
+          "Ubah ide lapangan jadi proposal formal dalam < 15 menit. Narasi AI, LFA, RAB SBM Kalimantan Selatan & daerah lainnya, Magic Link & E-Signature.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -72,7 +81,9 @@ function SectionLabel({ index, children }: { index: string; children: string }) 
   return (
     <div className="flex items-center gap-3 border-t-2 border-foreground pt-3">
       <span className="font-mono text-xs tracking-widest text-muted-foreground">{index}</span>
-      <span className="text-xs font-semibold tracking-[0.2em] uppercase text-primary">{children}</span>
+      <span className="text-xs font-semibold tracking-[0.2em] uppercase text-primary">
+        {children}
+      </span>
     </div>
   );
 }
@@ -91,7 +102,8 @@ function Landing() {
       <div className="bg-primary text-primary-foreground text-center py-2 px-4 text-xs font-medium flex items-center justify-center gap-2">
         <Sparkles className="size-3.5 shrink-0" />
         <span>
-          <strong>EcoGrant AI v1.0 MVP:</strong> Terintegrasi SBM Regional 2026 (Balai BPHL XI Banjarbaru, Kemenhut, BPDLH)
+          <strong>EcoGrant AI v1.0 MVP:</strong> Terintegrasi SBM Regional 2026 (Balai BPHL XI
+          Banjarbaru, Kemenhut, BPDLH)
         </span>
       </div>
 
@@ -126,7 +138,10 @@ function Landing() {
             <Button asChild variant="ghost" className="hidden sm:inline-flex" disabled={loading}>
               <Link to="/auth">Masuk</Link>
             </Button>
-            <Button asChild className="rounded-none bg-primary text-primary-foreground font-semibold">
+            <Button
+              asChild
+              className="rounded-none bg-primary text-primary-foreground font-semibold"
+            >
               <Link to={appHref}>
                 {appLabel} <ArrowRight className="size-4 ml-1" />
               </Link>
@@ -177,16 +192,30 @@ function Landing() {
                 <span className="text-gradient-eco">Pendanaan Hibah.</span>
               </h1>
               <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                Spesialisasi penyusunan proposal hibah <strong>Kehutanan, Lingkungan, Agroforestri (Sistem Dukuh), & Pemberdayaan Masyarakat</strong>. Ubah draf kasar menjadi proposal formal & RAB terikat <strong>Standar Biaya Masukan (SBM) Regional</strong> dalam kurang dari 15 menit.
+                Spesialisasi penyusunan proposal hibah{" "}
+                <strong>
+                  Kehutanan, Lingkungan, Agroforestri (Sistem Dukuh), & Pemberdayaan Masyarakat
+                </strong>
+                . Ubah draf kasar menjadi proposal formal & RAB terikat{" "}
+                <strong>Standar Biaya Masukan (SBM) Regional</strong> dalam kurang dari 15 menit.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                <Button asChild size="lg" className="rounded-none px-7 font-bold bg-primary text-primary-foreground shadow-md">
+                <Button
+                  asChild
+                  size="lg"
+                  className="rounded-none px-7 font-bold bg-primary text-primary-foreground shadow-md"
+                >
                   <Link to={appHref}>
                     {appLabel} <ArrowRight className="size-4 ml-1" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="rounded-none px-7 border-2 border-foreground font-semibold">
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="rounded-none px-7 border-2 border-foreground font-semibold"
+                >
                   <a href="#demo-sbm">
                     <Calculator className="size-4 mr-2 text-primary" /> Coba Live Simulator
                   </a>
@@ -202,8 +231,12 @@ function Landing() {
                   ["Magic Link", "E-Signature Ready"],
                 ].map(([v, k]) => (
                   <div key={k} className="bg-background px-4 py-4 text-center">
-                    <dt className="font-display text-xl sm:text-2xl font-bold text-foreground">{v}</dt>
-                    <dd className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{k}</dd>
+                    <dt className="font-display text-xl sm:text-2xl font-bold text-foreground">
+                      {v}
+                    </dt>
+                    <dd className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {k}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -223,8 +256,12 @@ function Landing() {
                     <ShieldCheck className="size-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-foreground">Terverifikasi Standar BPHL XI & Kemenhut</p>
-                    <p className="text-[11px] text-muted-foreground">Otomatis mencocokkan indeks harga regional Kalimantan Selatan & Nasional.</p>
+                    <p className="text-xs font-bold text-foreground">
+                      Terverifikasi Standar BPHL XI & Kemenhut
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Otomatis mencocokkan indeks harga regional Kalimantan Selatan & Nasional.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -233,7 +270,10 @@ function Landing() {
         </section>
 
         {/* DEMO SIMULATOR INTERACTIVE SECTION */}
-        <section id="demo-sbm" className="border-b-2 border-foreground bg-secondary/40 py-16 lg:py-24">
+        <section
+          id="demo-sbm"
+          className="border-b-2 border-foreground bg-secondary/40 py-16 lg:py-24"
+        >
           <div className="mx-auto max-w-7xl px-5">
             <SectionLabel index="01">Simulator Interaktif Live</SectionLabel>
             <div className="mt-4 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -242,7 +282,8 @@ function Landing() {
                   Uji Coba Simulator Proposal & SBM Regional
                 </h2>
                 <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-2xl">
-                  Coba langsung intake brief, pilih wilayah SBM (seperti Kalimantan Selatan), lihat penyusunan Scope of Work & perhitungan tabel RAB otomatis.
+                  Coba langsung intake brief, pilih wilayah SBM (seperti Kalimantan Selatan), lihat
+                  penyusunan Scope of Work & perhitungan tabel RAB otomatis.
                 </p>
               </div>
               <Badge className="w-fit bg-primary text-primary-foreground gap-1.5 px-3 py-1.5 text-xs font-semibold">
@@ -266,7 +307,9 @@ function Landing() {
                   Idenylah yang Mengubah Lapangan. Nulis Proposalnya yang Bikin Nyerah.
                 </h2>
                 <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                  Menyusun proposal untuk pendanaan hibah (seperti BPDLH, kementerian, atau donor internasional) mengharuskan kesesuaian ketat dengan format RAB SBM daerah. Pekerja lepas dan tim lapangan membuang waktu berhari-hari hanya untuk hal administratif.
+                  Menyusun proposal untuk pendanaan hibah (seperti BPDLH, kementerian, atau donor
+                  internasional) mengharuskan kesesuaian ketat dengan format RAB SBM daerah. Pekerja
+                  lepas dan tim lapangan membuang waktu berhari-hari hanya untuk hal administratif.
                 </p>
                 <img
                   src={problemImg}
@@ -333,7 +376,10 @@ function Landing() {
                   Bukan Sekadar AI Penulis Teks. Ini Konsultan Virtual & Costing Engine Regional.
                 </h2>
                 <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                  EcoGrant AI memangkas waktu penyusunan proposal dari hitungan hari menjadi kurang dari 15 menit. AI bertindak sebagai konsultan virtual yang merumuskan Scope of Work (SoW), sementara costing engine mencocokkan tugas dengan standar harga regional (SBM) terkini.
+                  EcoGrant AI memangkas waktu penyusunan proposal dari hitungan hari menjadi kurang
+                  dari 15 menit. AI bertindak sebagai konsultan virtual yang merumuskan Scope of
+                  Work (SoW), sementara costing engine mencocokkan tugas dengan standar harga
+                  regional (SBM) terkini.
                 </p>
 
                 <div className="mt-8 grid gap-px border-2 border-foreground bg-foreground sm:grid-cols-2">
@@ -364,7 +410,9 @@ function Landing() {
                       <div key={t as string} className="bg-background p-6">
                         <I className="size-6 text-primary" />
                         <h3 className="mt-4 font-display text-lg font-bold">{t as string}</h3>
-                        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{d as string}</p>
+                        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                          {d as string}
+                        </p>
                       </div>
                     );
                   })}
@@ -384,7 +432,8 @@ function Landing() {
                   Empat Modul Spesialis untuk Proposal Hibah Berkualitas
                 </h2>
                 <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-2xl">
-                  Dirancang komprehensif mengikuti alur kerja pembuatan proposal penawaran & hibah di Indonesia.
+                  Dirancang komprehensif mengikuti alur kerja pembuatan proposal penawaran & hibah
+                  di Indonesia.
                 </p>
               </div>
             </div>
@@ -397,21 +446,29 @@ function Landing() {
                     A
                   </div>
                   <div>
-                    <h3 className="font-display text-lg font-bold">Modul Persiapan & Asset Vault</h3>
-                    <p className="text-xs text-muted-foreground">Manajemen Identitas & Portfolio Integrator</p>
+                    <h3 className="font-display text-lg font-bold">
+                      Modul Persiapan & Asset Vault
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Manajemen Identitas & Portfolio Integrator
+                    </p>
                   </div>
                 </div>
                 <ul className="mt-5 space-y-3 text-xs sm:text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Custom Branding:</strong> Penyimpanan identitas visual NGO/komunitas (misal: "The Guardian of The Earth") yang otomatis terpasang pada header/footer proposal.
+                      <strong className="text-foreground">Custom Branding:</strong> Penyimpanan
+                      identitas visual NGO/komunitas (misal: "The Guardian of The Earth") yang
+                      otomatis terpasang pada header/footer proposal.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Portfolio Integrator:</strong> Direktori untuk menarik aset rekam jejak (seperti infografis Instagram & media cetak) langsung ke halaman lampiran proposal.
+                      <strong className="text-foreground">Portfolio Integrator:</strong> Direktori
+                      untuk menarik aset rekam jejak (seperti infografis Instagram & media cetak)
+                      langsung ke halaman lampiran proposal.
                     </span>
                   </li>
                 </ul>
@@ -424,27 +481,36 @@ function Landing() {
                     B
                   </div>
                   <div>
-                    <h3 className="font-display text-lg font-bold">Modul AI Generator Konseptual</h3>
-                    <p className="text-xs text-muted-foreground">Penyusun Kerangka & Matriks Logframe (LFA)</p>
+                    <h3 className="font-display text-lg font-bold">
+                      Modul AI Generator Konseptual
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Penyusun Kerangka & Matriks Logframe (LFA)
+                    </p>
                   </div>
                 </div>
                 <ul className="mt-5 space-y-3 text-xs sm:text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Dynamic Intake Chatbot:</strong> Antarmuka input awal untuk mendeskripsikan brief proyek secara bebas.
+                      <strong className="text-foreground">Dynamic Intake Chatbot:</strong> Antarmuka
+                      input awal untuk mendeskripsikan brief proyek secara bebas.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Domain-Specific Template:</strong> Paham istilah teknis pelestarian hutan, agroforestri tradisional (sistem Dukuh Kalsel), dan pemberdayaan desa.
+                      <strong className="text-foreground">Domain-Specific Template:</strong> Paham
+                      istilah teknis pelestarian hutan, agroforestri tradisional (sistem Dukuh
+                      Kalsel), dan pemberdayaan desa.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Smart Scope & Timeline Builder:</strong> Otomatis merumuskan Deliverables, Milestones, dan Indikator Keberhasilan (KPI).
+                      <strong className="text-foreground">Smart Scope & Timeline Builder:</strong>{" "}
+                      Otomatis merumuskan Deliverables, Milestones, dan Indikator Keberhasilan
+                      (KPI).
                     </span>
                   </li>
                 </ul>
@@ -457,27 +523,37 @@ function Landing() {
                     C
                   </div>
                   <div>
-                    <h3 className="font-display text-lg font-bold">Modul Kalkulasi RAB Terintegrasi SBM</h3>
-                    <p className="text-xs text-muted-foreground">Automated Costing & Model Data PostgreSQL</p>
+                    <h3 className="font-display text-lg font-bold">
+                      Modul Kalkulasi RAB Terintegrasi SBM
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Automated Costing & Model Data PostgreSQL
+                    </p>
                   </div>
                 </div>
                 <ul className="mt-5 space-y-3 text-xs sm:text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Regional SBM Filter:</strong> Dropdown penyesuaian database harga otomatis (Kalimantan Selatan - Balai BPHL XI, DKI, Papua, Nasional).
+                      <strong className="text-foreground">Regional SBM Filter:</strong> Dropdown
+                      penyesuaian database harga otomatis (Kalimantan Selatan - Balai BPHL XI, DKI,
+                      Papua, Nasional).
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">AI-to-Database Mapping:</strong> Mencocokkan Scope of Work dengan item pembiayaan regulasi kementerian/donor target.
+                      <strong className="text-foreground">AI-to-Database Mapping:</strong>{" "}
+                      Mencocokkan Scope of Work dengan item pembiayaan regulasi kementerian/donor
+                      target.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Custom Rate Override & RDBMS:</strong> Opsi ubah harga manual jika di luar SBM, serta dukungan Bulk Upload CSV Admin untuk pembaruan Peraturan Gubernur/Kemenhut.
+                      <strong className="text-foreground">Custom Rate Override & RDBMS:</strong>{" "}
+                      Opsi ubah harga manual jika di luar SBM, serta dukungan Bulk Upload CSV Admin
+                      untuk pembaruan Peraturan Gubernur/Kemenhut.
                     </span>
                   </li>
                 </ul>
@@ -490,27 +566,38 @@ function Landing() {
                     D
                   </div>
                   <div>
-                    <h3 className="font-display text-lg font-bold">Modul Kolaborasi & Distribusi</h3>
-                    <p className="text-xs text-muted-foreground">WYSIWYG Workspace, Magic Link & E-Signature</p>
+                    <h3 className="font-display text-lg font-bold">
+                      Modul Kolaborasi & Distribusi
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      WYSIWYG Workspace, Magic Link & E-Signature
+                    </p>
                   </div>
                 </div>
                 <ul className="mt-5 space-y-3 text-xs sm:text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Modular Editor (WYSIWYG):</strong> Kanvas visual dengan sakelar (*toggle*) untuk mengaktifkan bab opsional (*Manajemen Risiko*, *Struktur Tim*).
+                      <strong className="text-foreground">Modular Editor (WYSIWYG):</strong> Kanvas
+                      visual dengan sakelar (*toggle*) untuk mengaktifkan bab opsional (*Manajemen
+                      Risiko*, *Struktur Tim*).
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Interactive Client Portal (Magic Link):</strong> Pengiriman proposal berbentuk tautan web aman yang responsif.
+                      <strong className="text-foreground">
+                        Interactive Client Portal (Magic Link):
+                      </strong>{" "}
+                      Pengiriman proposal berbentuk tautan web aman yang responsif.
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
-                      <strong className="text-foreground">Document Analytics & E-Signature:</strong> Notifikasi saat donor membaca proposal dan fitur tanda tangan digital untuk penyetujuan instan.
+                      <strong className="text-foreground">Document Analytics & E-Signature:</strong>{" "}
+                      Notifikasi saat donor membaca proposal dan fitur tanda tangan digital untuk
+                      penyetujuan instan.
                     </span>
                   </li>
                 </ul>
@@ -520,7 +607,10 @@ function Landing() {
         </section>
 
         {/* TARGET PENGGUNA / PERSONAS (PRD Section 2) */}
-        <section id="persona" className="border-b-2 border-foreground bg-secondary/50 py-16 lg:py-24">
+        <section
+          id="persona"
+          className="border-b-2 border-foreground bg-secondary/50 py-16 lg:py-24"
+        >
           <div className="mx-auto max-w-7xl px-5">
             <SectionLabel index="05">Target Pengguna (User Persona)</SectionLabel>
             <h2 className="mt-4 font-display text-3xl font-bold sm:text-4xl">
@@ -557,26 +647,37 @@ function Landing() {
                 {activePersona === "freelancer" && (
                   <div className="grid gap-6 md:grid-cols-12 items-center">
                     <div className="md:col-span-8">
-                      <Badge className="bg-primary text-primary-foreground mb-3">User Persona Utama PRD</Badge>
+                      <Badge className="bg-primary text-primary-foreground mb-3">
+                        User Persona Utama PRD
+                      </Badge>
                       <h3 className="font-display text-2xl font-bold text-foreground">
                         Freelancer, Fasilitator Lapangan & Desainer Visual
                       </h3>
                       <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-                        Pekerja lepas yang jam kerjanya fleksibel (asynchronous). Unggul dalam mengeksekusi program di lapangan atau membuat kampanye edukasi visual, namun kerap terhambat oleh proses penyusunan administrasi proposal, kalkulasi RAB baku, dan justifikasi logis untuk tender atau hibah.
+                        Pekerja lepas yang jam kerjanya fleksibel (asynchronous). Unggul dalam
+                        mengeksekusi program di lapangan atau membuat kampanye edukasi visual, namun
+                        kerap terhambat oleh proses penyusunan administrasi proposal, kalkulasi RAB
+                        baku, dan justifikasi logis untuk tender atau hibah.
                       </p>
                       <ul className="mt-4 space-y-2 text-xs sm:text-sm font-medium">
                         <li className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="size-4" /> Hemat waktu pembuatan proposal dari 14 hari jadi &lt; 15 menit.
+                          <CheckCircle2 className="size-4" /> Hemat waktu pembuatan proposal dari 14
+                          hari jadi &lt; 15 menit.
                         </li>
                         <li className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="size-4" /> Integrasikan infografis Instagram langsung ke lampiran portofolio.
+                          <CheckCircle2 className="size-4" /> Integrasikan infografis Instagram
+                          langsung ke lampiran portofolio.
                         </li>
                       </ul>
                     </div>
                     <div className="md:col-span-4 rounded-lg bg-muted p-4 border border-border">
-                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Contoh Penggunaan:</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Contoh Penggunaan:
+                      </span>
                       <p className="mt-2 text-xs font-medium text-foreground italic">
-                        "Saya konsultan independen di Banjarbaru. Tinggal pilih SBM Kalimantan Selatan, buat proposal pelatihan kompos desa 3 hari, dan RAB langsung terisi honor narasumber resmi."
+                        "Saya konsultan independen di Banjarbaru. Tinggal pilih SBM Kalimantan
+                        Selatan, buat proposal pelatihan kompos desa 3 hari, dan RAB langsung terisi
+                        honor narasumber resmi."
                       </p>
                     </div>
                   </div>
@@ -585,26 +686,35 @@ function Landing() {
                 {activePersona === "asn" && (
                   <div className="grid gap-6 md:grid-cols-12 items-center">
                     <div className="md:col-span-8">
-                      <Badge className="bg-primary text-primary-foreground mb-3">ASN & Pejabat Teknis</Badge>
+                      <Badge className="bg-primary text-primary-foreground mb-3">
+                        ASN & Pejabat Teknis
+                      </Badge>
                       <h3 className="font-display text-2xl font-bold text-foreground">
                         ASN Kemenhut & Pejabat Balai Pengelolaan Hutan
                       </h3>
                       <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-                        Pengelola program pemerintah yang membutuhkan draf usulan kegiatan dengan kepatuhan 100% terhadap Peraturan Menteri dan Standar Biaya Masukan (SBM) regional resmi seperti Balai BPHL XI Banjarbaru.
+                        Pengelola program pemerintah yang membutuhkan draf usulan kegiatan dengan
+                        kepatuhan 100% terhadap Peraturan Menteri dan Standar Biaya Masukan (SBM)
+                        regional resmi seperti Balai BPHL XI Banjarbaru.
                       </p>
                       <ul className="mt-4 space-y-2 text-xs sm:text-sm font-medium">
                         <li className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="size-4" /> Terhindar dari kesalahan pagu anggaran melebihi SBM resmi.
+                          <CheckCircle2 className="size-4" /> Terhindar dari kesalahan pagu anggaran
+                          melebihi SBM resmi.
                         </li>
                         <li className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="size-4" /> Bahasa birokrasi formal baku yang siap diserahkan ke pimpinan.
+                          <CheckCircle2 className="size-4" /> Bahasa birokrasi formal baku yang siap
+                          diserahkan ke pimpinan.
                         </li>
                       </ul>
                     </div>
                     <div className="md:col-span-4 rounded-lg bg-muted p-4 border border-border">
-                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Contoh Penggunaan:</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Contoh Penggunaan:
+                      </span>
                       <p className="mt-2 text-xs font-medium text-foreground italic">
-                        "Menyusun Kerangka Acuan Kerja (KAK) dan RAB kegiatan pendampingan LPHD tanpa khawatir salah indeks harga satuan."
+                        "Menyusun Kerangka Acuan Kerja (KAK) dan RAB kegiatan pendampingan LPHD
+                        tanpa khawatir salah indeks harga satuan."
                       </p>
                     </div>
                   </div>
@@ -613,26 +723,35 @@ function Landing() {
                 {activePersona === "ngo" && (
                   <div className="grid gap-6 md:grid-cols-12 items-center">
                     <div className="md:col-span-8">
-                      <Badge className="bg-primary text-primary-foreground mb-3">Organisasi Nirlaba & Komunitas</Badge>
+                      <Badge className="bg-primary text-primary-foreground mb-3">
+                        Organisasi Nirlaba & Komunitas
+                      </Badge>
                       <h3 className="font-display text-2xl font-bold text-foreground">
                         NGO Lingkungan & Komunitas Lokal ("The Guardian of The Earth")
                       </h3>
                       <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-                        Komunitas yang fokus pada aksi nyata pelestarian hutan dan pemberdayaan masyarakat. Membutuhkan alat bantu untuk mengirimkan proposal profesional ke donor internasional atau BPDLH lengkap dengan branding organisasi.
+                        Komunitas yang fokus pada aksi nyata pelestarian hutan dan pemberdayaan
+                        masyarakat. Membutuhkan alat bantu untuk mengirimkan proposal profesional ke
+                        donor internasional atau BPDLH lengkap dengan branding organisasi.
                       </p>
                       <ul className="mt-4 space-y-2 text-xs sm:text-sm font-medium">
                         <li className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="size-4" /> Penyematan otomatis logo NGO dan header/footer dokumen.
+                          <CheckCircle2 className="size-4" /> Penyematan otomatis logo NGO dan
+                          header/footer dokumen.
                         </li>
                         <li className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="size-4" /> Magic Link interaktif memudahkan donor membaca & menyetujui.
+                          <CheckCircle2 className="size-4" /> Magic Link interaktif memudahkan donor
+                          membaca & menyetujui.
                         </li>
                       </ul>
                     </div>
                     <div className="md:col-span-4 rounded-lg bg-muted p-4 border border-border">
-                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Contoh Penggunaan:</span>
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Contoh Penggunaan:
+                      </span>
                       <p className="mt-2 text-xs font-medium text-foreground italic">
-                        "Proposal Restorasi Agroforestri Dukuh kami kirimkan ke donor lewat Magic Link, dan donor langsung membubuhkan e-signature."
+                        "Proposal Restorasi Agroforestri Dukuh kami kirimkan ke donor lewat Magic
+                        Link, dan donor langsung membubuhkan e-signature."
                       </p>
                     </div>
                   </div>
@@ -643,14 +762,18 @@ function Landing() {
         </section>
 
         {/* ALUR KERJA 5 LANGKAH PRD (PRD User Flow) */}
-        <section id="cara-kerja" className="border-b-2 border-foreground bg-background py-16 lg:py-24">
+        <section
+          id="cara-kerja"
+          className="border-b-2 border-foreground bg-background py-16 lg:py-24"
+        >
           <div className="mx-auto max-w-7xl px-5">
             <SectionLabel index="06">User Flow & Alur Kerja</SectionLabel>
             <h2 className="mt-4 font-display text-3xl font-bold sm:text-4xl">
               5 Langkah Mudah dari Brief Kasar ke Proposal Siap Kirim
             </h2>
             <p className="mt-2 text-sm sm:text-base text-muted-foreground">
-              Alur kerja terpandu tanpa ribet yang menyelesaikan kemacetan (*bottleneck*) perhitungan RAB.
+              Alur kerja terpandu tanpa ribet yang menyelesaikan kemacetan (*bottleneck*)
+              perhitungan RAB.
             </p>
 
             <img
@@ -664,11 +787,26 @@ function Landing() {
 
             <ol className="mt-8 grid gap-px border-2 border-foreground bg-foreground sm:grid-cols-2 lg:grid-cols-5">
               {[
-                ["1. Project Intake", "Pilih template 'Pemberdayaan Masyarakat' & masukkan brief di kolom chat intake."],
-                ["2. AI Drafting", "Sistem menghasilkan Latar Belakang, Metodologi, Scope of Work, dan Jadwal."],
-                ["3. Cost Mapping", "Pilih wilayah SBM (misal Kalsel). AI mencocokkan RAB otomatis sesuai standar harga."],
-                ["4. Review & Editing", "Edit di WYSIWYG editor, tambah lampiran desain visual & pastikan logo NGO terpasang."],
-                ["5. Export / Magic Link", "Kirim tautan proposal interaktif ke pemberi dana hibah untuk direviu & e-signed."],
+                [
+                  "1. Project Intake",
+                  "Pilih template 'Pemberdayaan Masyarakat' & masukkan brief di kolom chat intake.",
+                ],
+                [
+                  "2. AI Drafting",
+                  "Sistem menghasilkan Latar Belakang, Metodologi, Scope of Work, dan Jadwal.",
+                ],
+                [
+                  "3. Cost Mapping",
+                  "Pilih wilayah SBM (misal Kalsel). AI mencocokkan RAB otomatis sesuai standar harga.",
+                ],
+                [
+                  "4. Review & Editing",
+                  "Edit di WYSIWYG editor, tambah lampiran desain visual & pastikan logo NGO terpasang.",
+                ],
+                [
+                  "5. Export / Magic Link",
+                  "Kirim tautan proposal interaktif ke pemberi dana hibah untuk direviu & e-signed.",
+                ],
               ].map(([t, d], i) => (
                 <li key={t} className="bg-background p-5">
                   <span className="font-mono text-xs font-bold text-primary">LANGKAH 0{i + 1}</span>
@@ -690,7 +828,8 @@ function Landing() {
                   Segala Hal tentang EcoGrant AI
                 </h2>
                 <p className="mt-3 text-sm text-muted-foreground">
-                  Temukan jawaban seputar kepatuhan SBM, fitur Magic Link, serta keamanan data proposalmu.
+                  Temukan jawaban seputar kepatuhan SBM, fitur Magic Link, serta keamanan data
+                  proposalmu.
                 </p>
                 <img
                   src={faqImg}
@@ -730,7 +869,11 @@ function Landing() {
                       "Sangat aman. Seluruh data disimpan dalam PostgreSQL dengan proteksi Row Level Security (RLS) dan enkripsi penuh. Hanya kamu dan tim terotorisasi yang dapat mengakses dokumen proposal tersebut.",
                     ],
                   ].map(([q, a], i) => (
-                    <AccordionItem key={q} value={`item-${i}`} className="border-b-2 border-foreground">
+                    <AccordionItem
+                      key={q}
+                      value={`item-${i}`}
+                      className="border-b-2 border-foreground"
+                    >
                       <AccordionTrigger className="text-left font-display text-base font-semibold hover:no-underline py-4">
                         {q}
                       </AccordionTrigger>
@@ -764,10 +907,15 @@ function Landing() {
                 Proposal Hibah Berikutnya Nggak Perlu Bikin Begadang.
               </h2>
               <p className="mt-5 text-base leading-relaxed opacity-90">
-                Buat akun gratis, mulai dari brief ide sederhana, dan biarkan EcoGrant AI menyusunnya jadi proposal formal tervalidasi SBM yang siap dibaca lembaga donor.
+                Buat akun gratis, mulai dari brief ide sederhana, dan biarkan EcoGrant AI
+                menyusunnya jadi proposal formal tervalidasi SBM yang siap dibaca lembaga donor.
               </p>
               <div className="mt-9 flex flex-wrap justify-center gap-4">
-                <Button asChild size="lg" className="rounded-none bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-8 shadow-lg">
+                <Button
+                  asChild
+                  size="lg"
+                  className="rounded-none bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold px-8 shadow-lg"
+                >
                   <Link to={appHref}>
                     {appLabel} <ArrowRight className="size-4 ml-1" />
                   </Link>
@@ -797,12 +945,15 @@ function Landing() {
               <span className="font-display text-lg font-bold">EcoGrant AI</span>
             </div>
             <p className="mt-4 max-w-xs text-xs leading-relaxed text-muted-foreground">
-              Aplikasi generator proposal berbasis AI (LLM) khusus sektor Kehutanan, Lingkungan, Agroforestri, Konservasi & Pemberdayaan Masyarakat terintegrasi SBM Regional.
+              Aplikasi generator proposal berbasis AI (LLM) khusus sektor Kehutanan, Lingkungan,
+              Agroforestri, Konservasi & Pemberdayaan Masyarakat terintegrasi SBM Regional.
             </p>
           </div>
 
           <div>
-            <h4 className="text-xs font-bold tracking-[0.18em] uppercase text-primary">Navigasi Halaman</h4>
+            <h4 className="text-xs font-bold tracking-[0.18em] uppercase text-primary">
+              Navigasi Halaman
+            </h4>
             <ul className="mt-4 space-y-2 text-xs font-medium text-muted-foreground">
               {NAV.map((n) => (
                 <li key={n.href}>
@@ -815,7 +966,9 @@ function Landing() {
           </div>
 
           <div>
-            <h4 className="text-xs font-bold tracking-[0.18em] uppercase text-primary">Modul PRD</h4>
+            <h4 className="text-xs font-bold tracking-[0.18em] uppercase text-primary">
+              Modul PRD
+            </h4>
             <ul className="mt-4 space-y-2 text-xs font-medium text-muted-foreground">
               <li>Asset Vault & Branding NGO</li>
               <li>AI Generator & Logframe</li>
@@ -825,7 +978,9 @@ function Landing() {
           </div>
 
           <div>
-            <h4 className="text-xs font-bold tracking-[0.18em] uppercase text-primary">Spesialisasi Sektor</h4>
+            <h4 className="text-xs font-bold tracking-[0.18em] uppercase text-primary">
+              Spesialisasi Sektor
+            </h4>
             <ul className="mt-4 space-y-2 text-xs font-medium text-muted-foreground">
               <li>Pengelolaan Hutan & Agroforestri (Dukuh)</li>
               <li>Pemberdayaan Masyarakat Desa</li>
@@ -837,7 +992,10 @@ function Landing() {
 
         <div className="border-t border-border bg-muted/30">
           <div className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-            <p>© {new Date().getFullYear()} EcoGrant AI — Generator Proposal Hibah. Seluruh hak cipta dilindungi.</p>
+            <p>
+              © {new Date().getFullYear()} EcoGrant AI — Generator Proposal Hibah. Seluruh hak cipta
+              dilindungi.
+            </p>
             <p>Spesialis Proposal Kehutanan, Lingkungan & Pemberdayaan Masyarakat Indonesia.</p>
           </div>
         </div>

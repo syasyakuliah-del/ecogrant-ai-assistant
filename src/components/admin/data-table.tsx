@@ -2,7 +2,14 @@ import { useState, type ReactNode } from "react";
 import { Search, LayoutGrid, Table as TableIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export function AdminToolbar({
   query,
@@ -49,7 +56,11 @@ export function AdminTable({
             {headers.map((h, i) => (
               <TableHead
                 key={h}
-                className={i === 0 && stickyFirstColumn ? "sticky left-0 bg-muted z-10 font-semibold" : "font-semibold"}
+                className={
+                  i === 0 && stickyFirstColumn
+                    ? "sticky left-0 bg-muted z-10 font-semibold"
+                    : "font-semibold"
+                }
               >
                 {h}
               </TableHead>

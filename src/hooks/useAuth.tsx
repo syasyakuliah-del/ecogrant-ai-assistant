@@ -75,11 +75,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function loadUserData(userId: string) {
     try {
       // Load profile first
-      const { data: p } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
       setProfile((p as Profile) ?? null);
 
       // Load roles - may fail if tables don't exist yet
-      let assignedRoles: string[] = [];
+      const assignedRoles: string[] = [];
       let roleIds: string[] = [];
       try {
         const { data: userRoles } = await supabase
@@ -116,7 +120,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (rp) {
             fetchedPerms = rp
-              .map((item) => (item.permissions && typeof item.permissions === "object" && "name" in item.permissions ? item.permissions.name : null))
+              .map((item) =>
+                item.permissions &&
+                typeof item.permissions === "object" &&
+                "name" in item.permissions
+                  ? item.permissions.name
+                  : null,
+              )
               .filter(Boolean) as string[];
           }
         } catch {

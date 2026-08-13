@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Download,
+  FileSpreadsheet,
+  Loader2,
+  Plus,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { generateLogicalFramework } from "@/lib/ai.functions";
@@ -11,7 +20,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { aiErrorMessage, buildContext, type StepProps } from "./shared";
 import type { LfaRow } from "@/hooks/useProposalData";
 
@@ -28,10 +43,7 @@ function statementOf(row: LfaRow) {
 
 function statementField(type: string) {
   return (["goal", "outcome", "output", "activity"].includes(type) ? type : "activity") as
-    | "goal"
-    | "outcome"
-    | "output"
-    | "activity";
+    "goal" | "outcome" | "output" | "activity";
 }
 
 export function StepLfa({ proposal, sections, lfa, donor, refetch }: StepProps) {
@@ -81,7 +93,11 @@ export function StepLfa({ proposal, sections, lfa, donor, refetch }: StepProps) 
         },
       });
       await supabase.from("lfa_rows").delete().eq("proposal_id", proposal.id);
-      const rows = (result?.rows ?? []).map((r, i) => ({ ...r, proposal_id: proposal.id, sort_order: i + 1 }));
+      const rows = (result?.rows ?? []).map((r, i) => ({
+        ...r,
+        proposal_id: proposal.id,
+        sort_order: i + 1,
+      }));
       const { error } = await supabase.from("lfa_rows").insert(rows);
       if (error) throw error;
       refetch();
@@ -120,21 +136,42 @@ export function StepLfa({ proposal, sections, lfa, donor, refetch }: StepProps) 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                <FileSpreadsheet className="size-5 text-primary" /> Step 5: Logical Framework Matrix (LFA)
+                <FileSpreadsheet className="size-5 text-primary" /> Step 5: Logical Framework Matrix
+                (LFA)
               </CardTitle>
               <CardDescription>
-                Matriks kerangka logis hierarkis: Goal, Outcome, Output, Activity, Indikator, Baseline, Target, MOV, dan Asumsi.
+                Matriks kerangka logis hierarkis: Goal, Outcome, Output, Activity, Indikator,
+                Baseline, Target, MOV, dan Asumsi.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={exportLfaXlsx} className="gap-1.5 text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportLfaXlsx}
+                className="gap-1.5 text-xs"
+              >
                 <Download className="size-3.5 text-emerald-600 dark:text-emerald-400" /> Ekspor XLSX
               </Button>
-              <Button variant="outline" size="sm" onClick={() => void addRow()} className="gap-1.5 text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void addRow()}
+                className="gap-1.5 text-xs"
+              >
                 <Plus className="size-3.5" /> Tambah Baris
               </Button>
-              <Button size="sm" onClick={() => void handleGenerate()} disabled={busy} className="gap-1.5 text-xs shadow-sm">
-                {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+              <Button
+                size="sm"
+                onClick={() => void handleGenerate()}
+                disabled={busy}
+                className="gap-1.5 text-xs shadow-sm"
+              >
+                {busy ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="size-3.5" />
+                )}
                 Generate LFA AI
               </Button>
             </div>
@@ -153,17 +190,26 @@ export function StepLfa({ proposal, sections, lfa, donor, refetch }: StepProps) 
               {isHierarchyValid ? "Validasi Hierarki LFA Lengkap" : "Periksa Hierarki LFA Anda"}
             </AlertTitle>
             <AlertDescription className="text-xs mt-1 flex flex-wrap gap-2">
-              <Badge variant={hasGoal ? "default" : "outline"} className="text-[10px]">Goal: {hasGoal ? "OK" : "Wajib"}</Badge>
-              <Badge variant={hasOutcome ? "default" : "outline"} className="text-[10px]">Outcome: {hasOutcome ? "OK" : "Wajib"}</Badge>
-              <Badge variant={hasOutput ? "default" : "outline"} className="text-[10px]">Output: {hasOutput ? "OK" : "Wajib"}</Badge>
-              <Badge variant={hasActivity ? "default" : "outline"} className="text-[10px]">Activity: {hasActivity ? "OK" : "Wajib"}</Badge>
+              <Badge variant={hasGoal ? "default" : "outline"} className="text-[10px]">
+                Goal: {hasGoal ? "OK" : "Wajib"}
+              </Badge>
+              <Badge variant={hasOutcome ? "default" : "outline"} className="text-[10px]">
+                Outcome: {hasOutcome ? "OK" : "Wajib"}
+              </Badge>
+              <Badge variant={hasOutput ? "default" : "outline"} className="text-[10px]">
+                Output: {hasOutput ? "OK" : "Wajib"}
+              </Badge>
+              <Badge variant={hasActivity ? "default" : "outline"} className="text-[10px]">
+                Activity: {hasActivity ? "OK" : "Wajib"}
+              </Badge>
             </AlertDescription>
           </Alert>
 
           {/* LFA Rows Grid */}
           {lfa.length === 0 ? (
             <div className="rounded-lg border border-dashed p-10 text-center text-xs text-muted-foreground">
-              Belum ada baris Logical Framework. Susun otomatis dari narasi proposal dengan tombol AI di atas atau tambah manual.
+              Belum ada baris Logical Framework. Susun otomatis dari narasi proposal dengan tombol
+              AI di atas atau tambah manual.
             </div>
           ) : (
             <div className="space-y-3">
@@ -171,7 +217,10 @@ export function StepLfa({ proposal, sections, lfa, donor, refetch }: StepProps) 
                 <div key={row.id} className="rounded-lg border p-4 space-y-3 bg-card">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2">
                     <div className="flex items-center gap-2">
-                      <Select value={row.row_type} onValueChange={(v) => void update(row, { row_type: v })}>
+                      <Select
+                        value={row.row_type}
+                        onValueChange={(v) => void update(row, { row_type: v })}
+                      >
                         <SelectTrigger className="w-44 text-xs h-8">
                           <SelectValue />
                         </SelectTrigger>
@@ -206,13 +255,19 @@ export function StepLfa({ proposal, sections, lfa, donor, refetch }: StepProps) 
                       <Input
                         defaultValue={statementOf(row)}
                         placeholder={`Masukkan uraian ${row.row_type}...`}
-                        onBlur={(e) => void update(row, { [statementField(row.row_type)]: e.target.value } as Partial<LfaRow>)}
+                        onBlur={(e) =>
+                          void update(row, {
+                            [statementField(row.row_type)]: e.target.value,
+                          } as Partial<LfaRow>)
+                        }
                         className="text-xs"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[11px] font-semibold text-muted-foreground block mb-1">Indikator Terukur:</label>
+                      <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
+                        Indikator Terukur:
+                      </label>
                       <Input
                         defaultValue={row.indicator ?? ""}
                         placeholder="Indikator pencapaian..."
@@ -222,7 +277,9 @@ export function StepLfa({ proposal, sections, lfa, donor, refetch }: StepProps) 
                     </div>
 
                     <div>
-                      <label className="text-[11px] font-semibold text-muted-foreground block mb-1">Alat Verifikasi (MOV):</label>
+                      <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
+                        Alat Verifikasi (MOV):
+                      </label>
                       <Input
                         defaultValue={row.means_of_verification ?? ""}
                         placeholder="Dokumen / Laporan / Foto verifikasi..."
@@ -232,7 +289,9 @@ export function StepLfa({ proposal, sections, lfa, donor, refetch }: StepProps) 
                     </div>
 
                     <div>
-                      <label className="text-[11px] font-semibold text-muted-foreground block mb-1">Baseline Awal:</label>
+                      <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
+                        Baseline Awal:
+                      </label>
                       <Input
                         defaultValue={row.baseline ?? ""}
                         placeholder="Kondisi awal sebelum program..."
@@ -242,7 +301,9 @@ export function StepLfa({ proposal, sections, lfa, donor, refetch }: StepProps) 
                     </div>
 
                     <div>
-                      <label className="text-[11px] font-semibold text-muted-foreground block mb-1">Target Capaian:</label>
+                      <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
+                        Target Capaian:
+                      </label>
                       <Input
                         defaultValue={row.target ?? ""}
                         placeholder="Target numerik / kualitatif..."
@@ -252,7 +313,9 @@ export function StepLfa({ proposal, sections, lfa, donor, refetch }: StepProps) 
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="text-[11px] font-semibold text-muted-foreground block mb-1">Asumsi Eksternal & Risiko:</label>
+                      <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
+                        Asumsi Eksternal & Risiko:
+                      </label>
                       <Input
                         defaultValue={row.assumption ?? ""}
                         placeholder="Kondisi eksternal yang diasumsikan mendukung..."

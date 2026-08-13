@@ -38,25 +38,46 @@ async function runSecurityAndE2eAudit() {
 
   // XSS Protection Test
   const maliciousXssInput = "<script>alert('xss')</script><b>Judul Proposal</b>";
-  const sanitizedTitle = maliciousXssInput.replace(/<script.*?>.*?<\/script>/gi, "").replace(/<[^>]+>/g, "");
-  assert(sanitizedTitle === "Judul Proposal", `XSS input script should be stripped. Got: ${sanitizedTitle}`);
+  const sanitizedTitle = maliciousXssInput
+    .replace(/<script.*?>.*?<\/script>/gi, "")
+    .replace(/<[^>]+>/g, "");
+  assert(
+    sanitizedTitle === "Judul Proposal",
+    `XSS input script should be stripped. Got: ${sanitizedTitle}`,
+  );
 
   // SQL Injection Protection Test
   const sqliTestString = "' OR '1'='1'; DROP TABLE proposals; --";
   const safeParam = sqliTestString.replace(/'/g, "''");
-  assert(safeParam.includes("''"), "SQL Injection special characters sanitized by ORM parameterized bindings.");
+  assert(
+    safeParam.includes("''"),
+    "SQL Injection special characters sanitized by ORM parameterized bindings.",
+  );
 
   // IDOR & RLS Authorization Test
   const mockUserRole = "user";
   const mockTargetOwnerId = "other_user_id";
   const mockCurrentUserId = "current_user_id";
-  const canAccessOtherProposal = mockUserRole === "admin" || mockTargetOwnerId === mockCurrentUserId;
-  assert(!canAccessOtherProposal, "IDOR Protection: Standard user cannot access or modify another user's proposal.");
+  const canAccessOtherProposal =
+    mockUserRole === "admin" || mockTargetOwnerId === mockCurrentUserId;
+  assert(
+    !canAccessOtherProposal,
+    "IDOR Protection: Standard user cannot access or modify another user's proposal.",
+  );
 
   // File Upload Bypass Test
-  const fakeExeFile = { name: "malicious.php.png", mimeType: "application/x-msdownload", size: 1000 };
-  const isAllowedMime = ["image/png", "image/jpeg", "application/pdf"].includes(fakeExeFile.mimeType);
-  assert(!isAllowedMime, "File Upload Bypass: Executable MIME types blocked regardless of trailing .png extension.");
+  const fakeExeFile = {
+    name: "malicious.php.png",
+    mimeType: "application/x-msdownload",
+    size: 1000,
+  };
+  const isAllowedMime = ["image/png", "image/jpeg", "application/pdf"].includes(
+    fakeExeFile.mimeType,
+  );
+  assert(
+    !isAllowedMime,
+    "File Upload Bypass: Executable MIME types blocked regardless of trailing .png extension.",
+  );
 
   console.log("\n=======================================================");
   console.log("🎉 ALL SECURITY & E2E AUDIT TESTS PASSED SUCCESSFULLY!");

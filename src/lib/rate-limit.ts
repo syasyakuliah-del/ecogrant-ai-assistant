@@ -4,12 +4,12 @@ export type RateLimitRule = {
 };
 
 export const RATE_LIMIT_RULES = {
-  login: { maxRequests: 5, windowMs: 15 * 60 * 1000 },          // 5 per 15 min
-  forgotPassword: { maxRequests: 3, windowMs: 60 * 60 * 1000 },  // 3 per hour
+  login: { maxRequests: 5, windowMs: 15 * 60 * 1000 }, // 5 per 15 min
+  forgotPassword: { maxRequests: 3, windowMs: 60 * 60 * 1000 }, // 3 per hour
   resendVerification: { maxRequests: 3, windowMs: 60 * 60 * 1000 }, // 3 per hour
-  aiGenerate: { maxRequests: 20, windowMs: 60 * 1000 },          // 20 per min
-  export: { maxRequests: 10, windowMs: 60 * 60 * 1000 },         // 10 per hour
-  import: { maxRequests: 5, windowMs: 60 * 60 * 1000 },          // 5 per hour
+  aiGenerate: { maxRequests: 20, windowMs: 60 * 1000 }, // 20 per min
+  export: { maxRequests: 10, windowMs: 60 * 60 * 1000 }, // 10 per hour
+  import: { maxRequests: 5, windowMs: 60 * 60 * 1000 }, // 5 per hour
 } as const;
 
 type RateLimitRecord = {
@@ -19,7 +19,10 @@ type RateLimitRecord = {
 
 const memoryStore = new Map<string, RateLimitRecord>();
 
-export function checkRateLimit(key: string, rule: RateLimitRule): {
+export function checkRateLimit(
+  key: string,
+  rule: RateLimitRule,
+): {
   allowed: boolean;
   remaining: number;
   resetInSeconds: number;
@@ -29,7 +32,11 @@ export function checkRateLimit(key: string, rule: RateLimitRule): {
 
   if (!record || now > record.resetTime) {
     memoryStore.set(key, { count: 1, resetTime: now + rule.windowMs });
-    return { allowed: true, remaining: rule.maxRequests - 1, resetInSeconds: Math.ceil(rule.windowMs / 1000) };
+    return {
+      allowed: true,
+      remaining: rule.maxRequests - 1,
+      resetInSeconds: Math.ceil(rule.windowMs / 1000),
+    };
   }
 
   if (record.count >= rule.maxRequests) {
@@ -50,7 +57,7 @@ export function enforceRateLimit(action: keyof typeof RATE_LIMIT_RULES, identifi
 
   if (!result.allowed) {
     throw new Error(
-      `Batas percobaan ${action} terlampaui. Silakan tunggu ${result.resetInSeconds} detik sebelum mencoba lagi.`
+      `Batas percobaan ${action} terlampaui. Silakan tunggu ${result.resetInSeconds} detik sebelum mencoba lagi.`,
     );
   }
 }

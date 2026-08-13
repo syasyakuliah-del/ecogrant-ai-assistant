@@ -25,7 +25,7 @@ async function testTables() {
     "donor_matches",
     "notifications",
     "audit_logs",
-    "help_articles"
+    "help_articles",
   ];
 
   for (const t of tables) {

@@ -6,9 +6,15 @@ export const Route = createFileRoute("/_authenticated/about")({
   head: () => ({
     meta: [
       { title: "Tentang Aplikasi — EcoGrant AI" },
-      { name: "description", content: "Informasi versi, ruang lingkup, dan prinsip kerja platform EcoGrant AI." },
+      {
+        name: "description",
+        content: "Informasi versi, ruang lingkup, dan prinsip kerja platform EcoGrant AI.",
+      },
       { property: "og:title", content: "Tentang Aplikasi — EcoGrant AI" },
-      { property: "og:description", content: "Kenali prinsip Single Source of Truth dan cakupan fitur EcoGrant AI." },
+      {
+        property: "og:description",
+        content: "Kenali prinsip Single Source of Truth dan cakupan fitur EcoGrant AI.",
+      },
     ],
   }),
   component: AboutPage,
@@ -27,7 +33,10 @@ const MODULES = [
 function AboutPage() {
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Tentang Aplikasi" description="EcoGrant AI versi 1.0 — Bahasa Indonesia formal." />
+      <PageHeader
+        title="Tentang Aplikasi"
+        description="EcoGrant AI versi 1.0 — Bahasa Indonesia formal."
+      />
 
       <div className="surface-panel space-y-6 p-6">
         <div className="flex items-center gap-3">
@@ -36,14 +45,17 @@ function AboutPage() {
           </span>
           <div>
             <p className="font-display text-lg font-semibold">EcoGrant AI</p>
-            <p className="text-sm text-muted-foreground">Generator proposal hibah kehutanan dan lingkungan</p>
+            <p className="text-sm text-muted-foreground">
+              Generator proposal hibah kehutanan dan lingkungan
+            </p>
           </div>
         </div>
 
         <p className="text-sm leading-relaxed text-muted-foreground">
-          EcoGrant AI menerjemahkan ide lapangan menjadi dokumen pengajuan hibah yang formal, konsisten, dan
-          terdokumentasi. Seluruh data proposal menjadi sumber kebenaran tunggal sehingga perubahan pada narasi,
-          kerangka logis, standar biaya, atau anggaran otomatis memperbarui modul terkait.
+          EcoGrant AI menerjemahkan ide lapangan menjadi dokumen pengajuan hibah yang formal,
+          konsisten, dan terdokumentasi. Seluruh data proposal menjadi sumber kebenaran tunggal
+          sehingga perubahan pada narasi, kerangka logis, standar biaya, atau anggaran otomatis
+          memperbarui modul terkait.
         </p>
 
         <div>
@@ -74,7 +86,8 @@ function AboutPage() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Hasil AI merupakan draf yang wajib ditinjau pengguna sebelum diajukan kepada lembaga donor.
+          Hasil AI merupakan draf yang wajib ditinjau pengguna sebelum diajukan kepada lembaga
+          donor.
         </p>
       </div>
     </div>

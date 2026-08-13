@@ -15,7 +15,10 @@ export interface ProposalExportRow {
   updated_at: string;
 }
 
-export function exportProposalsToXLSX(proposals: ProposalExportRow[], filename = "ecogrant_proposals.xlsx") {
+export function exportProposalsToXLSX(
+  proposals: ProposalExportRow[],
+  filename = "ecogrant_proposals.xlsx",
+) {
   const data = proposals.map((p, idx) => ({
     No: idx + 1,
     "ID Proposal": p.id,
@@ -35,7 +38,10 @@ export function exportProposalsToXLSX(proposals: ProposalExportRow[], filename =
   XLSX.writeFile(workbook, filename);
 }
 
-export function exportProposalsToJSON(proposals: ProposalExportRow[], filename = "ecogrant_proposals.json") {
+export function exportProposalsToJSON(
+  proposals: ProposalExportRow[],
+  filename = "ecogrant_proposals.json",
+) {
   const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(proposals, null, 2))}`;
   const downloadAnchor = document.createElement("a");
   downloadAnchor.setAttribute("href", jsonString);

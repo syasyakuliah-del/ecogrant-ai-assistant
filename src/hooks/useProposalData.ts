@@ -46,7 +46,7 @@ export function useAutosave(id: string, currentVersion = 1) {
   const flush = useCallback(async () => {
     const payload = { ...pending.current };
     if (Object.keys(payload).length === 0) return;
-    
+
     setState("saving");
     setLastError(null);
     lastFailedPayload.current = payload;
@@ -135,9 +135,12 @@ export function useAutosave(id: string, currentVersion = 1) {
     }
   }, [flush]);
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
 
   return { save, flush, retrySave, state, savedAt, lastError };
 }
@@ -151,7 +154,8 @@ export function computeProgress(input: {
   const { proposal, sections, lfa, budget } = input;
   const checks = [
     Boolean(proposal.title && proposal.organization_name && proposal.province && proposal.category),
-    sections.filter((s) => s.section_type !== "executive_summary" && s.content.trim().length > 0).length >= 6,
+    sections.filter((s) => s.section_type !== "executive_summary" && s.content.trim().length > 0)
+      .length >= 6,
     sections.some((s) => s.section_type === "executive_summary" && s.content.trim().length > 0),
     Boolean(proposal.donor_id),
     lfa.length > 0,

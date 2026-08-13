@@ -33,7 +33,11 @@ export type FileValidationResult = {
 export function sanitizeFilename(filename: string): string {
   const parts = filename.split(".");
   const ext = parts.pop()?.toLowerCase() ?? "";
-  const name = parts.join(".").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 80) || "file";
+  const name =
+    parts
+      .join(".")
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .slice(0, 80) || "file";
   return `${name}.${ext}`;
 }
 
@@ -47,7 +51,11 @@ export function validateFile(file: File): FileValidationResult {
     return {
       valid: false,
       error: `Ekstensi file .${extension} tidak diizinkan. Format yang didukung: ${ALLOWED_ALL_EXTENSIONS.join(", ")}`,
-      sanitizedName, extension, mimeType, sizeBytes, category: "document",
+      sanitizedName,
+      extension,
+      mimeType,
+      sizeBytes,
+      category: "document",
     };
   }
 
@@ -55,7 +63,11 @@ export function validateFile(file: File): FileValidationResult {
     return {
       valid: false,
       error: `Tipe MIME (${file.type}) tidak valid atau berpotensi tidak aman.`,
-      sanitizedName, extension, mimeType, sizeBytes, category: "document",
+      sanitizedName,
+      extension,
+      mimeType,
+      sizeBytes,
+      category: "document",
     };
   }
 
@@ -66,7 +78,11 @@ export function validateFile(file: File): FileValidationResult {
     return {
       valid: false,
       error: `Ukuran file (${(sizeBytes / 1024 / 1024).toFixed(1)} MB) melebihi batas maksimum 10 MB.`,
-      sanitizedName, extension, mimeType, sizeBytes, category,
+      sanitizedName,
+      extension,
+      mimeType,
+      sizeBytes,
+      category,
     };
   }
 
@@ -86,7 +102,7 @@ export async function computeChecksum(file: File): Promise<string> {
 
 export async function uploadFileToSupabase(
   file: File,
-  entityContext: { organizationId?: string; workspaceId?: string; proposalId?: string } = {}
+  entityContext: { organizationId?: string; workspaceId?: string; proposalId?: string } = {},
 ) {
   const validation = validateFile(file);
   if (!validation.valid) throw new Error(validation.error);
@@ -97,25 +113,34 @@ export async function uploadFileToSupabase(
   const { data: userRes } = await supabase.auth.getUser();
 
   // Insert metadata to `files` table first
-  const { data: fileRecord, error: dbError } = await supabase.from("files").insert({
-    organization_id: entityContext.organizationId ?? null,
-    workspace_id: entityContext.workspaceId ?? null,
-    proposal_id: entityContext.proposalId ?? null,
-    uploaded_by: userRes.user?.id ?? null,
-    storage_disk: "supabase",
-    storage_key: uuidStorageKey,
-    original_name: validation.sanitizedName,
-    mime_type: validation.mimeType,
-    extension: validation.extension,
-    size_bytes: validation.sizeBytes,
-    checksum,
-    category: validation.category,
-    scan_status: "clean",
-  }).select().single();
+  const { data: fileRecord, error: dbError } = await supabase
+    .from("files")
+    .insert({
+      organization_id: entityContext.organizationId ?? null,
+      workspace_id: entityContext.workspaceId ?? null,
+      proposal_id: entityContext.proposalId ?? null,
+      uploaded_by: userRes.user?.id ?? null,
+      storage_disk: "supabase",
+      storage_key: uuidStorageKey,
+      original_name: validation.sanitizedName,
+      mime_type: validation.mimeType,
+      extension: validation.extension,
+      size_bytes: validation.sizeBytes,
+      checksum,
+      category: validation.category,
+      scan_status: "clean",
+    })
+    .select()
+    .single();
 
   if (dbError) throw new Error("Gagal mencatat metadata file: " + dbError.message);
 
-  await logAudit({ action: "file.upload", entityType: "file", entityId: fileRecord.id, newValues: { name: validation.sanitizedName, size: validation.sizeBytes, checksum } });
+  await logAudit({
+    action: "file.upload",
+    entityType: "file",
+    entityId: fileRecord.id,
+    newValues: { name: validation.sanitizedName, size: validation.sizeBytes, checksum },
+  });
 
   return {
     fileRecord,
@@ -124,8 +149,13 @@ export async function uploadFileToSupabase(
   };
 }
 
-export async function getSignedDownloadUrl(storageKey: string, expiresInSeconds: number = 3600): Promise<string> {
-  const { data, error } = await supabase.storage.from("private_files").createSignedUrl(storageKey, expiresInSeconds);
+export async function getSignedDownloadUrl(
+  storageKey: string,
+  expiresInSeconds: number = 3600,
+): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from("private_files")
+    .createSignedUrl(storageKey, expiresInSeconds);
   if (error) {
     // Fallback if storage bucket isn't provisioned yet
     return `https://storage.supabase.co/${storageKey}`;

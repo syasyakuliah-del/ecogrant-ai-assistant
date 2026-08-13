@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Loader2, RotateCcw } from "lucide-react";
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  RotateCcw,
+} from "lucide-react";
 import { useProposalData, useAutosave, computeProgress } from "@/hooks/useProposalData";
 import { WIZARD_STEPS } from "@/lib/constants";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,9 +35,16 @@ export const Route = createFileRoute("/_authenticated/proposals/$id")({
   head: () => ({
     meta: [
       { title: "Wizard Penyusunan Proposal — EcoGrant AI" },
-      { name: "description", content: "Susun proposal hibah 10 langkah lengkap dengan Asisten AI, LFA, SBM/SBU sync, RAB, & Export." },
+      {
+        name: "description",
+        content:
+          "Susun proposal hibah 10 langkah lengkap dengan Asisten AI, LFA, SBM/SBU sync, RAB, & Export.",
+      },
       { property: "og:title", content: "Wizard Penyusunan Proposal — EcoGrant AI" },
-      { property: "og:description", content: "Penyusunan narasi, Logical Framework Matrix, dan RAB proposal hibah." },
+      {
+        property: "og:description",
+        content: "Penyusunan narasi, Logical Framework Matrix, dan RAB proposal hibah.",
+      },
     ],
   }),
   component: WizardPage,
@@ -48,7 +63,11 @@ function WizardPage() {
     queryKey: ["donor", donorId],
     enabled: Boolean(donorId),
     queryFn: async () => {
-      const { data, error } = await supabase.from("donors").select("*").eq("id", donorId!).maybeSingle();
+      const { data, error } = await supabase
+        .from("donors")
+        .select("*")
+        .eq("id", donorId!)
+        .maybeSingle();
       if (error) throw error;
       return data as Donor | null;
     },
@@ -63,7 +82,12 @@ function WizardPage() {
   }
 
   const p = data.proposal;
-  const progress = computeProgress({ proposal: p, sections: data.sections, lfa: data.lfa, budget: data.budget });
+  const progress = computeProgress({
+    proposal: p,
+    sections: data.sections,
+    lfa: data.lfa,
+    budget: data.budget,
+  });
   const stepProps: StepProps = {
     proposal: p,
     sections: data.sections,
@@ -89,10 +113,10 @@ function WizardPage() {
                 autosaveState === "saving"
                   ? "secondary"
                   : autosaveState === "saved"
-                  ? "default"
-                  : autosaveState === "error" || autosaveState === "conflict"
-                  ? "destructive"
-                  : "outline"
+                    ? "default"
+                    : autosaveState === "error" || autosaveState === "conflict"
+                      ? "destructive"
+                      : "outline"
               }
               className="text-xs font-medium gap-1 px-2.5 py-1"
             >
@@ -104,12 +128,12 @@ function WizardPage() {
               {autosaveState === "saving"
                 ? "Menyimpan (Autosave 3s)..."
                 : autosaveState === "saved"
-                ? "Tersimpan"
-                : autosaveState === "error"
-                ? "Gagal Menyimpan"
-                : autosaveState === "conflict"
-                ? "Konflik Versi"
-                : "Autosave Aktif"}
+                  ? "Tersimpan"
+                  : autosaveState === "error"
+                    ? "Gagal Menyimpan"
+                    : autosaveState === "conflict"
+                      ? "Konflik Versi"
+                      : "Autosave Aktif"}
             </Badge>
 
             {(autosaveState === "error" || autosaveState === "conflict") && (
@@ -127,7 +151,8 @@ function WizardPage() {
           <AlertTriangle className="size-4" />
           <AlertTitle>Terjadi Konflik Versi (Optimistic Lock)</AlertTitle>
           <AlertDescription className="text-xs mt-1">
-            Data proposal di server telah diperbarui oleh sesi lain. Muat ulang halaman untuk menyelaraskan versi terbaru.
+            Data proposal di server telah diperbarui oleh sesi lain. Muat ulang halaman untuk
+            menyelaraskan versi terbaru.
           </AlertDescription>
         </Alert>
       )}
@@ -156,8 +181,8 @@ function WizardPage() {
                       isCurrent
                         ? "bg-primary text-primary-foreground font-bold shadow-sm"
                         : isChecked
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                        : "hover:bg-muted"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                          : "hover:bg-muted"
                     }`}
                   >
                     {s.step}. {s.short}
@@ -191,7 +216,8 @@ function WizardPage() {
           onClick={() => setStep((s) => Math.max(1, s - 1))}
           className="gap-1.5 text-xs sm:text-sm"
         >
-          <ChevronLeft className="size-4" /> Langkah Sebelumnya ({step > 1 ? WIZARD_STEPS[step - 2]?.short : ""})
+          <ChevronLeft className="size-4" /> Langkah Sebelumnya (
+          {step > 1 ? WIZARD_STEPS[step - 2]?.short : ""})
         </Button>
 
         <span className="text-xs font-semibold text-muted-foreground font-mono">
@@ -203,7 +229,8 @@ function WizardPage() {
           onClick={() => setStep((s) => Math.min(10, s + 1))}
           className="gap-1.5 text-xs sm:text-sm shadow-sm"
         >
-          Langkah Selanjutnya ({step < 10 ? WIZARD_STEPS[step]?.short : ""}) <ChevronRight className="size-4" />
+          Langkah Selanjutnya ({step < 10 ? WIZARD_STEPS[step]?.short : ""}){" "}
+          <ChevronRight className="size-4" />
         </Button>
       </div>
     </div>

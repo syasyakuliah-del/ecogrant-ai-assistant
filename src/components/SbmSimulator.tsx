@@ -13,12 +13,19 @@ import {
   Image as ImageIcon,
   PenTool,
   Download,
-  Eye
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const REGIONS: Record<string, { label: string; multiplier: number; sbmNote: string }> = {
   kalsel: {
@@ -61,13 +68,47 @@ const PRESETS = [
       "Hari 2: Praktek Pencampuran & Aktivator Bio-kompos",
       "Hari 3: Pengemasan & Evaluasi SOP Desa",
     ],
-    kpis: ["30 Peserta Desa Terlatih", "85% Nilai Pemahaman Post-Test", "1 Unit Bank Sampah Desa Terbentuk"],
+    kpis: [
+      "30 Peserta Desa Terlatih",
+      "85% Nilai Pemahaman Post-Test",
+      "1 Unit Bank Sampah Desa Terbentuk",
+    ],
     sbmItems: [
-      { kategori: "Honorarium", item: "Honorarium Narasumber Pakar Pengelolaan Sampah", satuan: "O-J (Orang-Jam)", volumeDefault: 12, rateBase: 350000 },
-      { kategori: "Honorarium", item: "Honorarium Fasilitator Lapangan Pemberdayaan", satuan: "O-H (Orang-Hari)", volumeDefault: 3, rateBase: 450000 },
-      { kategori: "Logistik Acara", item: "Uang Harian Peserta Pelatihan Desa", satuan: "O-H (Orang-Hari)", volumeDefault: 90, rateBase: 120000 },
-      { kategori: "Logistik Acara", item: "Konsumsi Pelatihan (Makan & Break)", satuan: "O-K (Orang-Kali)", volumeDefault: 180, rateBase: 45000 },
-      { kategori: "Sewa Peralatan", item: "Sewa Mesin Pencacah Organik Lapangan", satuan: "Unit-Hari", volumeDefault: 3, rateBase: 650000 },
+      {
+        kategori: "Honorarium",
+        item: "Honorarium Narasumber Pakar Pengelolaan Sampah",
+        satuan: "O-J (Orang-Jam)",
+        volumeDefault: 12,
+        rateBase: 350000,
+      },
+      {
+        kategori: "Honorarium",
+        item: "Honorarium Fasilitator Lapangan Pemberdayaan",
+        satuan: "O-H (Orang-Hari)",
+        volumeDefault: 3,
+        rateBase: 450000,
+      },
+      {
+        kategori: "Logistik Acara",
+        item: "Uang Harian Peserta Pelatihan Desa",
+        satuan: "O-H (Orang-Hari)",
+        volumeDefault: 90,
+        rateBase: 120000,
+      },
+      {
+        kategori: "Logistik Acara",
+        item: "Konsumsi Pelatihan (Makan & Break)",
+        satuan: "O-K (Orang-Kali)",
+        volumeDefault: 180,
+        rateBase: 45000,
+      },
+      {
+        kategori: "Sewa Peralatan",
+        item: "Sewa Mesin Pencacah Organik Lapangan",
+        satuan: "Unit-Hari",
+        volumeDefault: 3,
+        rateBase: 650000,
+      },
     ],
   },
   {
@@ -87,12 +128,40 @@ const PRESETS = [
       "Bulan 2: Pengadaan & Pemeliharaan Persemaian Bibit",
       "Bulan 3: Penanaman Bersama & Konsolidasi Kelompok",
     ],
-    kpis: ["150 Ha Tutupan Agroforestri Terdaftar", "2.500 Bibit Pohon Tertanam", "50 Anggota LPHD Terlibat"],
+    kpis: [
+      "150 Ha Tutupan Agroforestri Terdaftar",
+      "2.500 Bibit Pohon Tertanam",
+      "50 Anggota LPHD Terlibat",
+    ],
     sbmItems: [
-      { kategori: "Honorarium", item: "Honorarium Tenaga Ahli Pemetaan GIS Kehutanan", satuan: "O-B (Orang-Bulan)", volumeDefault: 1, rateBase: 7500000 },
-      { kategori: "Honorarium", item: "Honorarium Pendamping Lapangan Agroforestri", satuan: "O-B (Orang-Bulan)", volumeDefault: 2, rateBase: 4000000 },
-      { kategori: "Bahan & Bibit", item: "Bibit Pohon Endemik & Buah Lokal Berkualitas", satuan: "Batang", volumeDefault: 2500, rateBase: 18000 },
-      { kategori: "Transportasi", item: "Sewa Kendaraan Operasional Lapangan 4x4", satuan: "Unit-Hari", volumeDefault: 10, rateBase: 1200000 },
+      {
+        kategori: "Honorarium",
+        item: "Honorarium Tenaga Ahli Pemetaan GIS Kehutanan",
+        satuan: "O-B (Orang-Bulan)",
+        volumeDefault: 1,
+        rateBase: 7500000,
+      },
+      {
+        kategori: "Honorarium",
+        item: "Honorarium Pendamping Lapangan Agroforestri",
+        satuan: "O-B (Orang-Bulan)",
+        volumeDefault: 2,
+        rateBase: 4000000,
+      },
+      {
+        kategori: "Bahan & Bibit",
+        item: "Bibit Pohon Endemik & Buah Lokal Berkualitas",
+        satuan: "Batang",
+        volumeDefault: 2500,
+        rateBase: 18000,
+      },
+      {
+        kategori: "Transportasi",
+        item: "Sewa Kendaraan Operasional Lapangan 4x4",
+        satuan: "Unit-Hari",
+        volumeDefault: 10,
+        rateBase: 1200000,
+      },
     ],
   },
   {
@@ -112,11 +181,33 @@ const PRESETS = [
       "Minggu 2: Produksi Aset Visual & Motion Design",
       "Minggu 3: Launching Digital & Evaluasi Jangkauan",
     ],
-    kpis: ["100.000 Digital Impressions", "12 Seri Content Kit Terpublikasi", "1.500 Download Buku Saku"],
+    kpis: [
+      "100.000 Digital Impressions",
+      "12 Seri Content Kit Terpublikasi",
+      "1.500 Download Buku Saku",
+    ],
     sbmItems: [
-      { kategori: "Honorarium", item: "Honorarium Desain Grafis Kampanye Edukasi", satuan: "Paket", volumeDefault: 1, rateBase: 5000000 },
-      { kategori: "Honorarium", item: "Honorarium Penulis Narasi & Riset Kampanye", satuan: "Paket", volumeDefault: 1, rateBase: 3500000 },
-      { kategori: "Publikasi", item: "Promosi & Distribusi Media Digital Kampanye", satuan: "Kegiatan", volumeDefault: 1, rateBase: 2500000 },
+      {
+        kategori: "Honorarium",
+        item: "Honorarium Desain Grafis Kampanye Edukasi",
+        satuan: "Paket",
+        volumeDefault: 1,
+        rateBase: 5000000,
+      },
+      {
+        kategori: "Honorarium",
+        item: "Honorarium Penulis Narasi & Riset Kampanye",
+        satuan: "Paket",
+        volumeDefault: 1,
+        rateBase: 3500000,
+      },
+      {
+        kategori: "Publikasi",
+        item: "Promosi & Distribusi Media Digital Kampanye",
+        satuan: "Kegiatan",
+        volumeDefault: 1,
+        rateBase: 2500000,
+      },
     ],
   },
 ];
@@ -145,7 +236,11 @@ export function SbmSimulator() {
   const totalRab = calculatedItems.reduce((acc, curr) => acc + curr.total, 0);
 
   function formatRupiah(num: number) {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(num);
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(num);
   }
 
   return (
@@ -161,7 +256,10 @@ export function SbmSimulator() {
               <h3 className="font-display text-base font-semibold tracking-tight text-foreground">
                 Simulator Costing & Proposal Interactive
               </h3>
-              <Badge variant="secondary" className="gap-1 bg-primary/10 text-primary border-primary/20">
+              <Badge
+                variant="secondary"
+                className="gap-1 bg-primary/10 text-primary border-primary/20"
+              >
                 <Sparkles className="size-3" /> Live PRD Engine
               </Badge>
             </div>
@@ -245,12 +343,18 @@ export function SbmSimulator() {
           {/* TAB 1: Scope & Timeline */}
           <TabsContent value="scope" className="mt-4 space-y-4">
             <div className="rounded-lg border border-border bg-background p-4">
-              <h4 className="font-display text-sm font-semibold text-foreground">{preset?.title}</h4>
-              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{preset?.description}</p>
-              
+              <h4 className="font-display text-sm font-semibold text-foreground">
+                {preset?.title}
+              </h4>
+              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                {preset?.description}
+              </p>
+
               <div className="mt-4 grid gap-4 sm:grid-cols-3">
                 <div className="rounded-md border border-border/80 bg-muted/30 p-3">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Deliverables Utama</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                    Deliverables Utama
+                  </span>
                   <ul className="mt-2 space-y-1.5 text-xs text-foreground">
                     {(preset?.deliverables ?? []).map((d, i) => (
                       <li key={i} className="flex items-start gap-1.5">
@@ -262,7 +366,9 @@ export function SbmSimulator() {
                 </div>
 
                 <div className="rounded-md border border-border/80 bg-muted/30 p-3">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Milestones & Tahapan</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                    Milestones & Tahapan
+                  </span>
                   <ul className="mt-2 space-y-1.5 text-xs text-foreground">
                     {(preset?.milestones ?? []).map((m, i) => (
                       <li key={i} className="flex items-start gap-1.5">
@@ -274,11 +380,18 @@ export function SbmSimulator() {
                 </div>
 
                 <div className="rounded-md border border-border/80 bg-muted/30 p-3">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">KPI Indikator Keberhasilan</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                    KPI Indikator Keberhasilan
+                  </span>
                   <ul className="mt-2 space-y-1.5 text-xs text-foreground">
                     {(preset?.kpis ?? []).map((k, i) => (
                       <li key={i} className="flex items-start gap-1.5">
-                        <Badge variant="secondary" className="px-1 py-0 text-[10px] bg-primary/10 text-primary">KPI</Badge>
+                        <Badge
+                          variant="secondary"
+                          className="px-1 py-0 text-[10px] bg-primary/10 text-primary"
+                        >
+                          KPI
+                        </Badge>
                         <span>{k}</span>
                       </li>
                     ))}
@@ -306,13 +419,17 @@ export function SbmSimulator() {
                   {calculatedItems.map((item, idx) => (
                     <tr key={idx} className="hover:bg-muted/40 transition-colors">
                       <td className="px-3 py-2.5 font-medium text-foreground">
-                        <Badge variant="outline" className="text-[10px] py-0">{item.kategori}</Badge>
+                        <Badge variant="outline" className="text-[10px] py-0">
+                          {item.kategori}
+                        </Badge>
                       </td>
                       <td className="px-3 py-2.5 text-foreground font-medium">
                         {item.item}
                         {idx === 0 && (
                           <div className="mt-1 flex items-center gap-1">
-                            <span className="text-[10px] text-muted-foreground">Override Harga Manual:</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              Override Harga Manual:
+                            </span>
                             <input
                               type="number"
                               placeholder={item.finalRate.toString()}
@@ -331,9 +448,15 @@ export function SbmSimulator() {
                           </div>
                         )}
                       </td>
-                      <td className="px-3 py-2.5 text-center text-muted-foreground">{item.satuan}</td>
-                      <td className="px-3 py-2.5 text-center font-mono font-medium">{item.volumeDefault}</td>
-                      <td className="px-3 py-2.5 text-right font-mono">{formatRupiah(item.finalRate)}</td>
+                      <td className="px-3 py-2.5 text-center text-muted-foreground">
+                        {item.satuan}
+                      </td>
+                      <td className="px-3 py-2.5 text-center font-mono font-medium">
+                        {item.volumeDefault}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono">
+                        {formatRupiah(item.finalRate)}
+                      </td>
                       <td className="px-3 py-2.5 text-right font-mono font-semibold text-foreground">
                         {formatRupiah(item.total)}
                       </td>
@@ -355,9 +478,12 @@ export function SbmSimulator() {
 
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground px-1">
               <span className="flex items-center gap-1">
-                <CheckCircle2 className="size-3.5 text-emerald-500" /> Auto-mapped to target institution guidelines ({preset?.targetOrg ?? ""})
+                <CheckCircle2 className="size-3.5 text-emerald-500" /> Auto-mapped to target
+                institution guidelines ({preset?.targetOrg ?? ""})
               </span>
-              <span className="font-mono text-[11px]">Database Schema: `sbm_rates` (Version 2026)</span>
+              <span className="font-mono text-[11px]">
+                Database Schema: `sbm_rates` (Version 2026)
+              </span>
             </div>
           </TabsContent>
 
@@ -367,7 +493,8 @@ export function SbmSimulator() {
               {/* WYSIWYG Modular Toggles */}
               <div className="rounded-lg border border-border bg-background p-4">
                 <h4 className="font-display text-sm font-semibold flex items-center gap-2 text-foreground">
-                  <SlidersHorizontal className="size-4 text-primary" /> Sakelar Bab Opsional (WYSIWYG Editor)
+                  <SlidersHorizontal className="size-4 text-primary" /> Sakelar Bab Opsional
+                  (WYSIWYG Editor)
                 </h4>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Aktifkan bab sesuai kebutuhan donor tanpa perlu merombak struktur utama.
@@ -375,7 +502,8 @@ export function SbmSimulator() {
                 <div className="mt-4 space-y-3">
                   <label className="flex items-center justify-between rounded-md border border-border p-2.5 hover:bg-muted/50 cursor-pointer text-xs font-medium">
                     <span className="flex items-center gap-2">
-                      <ShieldCheck className="size-4 text-emerald-500" /> Bab "Manajemen Risiko & Mitigasi Bencana"
+                      <ShieldCheck className="size-4 text-emerald-500" /> Bab "Manajemen Risiko &
+                      Mitigasi Bencana"
                     </span>
                     <input
                       type="checkbox"
@@ -387,7 +515,8 @@ export function SbmSimulator() {
 
                   <label className="flex items-center justify-between rounded-md border border-border p-2.5 hover:bg-muted/50 cursor-pointer text-xs font-medium">
                     <span className="flex items-center gap-2">
-                      <Building2 className="size-4 text-emerald-500" /> Bab "Struktur Tim & Tata Kelola Organisasi"
+                      <Building2 className="size-4 text-emerald-500" /> Bab "Struktur Tim & Tata
+                      Kelola Organisasi"
                     </span>
                     <input
                       type="checkbox"
@@ -402,7 +531,8 @@ export function SbmSimulator() {
               {/* Asset Vault & Branding Integrator */}
               <div className="rounded-lg border border-border bg-background p-4">
                 <h4 className="font-display text-sm font-semibold flex items-center gap-2 text-foreground">
-                  <ImageIcon className="size-4 text-primary" /> Modul Asset Vault & Portfolio Integrator
+                  <ImageIcon className="size-4 text-primary" /> Modul Asset Vault & Portfolio
+                  Integrator
                 </h4>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Sematkan logo lembaga & rekam jejak infografis langsung ke lampiran proposal.
@@ -415,7 +545,9 @@ export function SbmSimulator() {
                       </span>
                       <div>
                         <span className="block">Logo Lembaga ("The Guardian of The Earth")</span>
-                        <span className="text-[10px] text-muted-foreground">Header & Footer Dokumen Otomatis</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          Header & Footer Dokumen Otomatis
+                        </span>
                       </div>
                     </div>
                     <input
@@ -431,7 +563,9 @@ export function SbmSimulator() {
                       <ImageIcon className="size-4 text-emerald-500" />
                       <div>
                         <span className="block">Portofolio Instagram & Kampanye Visual</span>
-                        <span className="text-[10px] text-muted-foreground">Disematkan ke Halaman Lampiran</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          Disematkan ke Halaman Lampiran
+                        </span>
                       </div>
                     </div>
                     <input
@@ -458,7 +592,8 @@ export function SbmSimulator() {
                 Modul Magic Link & Digital E-Signature Ready
               </h4>
               <p className="text-xs text-muted-foreground">
-                Kirim proposal dalam bentuk tautan web interaktif aman dengan pelacak rekam baca & e-signature.
+                Kirim proposal dalam bentuk tautan web interaktif aman dengan pelacak rekam baca &
+                e-signature.
               </p>
             </div>
           </div>
@@ -483,7 +618,8 @@ export function SbmSimulator() {
               [Preview Client Portal] Proposal Hibah {preset?.title ?? ""}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Tampilan interaktif yang diterima oleh pihak donor/kementerian melalui Magic Link aman.
+              Tampilan interaktif yang diterima oleh pihak donor/kementerian melalui Magic Link
+              aman.
             </DialogDescription>
           </DialogHeader>
 
@@ -496,9 +632,14 @@ export function SbmSimulator() {
                     THE GUARDIAN OF THE EARTH
                   </Badge>
                 )}
-                <span className="font-mono text-muted-foreground text-[11px]">Ref: EXP-2026-KALSAL-09</span>
+                <span className="font-mono text-muted-foreground text-[11px]">
+                  Ref: EXP-2026-KALSAL-09
+                </span>
               </div>
-              <Badge variant="outline" className="gap-1 border-emerald-500/40 text-emerald-600 dark:text-emerald-400">
+              <Badge
+                variant="outline"
+                className="gap-1 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+              >
                 <CheckCircle2 className="size-3" /> Status: Terriset & Validasi SBM
               </Badge>
             </div>
@@ -514,8 +655,12 @@ export function SbmSimulator() {
                 <p className="text-muted-foreground mt-0.5">{region?.label ?? ""}</p>
               </div>
               <div className="rounded bg-muted/40 p-2.5 border border-border/60">
-                <span className="font-semibold text-foreground">Total Pengajuan Anggaran (RAB):</span>
-                <p className="font-mono text-sm font-bold text-primary mt-0.5">{formatRupiah(totalRab)}</p>
+                <span className="font-semibold text-foreground">
+                  Total Pengajuan Anggaran (RAB):
+                </span>
+                <p className="font-mono text-sm font-bold text-primary mt-0.5">
+                  {formatRupiah(totalRab)}
+                </p>
               </div>
             </div>
 
@@ -542,12 +687,14 @@ export function SbmSimulator() {
             <div className="mt-4 rounded-lg border-2 border-dashed border-emerald-500/40 bg-emerald-500/5 p-4 text-center">
               <h6 className="font-semibold text-foreground">Digital E-Signature Approval</h6>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                Donor dapat langsung menandatangani proposal ini secara sah & digital dari tautan web.
+                Donor dapat langsung menandatangani proposal ini secara sah & digital dari tautan
+                web.
               </p>
 
               {signedState ? (
                 <div className="mt-3 flex items-center justify-center gap-2 font-semibold text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="size-5" /> Tanda Tangan Digital Diverifikasi oleh Balai / Donor Target (13 Agu 2026)
+                  <CheckCircle2 className="size-5" /> Tanda Tangan Digital Diverifikasi oleh Balai /
+                  Donor Target (13 Agu 2026)
                 </div>
               ) : (
                 <Button

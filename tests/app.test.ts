@@ -1,4 +1,7 @@
-import { validateProposalCompleteness, validateUniqueStandardsConstraint } from "../src/lib/business-validation";
+import {
+  validateProposalCompleteness,
+  validateUniqueStandardsConstraint,
+} from "../src/lib/business-validation";
 import { calculateRowSubtotal, calculateRowTax, calculateRowTotal } from "../src/lib/budget";
 import { calculateDonorMatchScore } from "../src/lib/donor-matching";
 import { StructuredAiOutputSchema } from "../src/lib/ai.server";
@@ -22,7 +25,10 @@ async function runUnitAndIntegrationTests() {
   // 1. RAB Formulas
   console.log("--- 1. Testing RAB Formulas ---");
   const subtotal = calculateRowSubtotal(5, 2, 100000);
-  assert(subtotal === 1000000, `Subtotal volume(5) * freq(2) * price(100k) should equal 1,000,000. Got: ${subtotal}`);
+  assert(
+    subtotal === 1000000,
+    `Subtotal volume(5) * freq(2) * price(100k) should equal 1,000,000. Got: ${subtotal}`,
+  );
 
   const tax = calculateRowTax(1000000, 0.11);
   assert(tax === 110000, `Tax 11% on 1,000,000 should equal 110,000. Got: ${tax}`);
@@ -69,8 +75,14 @@ async function runUnitAndIntegrationTests() {
   ];
   const dryRun = dryRunValidateImport("sbm", dummySbmRows);
   assert(dryRun.totalRows === 2, `Dry run total rows should equal 2. Got: ${dryRun.totalRows}`);
-  assert(dryRun.validRowsCount === 1, `Dry run valid rows count should equal 1. Got: ${dryRun.validRowsCount}`);
-  assert(dryRun.invalidRowsCount === 1, `Dry run invalid rows count should equal 1. Got: ${dryRun.invalidRowsCount}`);
+  assert(
+    dryRun.validRowsCount === 1,
+    `Dry run valid rows count should equal 1. Got: ${dryRun.validRowsCount}`,
+  );
+  assert(
+    dryRun.invalidRowsCount === 1,
+    `Dry run invalid rows count should equal 1. Got: ${dryRun.invalidRowsCount}`,
+  );
 
   // 5. Business Validation Rules
   console.log("\n--- 5. Testing Business Validation Rules ---");
@@ -80,15 +92,17 @@ async function runUnitAndIntegrationTests() {
     [],
     [],
     null,
-    false
+    false,
   );
   assert(!incompleteResult.canSubmit, "Incomplete proposal should fail submission validation.");
 
-  const constraintTest = validateUniqueStandardsConstraint(
-    2026, "1.0", "SBM-001", "JAKARTA",
-    [{ year: 2026, version: "1.0", code: "SBM-001", region_code: "JAKARTA" }]
+  const constraintTest = validateUniqueStandardsConstraint(2026, "1.0", "SBM-001", "JAKARTA", [
+    { year: 2026, version: "1.0", code: "SBM-001", region_code: "JAKARTA" },
+  ]);
+  assert(
+    constraintTest.isDuplicate,
+    "Duplicate SBM constraint check should detect existing combination.",
   );
-  assert(constraintTest.isDuplicate, "Duplicate SBM constraint check should detect existing combination.");
 
   // 6. Rate Limiter Framework
   console.log("\n--- 6. Testing Rate Limiting ---");
@@ -104,7 +118,10 @@ async function runUnitAndIntegrationTests() {
   // 7. File Validation & Sanitization
   console.log("\n--- 7. Testing File Upload Validation ---");
   const cleanName = sanitizeFilename("Laporan Kebutuhan (2026) @Final!.pdf");
-  assert(!cleanName.includes("(") && !cleanName.includes("@"), `Sanitized filename should remove special characters. Got: ${cleanName}`);
+  assert(
+    !cleanName.includes("(") && !cleanName.includes("@"),
+    `Sanitized filename should remove special characters. Got: ${cleanName}`,
+  );
 
   console.log("\n=======================================================");
   console.log("🎉 ALL UNIT & INTEGRATION TESTS PASSED SUCCESSFULLY!");

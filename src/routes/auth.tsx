@@ -12,16 +12,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } =>
-    typeof search['redirect'] === "string" ? { redirect: search['redirect'] } : {},
+    typeof search["redirect"] === "string" ? { redirect: search["redirect"] } : {},
   head: () => ({
     meta: [
       { title: "Masuk atau Daftar — EcoGrant AI" },
       {
         name: "description",
-        content: "Halaman autentikasi EcoGrant AI untuk pengelola program hibah kehutanan dan lingkungan.",
+        content:
+          "Halaman autentikasi EcoGrant AI untuk pengelola program hibah kehutanan dan lingkungan.",
       },
       { property: "og:title", content: "Masuk atau Daftar — EcoGrant AI" },
-      { property: "og:description", content: "Akses ruang kerja penyusunan proposal hibah EcoGrant AI." },
+      {
+        property: "og:description",
+        content: "Akses ruang kerja penyusunan proposal hibah EcoGrant AI.",
+      },
     ],
   }),
   component: AuthPage,
@@ -65,7 +69,9 @@ function AuthPage() {
     setBusy(false);
     if (error) {
       if (error.message.toLowerCase().includes("email not confirmed")) {
-        toast.error("Email belum dikonfirmasi. Di Supabase Dashboard, buka Authentication -> Providers -> Email dan nonaktifkan 'Confirm email' (atau klik confirm user pada tab Users).");
+        toast.error(
+          "Email belum dikonfirmasi. Di Supabase Dashboard, buka Authentication -> Providers -> Email dan nonaktifkan 'Confirm email' (atau klik confirm user pada tab Users).",
+        );
       } else {
         toast.error(error.message || "Email atau kata sandi tidak sesuai.");
       }
@@ -78,7 +84,10 @@ function AuthPage() {
         user_id: u.user.id,
         user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
       });
-      await supabase.from("profiles").update({ last_login_at: new Date().toISOString() }).eq("id", u.user.id);
+      await supabase
+        .from("profiles")
+        .update({ last_login_at: new Date().toISOString() })
+        .eq("id", u.user.id);
     }
     toast.success("Berhasil masuk.");
     void navigate({ to: search.redirect ?? (isAdmin ? "/admin" : "/dashboard"), replace: true });
@@ -137,8 +146,8 @@ function AuthPage() {
             Menerjemahkan ide lapangan menjadi proposal hibah yang siap diajukan.
           </h1>
           <p className="text-sm leading-relaxed opacity-80">
-            Narasi formal, Logical Framework Matrix, validasi Standar Biaya Masukan dan Standar Biaya Umum, serta
-            Rencana Anggaran Biaya terintegrasi dalam satu sumber data.
+            Narasi formal, Logical Framework Matrix, validasi Standar Biaya Masukan dan Standar
+            Biaya Umum, serta Rencana Anggaran Biaya terintegrasi dalam satu sumber data.
           </p>
           <ul className="space-y-2 text-sm opacity-80">
             <li>Wizard sepuluh langkah dengan penyimpanan otomatis</li>
@@ -205,11 +214,21 @@ function AuthPage() {
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="reg-name">Nama Lengkap</Label>
-                  <Input id="reg-name" required value={regName} onChange={(e) => setRegName(e.target.value)} />
+                  <Input
+                    id="reg-name"
+                    required
+                    value={regName}
+                    onChange={(e) => setRegName(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="reg-org">Organisasi</Label>
-                  <Input id="reg-org" required value={regOrg} onChange={(e) => setRegOrg(e.target.value)} />
+                  <Input
+                    id="reg-org"
+                    required
+                    value={regOrg}
+                    onChange={(e) => setRegOrg(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="reg-email">Email</Label>
@@ -231,7 +250,8 @@ function AuthPage() {
                     onChange={(e) => setRegPassword(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Minimal 10 karakter, mengandung huruf besar, huruf kecil, angka, dan karakter khusus.
+                    Minimal 10 karakter, mengandung huruf besar, huruf kecil, angka, dan karakter
+                    khusus.
                   </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={busy}>

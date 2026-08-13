@@ -36,7 +36,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -45,15 +51,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/proposals/")({
   head: () => ({
     meta: [
       { title: "Proposal Saya — EcoGrant AI" },
-      { name: "description", content: "Kelola seluruh proposal hibah beserta status, tanggal, progres, dan ekspor dokumen." },
+      {
+        name: "description",
+        content:
+          "Kelola seluruh proposal hibah beserta status, tanggal, progres, dan ekspor dokumen.",
+      },
       { property: "og:title", content: "Proposal Saya — EcoGrant AI" },
-      { property: "og:description", content: "Daftar proposal hibah lengkap dengan pencarian, filter, dan aksi massal." },
+      {
+        property: "og:description",
+        content: "Daftar proposal hibah lengkap dengan pencarian, filter, dan aksi massal.",
+      },
     ],
   }),
   component: ProposalsPage,
@@ -116,7 +136,11 @@ function ProposalsPage() {
   const { data: donors = [] } = useQuery({
     queryKey: ["donors-simple"],
     queryFn: async () => {
-      const { data } = await supabase.from("donors").select("id,name").is("deleted_at", null).order("name");
+      const { data } = await supabase
+        .from("donors")
+        .select("id,name")
+        .is("deleted_at", null)
+        .order("name");
       return data ?? [];
     },
   });
@@ -184,7 +208,11 @@ function ProposalsPage() {
         }
       }
 
-      const { data: rows, count, error } = await query
+      const {
+        data: rows,
+        count,
+        error,
+      } = await query
         .order(sortField, { ascending: sortAsc })
         .range(page * pageSize, page * pageSize + pageSize - 1);
 
@@ -216,7 +244,12 @@ function ProposalsPage() {
         .single();
 
       if (error) throw error;
-      await logAudit({ action: "proposal.create", entityType: "proposals", entityId: row.id, newValues: { title } });
+      await logAudit({
+        action: "proposal.create",
+        entityType: "proposals",
+        entityId: row.id,
+        newValues: { title },
+      });
       return row.id;
     },
     onSuccess: (id) => {
@@ -231,7 +264,11 @@ function ProposalsPage() {
   // Duplicate Proposal Mutation
   const duplicateMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { data: source, error } = await supabase.from("proposals").select("*").eq("id", id).single();
+      const { data: source, error } = await supabase
+        .from("proposals")
+        .select("*")
+        .eq("id", id)
+        .single();
       if (error) throw error;
 
       const { id: _id, created_at, updated_at, ...rest } = source;
@@ -262,20 +299,35 @@ function ProposalsPage() {
 
       if (sections?.length) {
         await supabase.from("proposal_sections").insert(
-          sections.map(({ id: _s, created_at: _c, updated_at: _u, ...s }) => ({ ...s, proposal_id: copy.id })),
+          sections.map(({ id: _s, created_at: _c, updated_at: _u, ...s }) => ({
+            ...s,
+            proposal_id: copy.id,
+          })),
         );
       }
 
       if (lfa?.length) {
         await supabase.from("lfa_rows").insert(
-          lfa.map(({ id: _l, created_at: _c, updated_at: _u, ...l }) => ({ ...l, proposal_id: copy.id })),
+          lfa.map(({ id: _l, created_at: _c, updated_at: _u, ...l }) => ({
+            ...l,
+            proposal_id: copy.id,
+          })),
         );
       }
 
       if (budget?.length) {
         await supabase.from("budget_items").insert(
           budget.map(
-            ({ id: _b, created_at: _c, updated_at: _u, subtotal: _st, tax_amount: _ta, total: _t, lfa_row_id: _lr, ...b }) => ({
+            ({
+              id: _b,
+              created_at: _c,
+              updated_at: _u,
+              subtotal: _st,
+              tax_amount: _ta,
+              total: _t,
+              lfa_row_id: _lr,
+              ...b
+            }) => ({
               ...b,
               proposal_id: copy.id,
             }),
@@ -290,7 +342,7 @@ function ProposalsPage() {
       toast.success("Proposal berhasil menduplikasi seluruh narasi, LFA, dan RAB.");
       void queryClient.invalidateQueries({ queryKey: ["proposals-list"] });
     },
-    onError: (err: any) => toast.error("Duplikasi gagal: " + err.message),
+    onError: (err: Error) => toast.error("Duplikasi gagal: " + err.message),
   });
 
   // Soft Delete with 10-Second Interactive Undo Toast
@@ -338,7 +390,11 @@ function ProposalsPage() {
       return;
     }
 
-    await logAudit({ action: "admin.proposal.bulk_delete", entityType: "proposals", newValues: { count, selectedIds } });
+    await logAudit({
+      action: "admin.proposal.bulk_delete",
+      entityType: "proposals",
+      newValues: { count, selectedIds },
+    });
     setSelectedIds([]);
     void queryClient.invalidateQueries({ queryKey: ["proposals-list"] });
 
@@ -377,9 +433,10 @@ function ProposalsPage() {
 
   // Bulk Export for Admin
   function handleBulkExport() {
-    const targetRows = selectedIds.length > 0
-      ? (data?.rows ?? []).filter((r) => selectedIds.includes(r.id))
-      : (data?.rows ?? []);
+    const targetRows =
+      selectedIds.length > 0
+        ? (data?.rows ?? []).filter((r) => selectedIds.includes(r.id))
+        : (data?.rows ?? []);
 
     if (targetRows.length === 0) {
       toast.error("Tidak ada proposal untuk diekspor.");
@@ -399,13 +456,17 @@ function ProposalsPage() {
       updated_at: r.updated_at,
     }));
 
-    exportProposalsToXLSX(exportData, `Laporan_Ekspor_Proposal_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    exportProposalsToXLSX(
+      exportData,
+      `Laporan_Ekspor_Proposal_${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
     toast.success(`${exportData.length} proposal berhasil diekspor ke Excel.`);
   }
 
   // Selection handlers
   const allCurrentRowIds = (data?.rows ?? []).map((r) => r.id);
-  const isAllSelected = allCurrentRowIds.length > 0 && allCurrentRowIds.every((id) => selectedIds.includes(id));
+  const isAllSelected =
+    allCurrentRowIds.length > 0 && allCurrentRowIds.every((id) => selectedIds.includes(id));
 
   function toggleSelectAll() {
     if (isAllSelected) {
@@ -416,7 +477,9 @@ function ProposalsPage() {
   }
 
   function toggleSelectRow(id: string) {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
   }
 
   // Toggle sorting by column
@@ -461,7 +524,13 @@ function ProposalsPage() {
 
           {/* Status Filter */}
           <div className="md:col-span-2">
-            <Select value={status} onValueChange={(v) => { setStatus(v); setPage(0); }}>
+            <Select
+              value={status}
+              onValueChange={(v) => {
+                setStatus(v);
+                setPage(0);
+              }}
+            >
               <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Filter Status" />
               </SelectTrigger>
@@ -478,7 +547,13 @@ function ProposalsPage() {
 
           {/* Donor Filter */}
           <div className="md:col-span-2">
-            <Select value={donor} onValueChange={(v) => { setDonor(v); setPage(0); }}>
+            <Select
+              value={donor}
+              onValueChange={(v) => {
+                setDonor(v);
+                setPage(0);
+              }}
+            >
               <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Filter Donor" />
               </SelectTrigger>
@@ -495,7 +570,13 @@ function ProposalsPage() {
 
           {/* Date Filter */}
           <div className="md:col-span-2">
-            <Select value={dateFilter} onValueChange={(v) => { setDateFilter(v); setPage(0); }}>
+            <Select
+              value={dateFilter}
+              onValueChange={(v) => {
+                setDateFilter(v);
+                setPage(0);
+              }}
+            >
               <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Rentang Tanggal" />
               </SelectTrigger>
@@ -513,7 +594,10 @@ function ProposalsPage() {
           <div className="md:col-span-2">
             <Input
               value={orgFilter}
-              onChange={(e) => { setOrgFilter(e.target.value); setPage(0); }}
+              onChange={(e) => {
+                setOrgFilter(e.target.value);
+                setPage(0);
+              }}
               placeholder="Filter Organisasi"
               className="text-xs sm:text-sm"
             />
@@ -552,7 +636,10 @@ function ProposalsPage() {
           {/* Bulk Action Controls for Admin or selected items */}
           <div className="flex items-center gap-2">
             {selectedIds.length > 0 && (
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
+              <Badge
+                variant="secondary"
+                className="bg-primary/10 text-primary border-primary/20 text-xs"
+              >
                 {selectedIds.length} Dipilih
               </Badge>
             )}
@@ -617,14 +704,20 @@ function ProposalsPage() {
                       <ArrowUpDown className="size-3 opacity-50" />
                     </div>
                   </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSortToggle("organization_name")}>
+                  <TableHead
+                    className="cursor-pointer"
+                    onClick={() => handleSortToggle("organization_name")}
+                  >
                     <div className="flex items-center gap-1">
                       Organisasi
                       <ArrowUpDown className="size-3 opacity-50" />
                     </div>
                   </TableHead>
                   <TableHead>Donor</TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSortToggle("grant_amount")}>
+                  <TableHead
+                    className="cursor-pointer"
+                    onClick={() => handleSortToggle("grant_amount")}
+                  >
                     <div className="flex items-center gap-1">
                       Nilai Hibah
                       <ArrowUpDown className="size-3 opacity-50" />
@@ -636,16 +729,25 @@ function ProposalsPage() {
                       <ArrowUpDown className="size-3 opacity-50" />
                     </div>
                   </TableHead>
-                  <TableHead className="w-36 cursor-pointer" onClick={() => handleSortToggle("progress_percent")}>
+                  <TableHead
+                    className="w-36 cursor-pointer"
+                    onClick={() => handleSortToggle("progress_percent")}
+                  >
                     <div className="flex items-center gap-1">
                       Progress
                       <ArrowUpDown className="size-3 opacity-50" />
                     </div>
                   </TableHead>
-                  <TableHead className="cursor-pointer text-xs" onClick={() => handleSortToggle("created_at")}>
+                  <TableHead
+                    className="cursor-pointer text-xs"
+                    onClick={() => handleSortToggle("created_at")}
+                  >
                     Tanggal Dibuat
                   </TableHead>
-                  <TableHead className="cursor-pointer text-xs" onClick={() => handleSortToggle("updated_at")}>
+                  <TableHead
+                    className="cursor-pointer text-xs"
+                    onClick={() => handleSortToggle("updated_at")}
+                  >
                     Terakhir Diperbarui
                   </TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
@@ -699,8 +801,8 @@ function ProposalsPage() {
                             p.status === "disetujui" || p.status === "selesai"
                               ? "default"
                               : p.status === "perlu_revisi"
-                              ? "destructive"
-                              : "secondary"
+                                ? "destructive"
+                                : "secondary"
                           }
                           className="text-[11px] font-normal"
                         >
@@ -712,7 +814,9 @@ function ProposalsPage() {
                       <TableCell>
                         <div className="space-y-1">
                           <Progress value={p.progress_percent} className="h-1.5" />
-                          <span className="text-[10px] text-muted-foreground font-mono">{p.progress_percent}%</span>
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            {p.progress_percent}%
+                          </span>
                         </div>
                       </TableCell>
 
@@ -746,7 +850,9 @@ function ProposalsPage() {
                             variant="ghost"
                             className="size-8"
                             title="Edit Proposal"
-                            onClick={() => void navigate({ to: "/proposals/$id", params: { id: p.id } })}
+                            onClick={() =>
+                              void navigate({ to: "/proposals/$id", params: { id: p.id } })
+                            }
                           >
                             <FileText className="size-3.5 text-emerald-600 dark:text-emerald-400" />
                           </Button>
@@ -797,7 +903,8 @@ function ProposalsPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between border-t border-border px-4 py-3 gap-3">
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span>
-                Menampilkan {page * pageSize + 1} - {Math.min((page + 1) * pageSize, totalCount)} dari {totalCount} proposal
+                Menampilkan {page * pageSize + 1} - {Math.min((page + 1) * pageSize, totalCount)}{" "}
+                dari {totalCount} proposal
               </span>
               <div className="flex items-center gap-1.5">
                 <span>Per Halaman:</span>
@@ -858,7 +965,8 @@ function ProposalsPage() {
               Buat Proposal Hibah Baru
             </DialogTitle>
             <DialogDescription>
-              Masukkan judul rencana proposal. Anda dapat menyunting judul dan narasi kembali di dalam wizard.
+              Masukkan judul rencana proposal. Anda dapat menyunting judul dan narasi kembali di
+              dalam wizard.
             </DialogDescription>
           </DialogHeader>
 
@@ -870,7 +978,9 @@ function ProposalsPage() {
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Contoh: Program Pemberdayaan Kelompok Tani Hutan Berkelanjutan"
             />
-            <p className="text-xs text-muted-foreground">Panjang judul antara 10 hingga 250 karakter.</p>
+            <p className="text-xs text-muted-foreground">
+              Panjang judul antara 10 hingga 250 karakter.
+            </p>
           </div>
 
           <DialogFooter>
@@ -898,7 +1008,10 @@ function ProposalsPage() {
               </div>
               <DialogTitle className="text-lg font-bold">{detailProposal.title}</DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                ID Proposal: <code className="font-mono text-[11px] bg-muted px-1 py-0.5 rounded">{detailProposal.id}</code>
+                ID Proposal:{" "}
+                <code className="font-mono text-[11px] bg-muted px-1 py-0.5 rounded">
+                  {detailProposal.id}
+                </code>
               </DialogDescription>
             </DialogHeader>
 
@@ -906,11 +1019,15 @@ function ProposalsPage() {
               <div className="grid grid-cols-2 gap-3 rounded-lg border p-3 bg-muted/30">
                 <div>
                   <span className="text-muted-foreground block text-[11px]">Organisasi</span>
-                  <span className="font-semibold">{detailProposal.organization_name || "Individu"}</span>
+                  <span className="font-semibold">
+                    {detailProposal.organization_name || "Individu"}
+                  </span>
                 </div>
                 <div>
                   <span className="text-muted-foreground block text-[11px]">Lembaga Donor</span>
-                  <span className="font-semibold">{detailProposal.donors?.name || "Belum Dipilih"}</span>
+                  <span className="font-semibold">
+                    {detailProposal.donors?.name || "Belum Dipilih"}
+                  </span>
                 </div>
                 <div>
                   <span className="text-muted-foreground block text-[11px]">Nilai Hibah</span>
@@ -942,7 +1059,9 @@ function ProposalsPage() {
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[10px] uppercase tracking-wider">Terakhir Diperbarui</span>
+                  <span className="block text-[10px] uppercase tracking-wider">
+                    Terakhir Diperbarui
+                  </span>
                   <span className="font-mono text-foreground text-[11px]">
                     {formatDateTime(detailProposal.updated_at)}
                   </span>
@@ -959,7 +1078,9 @@ function ProposalsPage() {
                 <Download className="size-3.5" /> Unduh XLSX
               </Button>
               <Button
-                onClick={() => void navigate({ to: "/proposals/$id", params: { id: detailProposal.id } })}
+                onClick={() =>
+                  void navigate({ to: "/proposals/$id", params: { id: detailProposal.id } })
+                }
                 className="gap-1.5 text-xs"
               >
                 <FileText className="size-3.5" /> Buka Wizard Penyusunan

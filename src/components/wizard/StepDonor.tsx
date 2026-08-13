@@ -24,10 +24,22 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { StepProps } from "./shared";
 
 const DEFAULT_DONORS: DonorRow[] = [
@@ -41,7 +53,12 @@ const DEFAULT_DONORS: DonorRow[] = [
     phone: "+62 21 3512300",
     funding_fields: ["Mitigasi dan Adaptasi Iklim", "Restorasi Gambut", "Kehutanan Berkelanjutan"],
     priorities: ["Kalimantan", "Penurunan emisi terukur", "Perhutanan Sosial"],
-    requirements: ["Legalitas lembaga", "Rekening khusus program", "RAB sesuai SBM", "Sistem MRV emisi"],
+    requirements: [
+      "Legalitas lembaga",
+      "Rekening khusus program",
+      "RAB sesuai SBM",
+      "Sistem MRV emisi",
+    ],
     min_grant: 100000000,
     max_grant: 2000000000,
     currency: "IDR",
@@ -73,8 +90,16 @@ const DEFAULT_DONORS: DonorRow[] = [
     website: "https://sgp.undp.org",
     email: "sgp.indonesia@undp.org",
     phone: "+62 21 3141308",
-    funding_fields: ["Konservasi Keanekaragaman Hayati", "Mitigasi Perubahan Iklim", "Degradasi Lahan"],
-    priorities: ["Organisasi berbasis masyarakat", "Pelibatan masyarakat adat", "Kesetaraan gender"],
+    funding_fields: [
+      "Konservasi Keanekaragaman Hayati",
+      "Mitigasi Perubahan Iklim",
+      "Degradasi Lahan",
+    ],
+    priorities: [
+      "Organisasi berbasis masyarakat",
+      "Pelibatan masyarakat adat",
+      "Kesetaraan gender",
+    ],
     requirements: ["Akta pendirian", "Laporan keuangan 2 tahun", "Surat dukungan pemda"],
     min_grant: 200000000,
     max_grant: 750000000,
@@ -107,7 +132,11 @@ const DEFAULT_DONORS: DonorRow[] = [
     website: "https://www.fordfoundation.org",
     email: "indonesia@fordfoundation.org",
     phone: "+62 21 2358 6900",
-    funding_fields: ["Keadilan Sosial", "Tata Kelola Sumber Daya Alam", "Pemberdayaan Masyarakat Adat"],
+    funding_fields: [
+      "Keadilan Sosial",
+      "Tata Kelola Sumber Daya Alam",
+      "Pemberdayaan Masyarakat Adat",
+    ],
     priorities: ["Advokasi kebijakan", "Penguatan kelembagaan", "Inklusi sosial"],
     requirements: ["Profil organisasi", "Teori perubahan", "Audit keuangan"],
     min_grant: 500000000,
@@ -143,7 +172,9 @@ export function StepDonor({ proposal, save }: StepProps) {
       .filter(({ donor }) => {
         const matchesSearch =
           !search.trim() ||
-          [donor.name, donor.category, donor.country].some((f) => (f ?? "").toLowerCase().includes(search.toLowerCase()));
+          [donor.name, donor.category, donor.country].some((f) =>
+            (f ?? "").toLowerCase().includes(search.toLowerCase()),
+          );
         const matchesCategory = categoryFilter === "semua" || donor.category === categoryFilter;
         return matchesSearch && matchesCategory;
       })
@@ -166,10 +197,12 @@ export function StepDonor({ proposal, save }: StepProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border bg-muted/40 p-4">
         <div>
           <h3 className="text-base font-semibold flex items-center gap-2">
-            <Building2 className="size-4 text-primary" /> Step 4: Pemilihan Lembaga Donor & Matching Engine
+            <Building2 className="size-4 text-primary" /> Step 4: Pemilihan Lembaga Donor & Matching
+            Engine
           </h3>
           <p className="text-xs text-muted-foreground">
-            Sistem mencocokkan tema program, lokasi, tenggat waktu, dan rentang hibah secara otomatis.
+            Sistem mencocokkan tema program, lokasi, tenggat waktu, dan rentang hibah secara
+            otomatis.
           </p>
         </div>
         {proposal.donor_id && (
@@ -213,7 +246,9 @@ export function StepDonor({ proposal, save }: StepProps) {
             <Card
               key={donor.id}
               className={`transition-all ${
-                isSelected ? "border-2 border-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/10 shadow-md" : "hover:border-primary/50"
+                isSelected
+                  ? "border-2 border-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/10 shadow-md"
+                  : "hover:border-primary/50"
               }`}
             >
               <CardHeader className="pb-3">
@@ -228,7 +263,9 @@ export function StepDonor({ proposal, save }: StepProps) {
                     </p>
                   </div>
                   <Badge
-                    variant={match.score >= 70 ? "default" : match.score >= 45 ? "secondary" : "outline"}
+                    variant={
+                      match.score >= 70 ? "default" : match.score >= 45 ? "secondary" : "outline"
+                    }
                     className={`font-mono text-xs ${
                       match.score >= 70 ? "bg-emerald-600" : match.score >= 45 ? "bg-amber-600" : ""
                     }`}
@@ -244,33 +281,47 @@ export function StepDonor({ proposal, save }: StepProps) {
                   <div className="flex justify-between font-mono text-[11px]">
                     <span>Rentang Hibah:</span>
                     <span className="font-semibold text-foreground">
-                      {formatCurrency(donor.min_grant, donor.currency)} – {formatCurrency(donor.max_grant, donor.currency)}
+                      {formatCurrency(donor.min_grant, donor.currency)} –{" "}
+                      {formatCurrency(donor.max_grant, donor.currency)}
                     </span>
                   </div>
                   <div className="flex justify-between text-[11px]">
                     <span className="text-muted-foreground">Tenggat Pengajuan:</span>
-                    <span className="font-medium text-foreground">{formatDate(donor.deadline)}</span>
+                    <span className="font-medium text-foreground">
+                      {formatDate(donor.deadline)}
+                    </span>
                   </div>
                 </div>
 
                 {/* PRD 11.4: Matching Results breakdown */}
                 <div className="space-y-2">
-                  <span className="font-semibold text-foreground block">Analisis Kecocokan Matching Engine:</span>
+                  <span className="font-semibold text-foreground block">
+                    Analisis Kecocokan Matching Engine:
+                  </span>
                   <div className="space-y-1.5">
                     {match.reasons.slice(0, 2).map((r, i) => (
-                      <div key={i} className="flex items-start gap-1.5 text-emerald-700 dark:text-emerald-300">
+                      <div
+                        key={i}
+                        className="flex items-start gap-1.5 text-emerald-700 dark:text-emerald-300"
+                      >
                         <CheckCircle2 className="size-3.5 shrink-0 mt-0.5" />
                         <span>{r}</span>
                       </div>
                     ))}
                     {match.unmet_requirements.slice(0, 1).map((u, i) => (
-                      <div key={i} className="flex items-start gap-1.5 text-amber-700 dark:text-amber-300">
+                      <div
+                        key={i}
+                        className="flex items-start gap-1.5 text-amber-700 dark:text-amber-300"
+                      >
                         <AlertTriangle className="size-3.5 shrink-0 mt-0.5" />
                         <span>Belum memenuhi syarat: {u}</span>
                       </div>
                     ))}
                     {match.risks.slice(0, 1).map((rk, i) => (
-                      <div key={i} className="flex items-start gap-1.5 text-rose-600 dark:text-rose-400">
+                      <div
+                        key={i}
+                        className="flex items-start gap-1.5 text-rose-600 dark:text-rose-400"
+                      >
                         <XCircle className="size-3.5 shrink-0 mt-0.5" />
                         <span>Risiko: {rk}</span>
                       </div>
@@ -304,7 +355,10 @@ export function StepDonor({ proposal, save }: StepProps) {
       </div>
 
       {/* Modal Detail Donor Complete */}
-      <Dialog open={!!selectedDonorDetail} onOpenChange={(open) => !open && setSelectedDonorDetail(null)}>
+      <Dialog
+        open={!!selectedDonorDetail}
+        onOpenChange={(open) => !open && setSelectedDonorDetail(null)}
+      >
         {selectedDonorDetail && (
           <DialogContent className="max-w-xl">
             <DialogHeader>
@@ -313,7 +367,8 @@ export function StepDonor({ proposal, save }: StepProps) {
               </div>
               <DialogTitle className="text-lg">{selectedDonorDetail.name}</DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
-                Kategori: {selectedDonorDetail.category} · Negara: {selectedDonorDetail.country || "Internasional"}
+                Kategori: {selectedDonorDetail.category} · Negara:{" "}
+                {selectedDonorDetail.country || "Internasional"}
               </DialogDescription>
             </DialogHeader>
 
@@ -322,7 +377,8 @@ export function StepDonor({ proposal, save }: StepProps) {
                 <div>
                   <span className="text-muted-foreground block">Rentang Hibah</span>
                   <span className="font-mono font-semibold">
-                    {formatCurrency(selectedDonorDetail.min_grant, selectedDonorDetail.currency)} – {formatCurrency(selectedDonorDetail.max_grant, selectedDonorDetail.currency)}
+                    {formatCurrency(selectedDonorDetail.min_grant, selectedDonorDetail.currency)} –{" "}
+                    {formatCurrency(selectedDonorDetail.max_grant, selectedDonorDetail.currency)}
                   </span>
                 </div>
                 <div>
@@ -342,7 +398,8 @@ export function StepDonor({ proposal, save }: StepProps) {
                       rel="noreferrer"
                       className="flex items-center gap-1 text-primary hover:underline"
                     >
-                      <Globe className="size-3.5" /> Website Resmi <ExternalLink className="size-3" />
+                      <Globe className="size-3.5" /> Website Resmi{" "}
+                      <ExternalLink className="size-3" />
                     </a>
                   )}
                   {selectedDonorDetail.email && (
@@ -371,7 +428,9 @@ export function StepDonor({ proposal, save }: StepProps) {
               </div>
 
               <div className="space-y-2">
-                <span className="font-semibold text-foreground block">Persyaratan Dokumen & Administrasi:</span>
+                <span className="font-semibold text-foreground block">
+                  Persyaratan Dokumen & Administrasi:
+                </span>
                 <ul className="space-y-1">
                   {(selectedDonorDetail.requirements || []).map((r, i) => (
                     <li key={i} className="flex items-start gap-1.5 text-muted-foreground">

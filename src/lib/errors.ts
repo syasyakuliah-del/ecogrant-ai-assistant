@@ -24,7 +24,7 @@ export class AppError extends Error {
     code: ErrorCategory,
     message: string,
     recoveryAction?: string,
-    statusCode: number = 400
+    statusCode: number = 400,
   ) {
     super(message);
     this.name = "AppError";

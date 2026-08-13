@@ -36,17 +36,29 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   applySecurityHeaders(newHeaders);
 
   if (response.status < 500) {
-    return new Response(response.body, { status: response.status, statusText: response.statusText, headers: newHeaders });
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: newHeaders,
+    });
   }
 
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) {
-    return new Response(response.body, { status: response.status, statusText: response.statusText, headers: newHeaders });
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: newHeaders,
+    });
   }
 
   const body = await response.clone().text();
   if (!isH3SwallowedErrorBody(body)) {
-    return new Response(response.body, { status: response.status, statusText: response.statusText, headers: newHeaders });
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: newHeaders,
+    });
   }
 
   console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
@@ -97,35 +109,50 @@ export default {
 
     if (url.pathname === "/api/v1/export/document" && request.method === "POST") {
       try {
-        const body = (await request.json()) as { title?: string; format?: string; content?: string };
+        const body = (await request.json()) as {
+          title?: string;
+          format?: string;
+          content?: string;
+        };
         const format = body.format || "pdf";
         const title = body.title || "Proposal_Export";
-        const filename = `${title.replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "_")}.${format}`;
+        const filename = `${title
+          .replace(/[^a-zA-Z0-9\s-]/g, "")
+          .trim()
+          .replace(/\s+/g, "_")}.${format}`;
 
         if (format === "docx") {
           const docxContent = `ECOGRANT AI PROPOSAL EXPORT\n============================\n\nJudul: ${title}\nTanggal Ekspor: ${new Date().toLocaleDateString("id-ID")}\n\n${body.content || ""}`;
           return new Response(docxContent, {
             status: 200,
-            headers: applySecurityHeaders(new Headers({
-              "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-              "content-disposition": `attachment; filename="${filename}"`,
-            })),
+            headers: applySecurityHeaders(
+              new Headers({
+                "content-type":
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "content-disposition": `attachment; filename="${filename}"`,
+              }),
+            ),
           });
         } else {
           const textPayload = `ECOGRANT AI PROPOSAL EXPORT\n============================\n\nJudul: ${title}\nTanggal Ekspor: ${new Date().toLocaleDateString("id-ID")}\n\n${body.content || ""}`;
           return new Response(textPayload, {
             status: 200,
-            headers: applySecurityHeaders(new Headers({
-              "content-type": "application/pdf",
-              "content-disposition": `attachment; filename="${filename}"`,
-            })),
+            headers: applySecurityHeaders(
+              new Headers({
+                "content-type": "application/pdf",
+                "content-disposition": `attachment; filename="${filename}"`,
+              }),
+            ),
           });
         }
       } catch (err) {
-        return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), {
-          status: 500,
-          headers: applySecurityHeaders(new Headers({ "content-type": "application/json" })),
-        });
+        return new Response(
+          JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
+          {
+            status: 500,
+            headers: applySecurityHeaders(new Headers({ "content-type": "application/json" })),
+          },
+        );
       }
     }
 

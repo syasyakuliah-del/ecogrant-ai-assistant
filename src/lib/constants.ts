@@ -45,13 +45,40 @@ export const WIZARD_STEPS = [
 ] as const;
 
 export const PROVINCES = [
-  "Aceh", "Sumatera Utara", "Sumatera Barat", "Riau", "Jambi", "Sumatera Selatan",
-  "Bengkulu", "Lampung", "Kepulauan Bangka Belitung", "Kepulauan Riau", "DKI Jakarta",
-  "Jawa Barat", "Jawa Tengah", "DI Yogyakarta", "Jawa Timur", "Banten", "Bali",
-  "Nusa Tenggara Barat", "Nusa Tenggara Timur", "Kalimantan Barat", "Kalimantan Tengah",
-  "Kalimantan Selatan", "Kalimantan Timur", "Kalimantan Utara", "Sulawesi Utara",
-  "Sulawesi Tengah", "Sulawesi Selatan", "Sulawesi Tenggara", "Gorontalo",
-  "Sulawesi Barat", "Maluku", "Maluku Utara", "Papua Barat", "Papua",
+  "Aceh",
+  "Sumatera Utara",
+  "Sumatera Barat",
+  "Riau",
+  "Jambi",
+  "Sumatera Selatan",
+  "Bengkulu",
+  "Lampung",
+  "Kepulauan Bangka Belitung",
+  "Kepulauan Riau",
+  "DKI Jakarta",
+  "Jawa Barat",
+  "Jawa Tengah",
+  "DI Yogyakarta",
+  "Jawa Timur",
+  "Banten",
+  "Bali",
+  "Nusa Tenggara Barat",
+  "Nusa Tenggara Timur",
+  "Kalimantan Barat",
+  "Kalimantan Tengah",
+  "Kalimantan Selatan",
+  "Kalimantan Timur",
+  "Kalimantan Utara",
+  "Sulawesi Utara",
+  "Sulawesi Tengah",
+  "Sulawesi Selatan",
+  "Sulawesi Tenggara",
+  "Gorontalo",
+  "Sulawesi Barat",
+  "Maluku",
+  "Maluku Utara",
+  "Papua Barat",
+  "Papua",
 ];
 
 export const PROGRAM_CATEGORIES = [
@@ -81,4 +108,18 @@ export const BUDGET_CATEGORIES = [
   "Manajemen Program",
 ];
 
-export const UNITS = ["OJ", "OK", "OH", "OB", "Paket", "Unit", "Unit/Hari", "Batang", "Kg", "Lembar", "Eksemplar", "Kegiatan", "Bulan"];
+export const UNITS = [
+  "OJ",
+  "OK",
+  "OH",
+  "OB",
+  "Paket",
+  "Unit",
+  "Unit/Hari",
+  "Batang",
+  "Kg",
+  "Lembar",
+  "Eksemplar",
+  "Kegiatan",
+  "Bulan",
+];

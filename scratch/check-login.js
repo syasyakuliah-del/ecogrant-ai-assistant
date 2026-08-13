@@ -22,7 +22,10 @@ async function checkLogin() {
     console.log("User metadata:", data.user?.user_metadata);
 
     // Check user role
-    const { data: roles } = await supabase.from("user_roles").select("*").eq("user_id", data.user?.id);
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("*")
+      .eq("user_id", data.user?.id);
     console.log("User Roles in DB:", roles);
   }
 }

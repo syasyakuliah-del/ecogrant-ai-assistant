@@ -36,7 +36,10 @@ export function validateItem(
       : undefined;
 
   if (!std) {
-    return { validation_status: "manual", validation_message: "Item tidak mengacu pada standar biaya." };
+    return {
+      validation_status: "manual",
+      validation_message: "Item tidak mengacu pada standar biaya.",
+    };
   }
   const stdPrice = Number(std.price);
   if (price <= stdPrice) {
@@ -79,4 +82,4 @@ export function calculateRowTax(subtotal: number, taxRate: number): number {
 /** RAB Formula: Total = Subtotal + Tax */
 export function calculateRowTotal(subtotal: number, tax: number): number {
   return subtotal + tax;
-}
+}

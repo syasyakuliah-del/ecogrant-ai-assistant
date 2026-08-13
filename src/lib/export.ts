@@ -27,7 +27,12 @@ function download(blob: Blob, filename: string) {
 }
 
 export function safeFileName(title: string, ext: string) {
-  const base = title.replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 60) || "Proposal";
+  const base =
+    title
+      .replace(/[^a-zA-Z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "_")
+      .slice(0, 60) || "Proposal";
   return `${base}_v1.0_${new Date().toISOString().slice(0, 10)}.${ext}`;
 }
 
@@ -43,7 +48,12 @@ async function recordExport(proposalId: string, format: string, exportType: stri
       status: "completed",
       completed_at: new Date().toISOString(),
     });
-    await logAudit({ action: "data.export", entityType: "export", entityId: proposalId, newValues: { format, exportType } });
+    await logAudit({
+      action: "data.export",
+      entityType: "export",
+      entityId: proposalId,
+      newValues: { format, exportType },
+    });
   } catch {
     // non-blocking
   }
@@ -135,7 +145,17 @@ export async function exportPdf(bundle: ExportBundle) {
 
 export async function exportDocx(bundle: ExportBundle) {
   const docx = await import("docx");
-  const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } = docx;
+  const {
+    Document,
+    Packer,
+    Paragraph,
+    TextRun,
+    HeadingLevel,
+    Table,
+    TableRow,
+    TableCell,
+    WidthType,
+  } = docx;
   const p = bundle.proposal;
 
   const children: (typeof Paragraph.prototype | typeof Table.prototype)[] = [
@@ -157,7 +177,10 @@ export async function exportDocx(bundle: ExportBundle) {
           break: 1,
         }),
         new TextRun({ text: `Lembaga donor: ${bundle.donorName ?? "-"}`, break: 1 }),
-        new TextRun({ text: `Nilai hibah: ${formatCurrency(p.grant_amount, p.currency)}`, break: 1 }),
+        new TextRun({
+          text: `Nilai hibah: ${formatCurrency(p.grant_amount, p.currency)}`,
+          break: 1,
+        }),
       ],
       spacing: { after: 300 },
     }),
@@ -166,7 +189,11 @@ export async function exportDocx(bundle: ExportBundle) {
   const summary = sectionContent(bundle.sections, EXECUTIVE_SUMMARY_KEY);
   if (summary) {
     children.push(
-      new Paragraph({ text: "Executive Summary", heading: HeadingLevel.HEADING_1, spacing: { before: 240, after: 120 } }),
+      new Paragraph({
+        text: "Executive Summary",
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 240, after: 120 },
+      }),
       new Paragraph({ text: summary, spacing: { after: 200 } }),
     );
   }

@@ -8,7 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { StepProps } from "./shared";
 
@@ -50,7 +56,11 @@ export function StepInfo({ proposal, save }: StepProps) {
   const { data: donors = [] } = useQuery({
     queryKey: ["donors-select"],
     queryFn: async () => {
-      const { data } = await supabase.from("donors").select("id, name, category").is("deleted_at", null).order("name");
+      const { data } = await supabase
+        .from("donors")
+        .select("id, name, category")
+        .is("deleted_at", null)
+        .order("name");
       return data ?? [];
     },
   });
@@ -77,10 +87,14 @@ export function StepInfo({ proposal, save }: StepProps) {
                 <Info className="size-5 text-primary" /> Step 1: Informasi Dasar Proposal
               </CardTitle>
               <CardDescription>
-                Isi parameter utama proposal, organisasi pelaksana, durasi program, dan target pendanaan.
+                Isi parameter utama proposal, organisasi pelaksana, durasi program, dan target
+                pendanaan.
               </CardDescription>
             </div>
-            <Badge variant="outline" className="gap-1 bg-primary/10 text-primary border-primary/20 font-mono">
+            <Badge
+              variant="outline"
+              className="gap-1 bg-primary/10 text-primary border-primary/20 font-mono"
+            >
               Durasi: {durationMonths} Bulan
             </Badge>
           </div>
@@ -108,7 +122,9 @@ export function StepInfo({ proposal, save }: StepProps) {
                 <Label htmlFor="title" className="font-semibold">
                   Judul Proposal <span className="text-destructive">*</span>
                 </Label>
-                <span className={`text-xs ${isTitleValid ? "text-muted-foreground" : "text-destructive font-medium"}`}>
+                <span
+                  className={`text-xs ${isTitleValid ? "text-muted-foreground" : "text-destructive font-medium"}`}
+                >
                   {title.length}/250 karakter
                 </span>
               </div>
@@ -332,7 +348,8 @@ export function StepInfo({ proposal, save }: StepProps) {
                 placeholder="Uraikan gagasan singkat mengenai permasalahan yang dihadapi, solusi yang ditawarkan, dan dampak utama yang ingin dicapai..."
               />
               <p className="text-xs text-muted-foreground">
-                Ringkasan gagasan ini digunakan oleh Asisten AI untuk membantu menyusun narasi dan Logical Framework pada langkah berikutnya.
+                Ringkasan gagasan ini digunakan oleh Asisten AI untuk membantu menyusun narasi dan
+                Logical Framework pada langkah berikutnya.
               </p>
             </div>
           </div>

@@ -24,15 +24,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — EcoGrant AI" },
-      { name: "description", content: "Ringkasan proposal hibah, progres penyusunan, dan aktivitas terbaru." },
+      {
+        name: "description",
+        content: "Ringkasan proposal hibah, progres penyusunan, dan aktivitas terbaru.",
+      },
       { property: "og:title", content: "Dashboard — EcoGrant AI" },
-      { property: "og:description", content: "Ringkasan proposal hibah dan progres penyusunan Anda." },
+      {
+        property: "og:description",
+        content: "Ringkasan proposal hibah dan progres penyusunan Anda.",
+      },
     ],
   }),
   component: DashboardPage,
@@ -54,7 +66,9 @@ function DashboardPage() {
     queryFn: async () => {
       let query = supabase
         .from("proposals")
-        .select("id,title,status,progress_percent,grant_amount,currency,updated_at,created_at,donor_id")
+        .select(
+          "id,title,status,progress_percent,grant_amount,currency,updated_at,created_at,donor_id",
+        )
         .eq("owner_id", user!.id)
         .is("deleted_at", null)
         .order("updated_at", { ascending: false });
@@ -82,7 +96,8 @@ function DashboardPage() {
     return {
       total: list.length,
       draft: list.filter((p) => p.status === "draft" || p.status === "sedang_disusun").length,
-      review: list.filter((p) => p.status === "siap_ditinjau" || p.status === "perlu_revisi").length,
+      review: list.filter((p) => p.status === "siap_ditinjau" || p.status === "perlu_revisi")
+        .length,
       done: list.filter((p) => p.status === "selesai" || p.status === "disetujui").length,
       value: list.reduce((a, p) => a + Number(p.grant_amount ?? 0), 0),
     };
@@ -111,13 +126,21 @@ function DashboardPage() {
       .map(([key, jumlah]) => ({ bulan: key, jumlah }));
   }, [data]);
 
-  const chartColors = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
+  const chartColors = [
+    "var(--chart-1)",
+    "var(--chart-2)",
+    "var(--chart-3)",
+    "var(--chart-4)",
+    "var(--chart-5)",
+  ];
 
   if (isError) {
     return (
       <div className="surface-panel flex flex-col items-center gap-3 p-12 text-center">
         <p className="font-display font-semibold">Data dashboard gagal dimuat</p>
-        <p className="text-sm text-muted-foreground">Terjadi kendala saat mengambil data dari server.</p>
+        <p className="text-sm text-muted-foreground">
+          Terjadi kendala saat mengambil data dari server.
+        </p>
         <Button onClick={() => void refetch()} variant="outline">
           <RefreshCw className="size-4" /> Coba lagi
         </Button>
@@ -188,7 +211,9 @@ function DashboardPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="font-display text-2xl font-semibold text-primary">{formatCurrency(stats.value)}</p>
+          <p className="font-display text-2xl font-semibold text-primary">
+            {formatCurrency(stats.value)}
+          </p>
         </CardContent>
       </Card>
 
@@ -203,7 +228,13 @@ function DashboardPage() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={statusChart} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90}>
+                  <Pie
+                    data={statusChart}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={55}
+                    outerRadius={90}
+                  >
                     {statusChart.map((_, i) => (
                       <Cell key={i} fill={chartColors[i % chartColors.length]} />
                     ))}
@@ -269,7 +300,8 @@ function DashboardPage() {
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold">{p.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        Diperbarui {formatDateTime(p.updated_at)} · {formatCurrency(p.grant_amount, p.currency)}
+                        Diperbarui {formatDateTime(p.updated_at)} ·{" "}
+                        {formatCurrency(p.grant_amount, p.currency)}
                       </p>
                     </div>
                     <Badge variant="secondary">{STATUS_LABEL[p.status]}</Badge>
@@ -296,7 +328,9 @@ function DashboardPage() {
                     <p className="text-sm font-medium">{n.title}</p>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">{n.message}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{formatDateTime(n.created_at)}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {formatDateTime(n.created_at)}
+                  </p>
                 </div>
               ))
             )}
