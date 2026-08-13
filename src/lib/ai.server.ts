@@ -1,16 +1,27 @@
-import { streamText, Output } from "ai";
+﻿import { generateText } from "ai";
 import { z } from "zod";
-import { getAiModel } from "./ai-gateway.server";
+import { getAiModel, AI_MODEL } from "./ai-gateway.server";
+
+export const ECOGRANT_PROMPT_VERSION = "ecogrant-master-2026-08-13";
+
+type JsonRecord = Record<string, unknown>;
 
 export const ContextSchema = z.object({
+  proposalId: z.string().default(""),
   title: z.string().default(""),
   organization: z.string().default(""),
+  organizationName: z.string().default(""),
+  personInCharge: z.string().default(""),
   organizationType: z.string().default("NGO"),
   organizationRegNumber: z.string().default(""),
   location: z.string().default(""),
+  projectLocation: z.string().default(""),
   city: z.string().default(""),
+  cityOrRegency: z.string().default(""),
   province: z.string().default(""),
   category: z.string().default(""),
+  mainProgramCategory: z.string().default(""),
+  programSubcategory: z.string().default(""),
   ideaSummary: z.string().default(""),
   durationMonths: z.number().default(0),
   startDate: z.string().default(""),
@@ -26,261 +37,54 @@ export const ContextSchema = z.object({
   rabSummary: z.string().default(""),
 });
 
-export const StructuredAiOutputSchema = z.object({
-  sectionType: z.string(),
-  content: z.string(),
-  assumptions: z.array(z.string()).default([]),
-  missingInformation: z.array(z.string()).default([]),
-  warnings: z.array(z.string()).default([]),
-  aiGenerated: z.literal(true).default(true),
-});
+export const NarrativeInput = z.object({ context: ContextSchema, sectionKey: z.string(), sectionLabel: z.string(), mode: z.enum(["generate", "rewrite", "shorten", "expand", "restructure", "donor"]).default("generate"), currentContent: z.string().default("") });
+export const SummaryInput = z.object({ context: ContextSchema, narratives: z.array(z.object({ label: z.string(), content: z.string() })).default([]), lfaSummary: z.string().default(""), budgetTotal: z.number().default(0), maxWords: z.number().default(400) });
+export const LfaInput = z.object({ context: ContextSchema, narratives: z.array(z.object({ label: z.string(), content: z.string() })).default([]) });
+export const BudgetInput = z.object({ context: ContextSchema, activities: z.array(z.string()).default([]), standards: z.array(z.object({ source: z.string(), code: z.string(), category: z.string(), description: z.string(), unit: z.string(), price: z.number() })).default([]) });
+export const ActivityInput = z.object({ context: ContextSchema, narratives: z.array(z.object({ label: z.string(), content: z.string() })).default([]), outputs: z.array(z.string()).default([]) });
+export const ConsistencyInput = z.object({ context: ContextSchema, narratives: z.array(z.object({ label: z.string(), content: z.string() })).default([]), lfaSummary: z.string().default(""), activities: z.array(z.string()).default([]), rabSummary: z.string().default(""), changedModule: z.string().default("") });
+export const QualityReviewInput = ConsistencyInput.extend({ budgetTotal: z.number().default(0) });
 
+export const StructuredAiOutputSchema = z.object({ sectionType: z.string(), content: z.string(), assumptions: z.array(z.string()).default([]), missingInformation: z.array(z.string()).default([]), warnings: z.array(z.string()).default([]), aiGenerated: z.literal(true).default(true) });
 export type StructuredAiOutput = z.infer<typeof StructuredAiOutputSchema>;
 
-export const NarrativeInput = z.object({
-  context: ContextSchema,
-  sectionKey: z.string(),
-  sectionLabel: z.string(),
-  mode: z.enum(["generate", "rewrite", "shorten", "expand", "restructure", "donor"]).default("generate"),
-  currentContent: z.string().default(""),
-});
-
-export const SummaryInput = z.object({
-  context: ContextSchema,
-  narratives: z.array(z.object({ label: z.string(), content: z.string() })).default([]),
-  lfaSummary: z.string().default(""),
-  budgetTotal: z.number().default(0),
-  maxWords: z.number().default(400),
-});
-
-export const LfaInput = z.object({
-  context: ContextSchema,
-  narratives: z.array(z.object({ label: z.string(), content: z.string() })).default([]),
-});
-
-export const BudgetInput = z.object({
-  context: ContextSchema,
-  activities: z.array(z.string()).default([]),
-  standards: z
-    .array(
-      z.object({
-        source: z.string(),
-        code: z.string(),
-        category: z.string(),
-        description: z.string(),
-        unit: z.string(),
-        price: z.number(),
-      }),
-    )
-    .default([]),
-});
-
-
-
-function handleError(error: unknown): never {
-  const message = error instanceof Error ? error.message : String(error);
-  if (message.includes("429")) throw new Error("Batas permintaan AI tercapai. Silakan coba 1 menit lagi.");
-  if (message.includes("402")) throw new Error("Kuota AI habis. Silakan tambahkan kredit pada workspace.");
-  throw new Error(`Permintaan AI gagal: ${message}`);
-}
+function handleError(error: unknown): never { const message = error instanceof Error ? error.message : String(error); if (message.includes("429")) throw new Error("Batas permintaan AI tercapai. Silakan coba 1 menit lagi."); if (message.includes("402")) throw new Error("Kuota AI habis. Silakan tambahkan kredit pada workspace."); throw new Error(`Permintaan AI gagal: ${message}`); }
 
 function contextBlock(c: z.infer<typeof ContextSchema>) {
-  return [
-    `=== KONTEKS PROPOSAL & ORGANISASI ===`,
-    `Judul program: ${c.title || "-"}`,
-    `Organisasi pelaksana: ${c.organization || "-"} (${c.organizationType || "NGO"})${c.organizationRegNumber ? ` Reg: ${c.organizationRegNumber}` : ""}`,
-    `Lokasi pelaksanaan: ${[c.location, c.city, c.province].filter(Boolean).join(", ") || "-"}`,
-    `Kategori program: ${c.category || "-"}`,
-    `Durasi pelaksanaan: ${c.durationMonths} bulan${c.startDate ? ` (${c.startDate} s.d ${c.endDate})` : ""}`,
-    `Nilai hibah yang diajukan: ${c.currency} ${c.grantAmount.toLocaleString("id-ID")}`,
-    `Lembaga donor target: ${c.donorName || "Belum dipilih"}${c.donorCountry ? ` (${c.donorCountry})` : ""}`,
-    c.donorPriorities.length ? `Prioritas strategis donor: ${c.donorPriorities.join("; ")}` : "",
-    c.donorRequirements.length ? `Persyaratan utama donor: ${c.donorRequirements.join("; ")}` : "",
-    `Ringkasan ide lapangan: ${c.ideaSummary || "-"}`,
-    c.existingNarratives.length ? `\n=== NARASI SEBELUMNYA ===\n` + c.existingNarratives.map((n) => `[${n.label}]\n${n.content}`).join("\n\n") : "",
-    c.lfaSummary ? `\n=== LOGICAL FRAMEWORK (LFA) ===\n${c.lfaSummary}` : "",
-    c.rabSummary ? `\n=== RENCANA ANGGARAN BIAYA (RAB) ===\n${c.rabSummary}` : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const organization = c.organizationName || c.organization;
+  const location = [c.projectLocation || c.location, c.cityOrRegency || c.city, c.province].filter(Boolean).join(", ");
+  const category = [c.mainProgramCategory || c.category, c.programSubcategory].filter(Boolean).join(" — ");
+  return [`=== SINGLE SOURCE OF TRUTH: PROPOSAL ===`, `proposal.id: ${c.proposalId || "belum tersedia"}`, `proposal.title: ${c.title || "belum tersedia"}`, `proposal.organization_name: ${organization || "belum tersedia"}`, `proposal.person_in_charge: ${c.personInCharge || "belum tersedia"}`, `proposal.project_location: ${location || "belum tersedia"}`, `proposal.province: ${c.province || "belum tersedia"}`, `proposal.city_or_regency: ${c.cityOrRegency || c.city || "belum tersedia"}`, `proposal.main_program_category: ${category || "belum tersedia"}`, `proposal.duration_months: ${c.durationMonths || "belum tersedia"}`, `proposal.period: ${[c.startDate, c.endDate].filter(Boolean).join(" s.d ") || "belum tersedia"}`, `proposal.grant_amount: ${c.grantAmount > 0 ? `${c.currency} ${c.grantAmount.toLocaleString("id-ID")}` : "belum tersedia"}`, `proposal.donor: ${c.donorName || "belum tersedia"}`, c.donorPriorities.length ? `donor.priorities: ${c.donorPriorities.join("; ")}` : "donor.priorities: belum tersedia", c.donorRequirements.length ? `donor.requirements: ${c.donorRequirements.join("; ")}` : "donor.requirements: belum tersedia", `proposal.idea_summary: ${c.ideaSummary || "belum tersedia"}`, c.existingNarratives.length ? `\n=== EXISTING NARRATIVES ===\n${c.existingNarratives.map((n) => `[${n.label}]\n${n.content}`).join("\n\n")}` : "", c.lfaSummary ? `\n=== LOGICAL FRAMEWORK ===\n${c.lfaSummary}` : "", c.rabSummary ? `\n=== RAB SUMMARY ===\n${c.rabSummary}` : ""].filter(Boolean).join("\n");
 }
 
-const SYSTEM = `MASTER AI PROMPT — ECOGRANT AI
+const MASTER_SYSTEM = `MASTER AI PROMPT — ECOGRANT AI
+Anda adalah EcoGrant AI Proposal Intelligence Engine: Senior Grant Proposal Writer, Grant Strategist, Program Design Specialist, LFA Specialist, MEAL Specialist, Environmental and Social Program Specialist, Budget Planning Specialist, Grant Compliance Assistant, dan Proposal Quality Assurance Reviewer.
+Tugas utama Anda adalah membantu pengguna mengubah informasi dasar dan gagasan program menjadi proposal hibah yang logis, evidence-informed, terstruktur, realistis, dapat diimplementasikan, measurable, konsisten antara narasi-LFA-activity-indicator-target-budget, sesuai konteks lokasi dan kategori program, sesuai persyaratan donor bila tersedia, dapat ditelusuri ke input pengguna, dan tidak mengarang fakta, angka, regulasi, harga, atau data lapangan.
+EcoGrant AI mencakup kehutanan, lingkungan, perubahan iklim, konservasi, biodiversitas, pemberdayaan masyarakat, penghidupan berkelanjutan, pembangunan sosial, tata kelola sumber daya alam, dan program berbasis masyarakat.
+SINGLE SOURCE OF TRUTH: Gunakan hanya input pengguna, data proposal, data donor, database kegiatan, SBM, SBU, dan sumber/regulasi eksplisit yang diberikan. Jika informasi tidak tersedia, tulis "belum tersedia", "perlu dikonfirmasi", "data perlu dilengkapi", atau label "ASSUMPTION". Jika membutuhkan data eksternal, tandai "DATA_VERIFICATION_REQUIRED".
+ANTI-HALLUCINATION: Dilarang membuat statistik, nama desa, jumlah penerima manfaat, luas wilayah, persentase, angka kemiskinan, angka emisi, harga barang, tarif SBM/SBU, nomor regulasi, nama donor, deadline donor, baseline, target numerik, atau klaim dampak jika tidak tersedia atau tidak terverifikasi.
+CARA BERPIKIR INTERNAL: Extract → Classify → Diagnose → Design Problem → Intervention → Activity → Output → Outcome → Goal/Impact → Validate → Generate.
+GAYA PENULISAN: Bahasa Indonesia formal, profesional, natural, donor-ready. Bukan akademik kaku, bukan promosi, bukan generik. Gunakan kalimat aktif, heading, bullet bila membantu, terminologi program development bila relevan.
+NARRATIVE: Latar Belakang, Permasalahan, Tujuan, Sasaran, Output, Outcome, Metodologi, Strategi Implementasi, Keberlanjutan, Risiko, Monitoring, Evaluasi. Jangan membuat angka, baseline, target, jumlah penerima manfaat, atau klaim baru.
+EXECUTIVE SUMMARY: Dibuat dari proposal, narasi, LFA, activity, dan RAB tersedia. Jangan copy-paste latar belakang atau memperkenalkan fakta/aktivitas/angka baru.
+LFA: Berdasarkan narasi. Hierarchy GOAL → OUTCOME → OUTPUT → ACTIVITY. Baseline/Target hanya isi jika tersedia; jika tidak gunakan "TBD" atau "To be established during baseline assessment".
+RAB: Turunkan dari LFA, activity, durasi, lokasi, nilai hibah, SBM, SBU. AI adalah budget recommendation engine, bukan sumber harga mandiri. Jangan mengarang nilai SBM/SBU. Formula: Subtotal = Volume × Frekuensi × Harga Satuan; PPN = Subtotal × Tarif PPN; Grand Total = Σ Subtotal + Σ PPN. Status validasi: VALID, VALID_WITH_WARNING, ABOVE_STANDARD, STANDARD_NOT_FOUND, MISSING_SOURCE, DUPLICATE_SUSPECTED, MISSING_ACTIVITY, REVIEW_REQUIRED.
+CROSS-MODULE SYNCHRONIZATION: Laporkan inkonsistensi dan change impact; jangan diam-diam memperbaiki.
+HUMAN REVIEW: Hasil adalah AI_DRAFT atau AI_RECOMMENDATION. Jangan menyatakan proposal pasti lolos donor atau RAB pasti sesuai regulasi.
+PRIORITY RULE: User-provided verified data > Official database/regulatory data > Donor requirements > Program design logic > AI inference.`;
 
-1. SYSTEM ROLE
-Anda adalah EcoGrant AI Proposal Intelligence Engine, sebuah AI senior yang bertindak sebagai:
-• Senior Grant Proposal Writer
-• Grant Strategist
-• Program Design Specialist
-• Logical Framework / LFA Specialist
-• Monitoring, Evaluation, Accountability and Learning (MEAL) Specialist
-• Environmental and Social Program Specialist
-• Budget Planning Specialist
-• Grant Compliance Assistant
-• Proposal Quality Assurance Reviewer
+const JSON_ENVELOPE_INSTRUCTION = `Kembalikan HANYA JSON valid tanpa markdown fence. Gunakan envelope: {"status":"success|warning|needs_input|error","module":"","proposal_id":"","generated_at":"ISO-8601","prompt_version":"${ECOGRANT_PROMPT_VERSION}","model":"${AI_MODEL}","content":{},"warnings":[],"missing_information":[],"assumptions":[],"validation":{},"source_context":[]}`;
+const MODE_INSTRUCTION: Record<string, string> = { generate: "Susun isi bagian tersebut dari awal berdasarkan konteks proposal.", rewrite: "Tulis ulang naskah berikut menjadi lebih formal dan terstruktur tanpa mengubah substansi.", shorten: "Ringkas naskah berikut menjadi lebih padat namun tetap lengkap secara substansi.", expand: "Perluas naskah berikut dengan penjelasan yang lebih rinci dan argumentatif tanpa menambah fakta baru.", restructure: "Perbaiki struktur dan alur logika naskah berikut sehingga runtut dan mudah dinilai.", donor: "Sesuaikan naskah berikut agar selaras dengan prioritas dan persyaratan donor yang tersedia. Jangan membuat persyaratan donor baru." };
 
-Tugas utama Anda adalah membantu pengguna mengubah informasi dasar dan gagasan program menjadi proposal hibah yang:
-1. logis;
-2. evidence-informed;
-3. terstruktur;
-4. realistis;
-5. dapat diimplementasikan;
-6. measurable;
-7. konsisten antara narasi, LFA, activity, indicator, target, dan budget;
-8. sesuai konteks lokasi;
-9. sesuai kategori program;
-10. sesuai persyaratan donor apabila data donor tersedia;
-11. dapat ditelusuri kembali ke input pengguna;
-12. tidak mengarang fakta, angka, regulasi, harga, atau data lapangan.
+function extractJson(text: string): JsonRecord { const cleaned = text.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim(); try { return JSON.parse(cleaned) as JsonRecord; } catch { const start = cleaned.indexOf("{"); const end = cleaned.lastIndexOf("}"); if (start >= 0 && end > start) return JSON.parse(cleaned.slice(start, end + 1)) as JsonRecord; throw new Error("AI tidak mengembalikan JSON valid."); } }
+async function generateJson(prompt: string, temperature = 0.3): Promise<JsonRecord> { const response = await generateText({ model: getAiModel(), system: MASTER_SYSTEM, prompt: `${prompt}\n\n${JSON_ENVELOPE_INSTRUCTION}`, temperature }); return extractJson(response.text); }
+function stringArray(value: unknown): string[] { return Array.isArray(value) ? value.filter((x): x is string => typeof x === "string") : []; }
+function envelopeText(json: JsonRecord, fallbackKey = "text") { const content = json["content"]; if (typeof content === "string") return content; if (content && typeof content === "object") { const record = content as JsonRecord; const direct = record[fallbackKey] ?? record["content"] ?? record["narrative"] ?? record["summary"]; if (typeof direct === "string") return direct; } return ""; }
 
-Anda bukan sekadar text generator. Anda harus berpikir sebagai proposal architect: setiap bagian proposal harus memiliki hubungan sebab-akibat yang jelas dengan bagian lainnya.
-
-2. PRODUCT CONTEXT
-EcoGrant AI adalah aplikasi generator proposal hibah untuk sektor kehutanan, lingkungan, perubahan iklim, konservasi, biodiversitas, pemberdayaan masyarakat, penghidupan berkelanjutan, pembangunan sosial, tata kelola sumber daya alam, dan program berbasis masyarakat.
-Data proposal merupakan Single Source of Truth. Jangan membuat fakta baru yang tidak berasal dari input pengguna, data proposal, data donor, database kegiatan, SBM, atau SBU. Jika informasi tidak tersedia, gunakan status "belum tersedia", "perlu dikonfirmasi", "data perlu dilengkapi", atau buat asumsi eksplisit dengan label ASSUMPTION. AI mendukung human-in-the-loop. Hasil AI adalah draft/rekomendasi (AI_DRAFT).
-
-3. PRINCIPLE OF TRUTHFULNESS & ANTI-HALLUCINATION
-DILARANG memfabrikasi statistik, nama desa, jumlah penerima manfaat, luas wilayah, persentase, angka kemiskinan, angka emisi, harga barang, tarif SBM/SBU, nomor regulasi, nama donor, deadline, baseline, atau target numerik tanpa bukti.
-Jika membutuhkan data eksternal, tandai DATA_VERIFICATION_REQUIRED. Jangan menyamarkan asumsi sebagai fakta; beri label ASSUMPTION.
-
-4. CARA BERPIKIR (REASONING PROCESS)
-Lakukan analisis internal secara sistematis:
-Step 1 — Extract (masalah, sasaran, lokasi, sektor, akar masalah, kebutuhan, peluang, tujuan, perubahan, aktivitas)
-Step 2 — Classify (sektor, kategori, penerima manfaat, lokasi, intervensi)
-Step 3 — Diagnose (masalah utama, root causes, consequences, stakeholder, gaps, constraints, risks)
-Step 4 — Design (Problem → Intervention → Activity → Output → Outcome → Goal/Impact)
-Step 5 — Validate (causal logic, feasibility, measurability, consistency, realism, alignment)
-Step 6 — Generate (hasilkan output modul)
-
-5. GAYA PENULISAN
-Gunakan Bahasa Indonesia formal, profesional, natural, dan donor-ready. Gunakan kalimat aktif, hindari repetisi dan frasa AI generik ("program ini sangat penting", "memberikan dampak yang signifikan"). Gunakan paragraf utuh, heading, dan terminology program development yang tepat.
-
-6. MODUL AI NARRATIVE GENERATOR (12 SECTIONS)
-Hasilkan 12 bagian berikut:
-1. Latar Belakang (Context → Situation → Evidence → Problem → Consequence → Gap → Opportunity → Rationale)
-2. Permasalahan (Masalah utama, Penyebab langsung, Penyebab struktural, Dampak, Gap)
-3. Tujuan (Tujuan Umum & Tujuan Khusus yang spesifik dan menjawab masalah)
-4. Sasaran (Direct & indirect beneficiaries, kelompok prioritas, stakeholder, partner)
-5. Output (Hasil langsung kegiatan: Activity → Output)
-6. Outcome (Perubahan akibat adopsi/utilisasi output: Output + Adoption = Outcome)
-7. Metodologi (Pendekatan, tahapan, metode, partisipasi, pendampingan, dokumentasi, QA)
-8. Strategi Implementasi (Preparation → Mobilization → Implementation → Monitoring → Adaptation → Consolidation → Handover)
-9. Keberlanjutan (Analisis 5+ dimensi: kelembagaan, finansial, kapasitas, sosial, lingkungan, kebijakan, ownership)
-10. Risiko (Risk register: operational, financial, social, environmental, institutional, climate dengan Mitigasi & PIC)
-11. Monitoring (Terhubung LFA: indikator, baseline, target, frekuensi, metode, sumber data, PIC)
-12. Evaluasi (Pendekatan evaluasi: baseline, midline, endline, outcome assessment, beneficiary feedback)
-
-7. PRIORITY RULE
-Jika terdapat konflik:
-User-provided verified data > Official database/regulatory data > Donor requirements > Program design logic > AI inference.
-AI inference tidak boleh menggantikan fakta pengguna atau data resmi.
-
-8. FINAL INSTRUCTION
-Hasilkan output yang Specific, Logical, Evidence-aware, Measurable, Feasible, Budgetable, Traceable, Consistent, Donor-ready, dan Human-reviewable. Prioritaskan QUALITY > CONSISTENCY > TRACEABILITY > REALISM > COMPLETENESS > LENGTH.`;
-
-
-
-
-const MODE_INSTRUCTION: Record<string, string> = {
-  generate: "Susun isi bagian tersebut dari awal berdasarkan konteks proposal.",
-  rewrite: "Tulis ulang naskah berikut menjadi lebih formal dan terstruktur tanpa mengubah substansi.",
-  shorten: "Ringkas naskah berikut menjadi lebih padat namun tetap lengkap secara substansi.",
-  expand: "Perluas naskah berikut dengan penjelasan yang lebih rinci dan argumentatif.",
-  restructure: "Perbaiki struktur dan alur logika naskah berikut sehingga runtut dan mudah dinilai.",
-  donor: "Sesuaikan naskah berikut agar selaras dengan prioritas dan persyaratan lembaga donor yang dituju.",
-};
-
-export async function runNarrative(data: z.infer<typeof NarrativeInput>) {
-  try {
-    const parsed = NarrativeInput.parse(data);
-    const instruction = MODE_INSTRUCTION[parsed.mode] ?? MODE_INSTRUCTION["generate"];
-    const prompt = `${contextBlock(parsed.context)}
-
-Tugas: ${instruction}
-Bagian proposal: ${parsed.sectionLabel}
-
-${parsed.currentContent ? `Naskah saat ini:\n${parsed.currentContent}\n` : ""}
-
-Hasil narasi wajib formal dan dapat diubah pengguna secara bebas:`;
-
-    const response = streamText({
-      model: getAiModel(),
-      system: SYSTEM,
-      prompt,
-      temperature: 0.4,
-    });
-
-    return response.toTextStreamResponse();
-  } catch (error) {
-    handleError(error);
-  }
-}
-
-export async function runSummary(data: z.infer<typeof SummaryInput>) {
-  try {
-    const parsed = SummaryInput.parse(data);
-    const prompt = `${contextBlock(parsed.context)}
-
-Mata anggaran total: Rp ${parsed.budgetTotal.toLocaleString("id-ID")}
-Ringkasan LFA: ${parsed.lfaSummary || "-"}
-
-Tugas: Hasikan ringkasan eksekutif proposal hibah secara komprehensif dalam maksimal ${parsed.maxWords} kata.`;
-
-    const response = streamText({
-      model: getAiModel(),
-      system: SYSTEM,
-      prompt,
-      temperature: 0.3,
-    });
-
-    return response.toTextStreamResponse();
-  } catch (error) {
-    handleError(error);
-  }
-}
-
-export async function runLfa(data: z.infer<typeof LfaInput>) {
-  try {
-    const parsed = LfaInput.parse(data);
-    const prompt = `${contextBlock(parsed.context)}
-
-Tugas: Hasilkan matriks kerangka logis (LFA) terstruktur.`;
-
-    const response = streamText({
-      model: getAiModel(),
-      system: SYSTEM,
-      prompt,
-      temperature: 0.3,
-    });
-
-    return response.toTextStreamResponse();
-  } catch (error) {
-    handleError(error);
-  }
-}
-
-export async function runBudget(data: z.infer<typeof BudgetInput>) {
-  try {
-    const parsed = BudgetInput.parse(data);
-    const prompt = `${contextBlock(parsed.context)}
-
-Daftar Kegiatan Utama:
-${parsed.activities.map((a, i) => `${i + 1}. ${a}`).join("\n") || "-"}
-
-Standar Biaya SBM/SBU Terkait:
-${parsed.standards.map((s) => `[${s.source}] ${s.code} - ${s.description}: Rp ${s.price.toLocaleString("id-ID")}/${s.unit}`).join("\n") || "-"}
-
-Tugas: Susun rekomendasi rincian Rencana Anggaran Biaya (RAB).`;
-
-    const response = streamText({
-      model: getAiModel(),
-      system: SYSTEM,
-      prompt,
-      temperature: 0.3,
-    });
-
-    return response.toTextStreamResponse();
-  } catch (error) {
-    handleError(error);
-  }
-}
+export async function runNarrative(data: z.infer<typeof NarrativeInput>) { try { const parsed = NarrativeInput.parse(data); const instruction = MODE_INSTRUCTION[parsed.mode] ?? MODE_INSTRUCTION.generate; const prompt = `${contextBlock(parsed.context)}\n\nMODULE: GENERATE_SECTION\nSection key: ${parsed.sectionKey}\nSection label: ${parsed.sectionLabel}\nMode instruction: ${instruction}\n${parsed.currentContent ? `\nNaskah saat ini:\n${parsed.currentContent}` : ""}\n\nOutput content: {"section_key":"${parsed.sectionKey}","section_label":"${parsed.sectionLabel}","text":"..."}. Tulis hanya bagian ini. Jangan membuat angka, baseline, target, penerima manfaat, harga, atau regulasi yang tidak tersedia.`; const json = await generateJson(prompt, 0.4); return { content: envelopeText(json), assumptions: stringArray(json["assumptions"]), missingInformation: stringArray(json["missing_information"]), warnings: stringArray(json["warnings"]), raw: json }; } catch (error) { handleError(error); } }
+export async function runSummary(data: z.infer<typeof SummaryInput>) { try { const parsed = SummaryInput.parse(data); const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives })}\n\nMODULE: GENERATE_EXECUTIVE_SUMMARY\nMata anggaran total: ${parsed.budgetTotal > 0 ? `${parsed.context.currency} ${parsed.budgetTotal.toLocaleString("id-ID")}` : "belum tersedia"}\nRingkasan LFA: ${parsed.lfaSummary || "belum tersedia"}\nMaksimal ${parsed.maxWords} kata. content harus {"summary":"..."}. Jangan memperkenalkan fakta baru.`; const json = await generateJson(prompt, 0.3); return { content: envelopeText(json, "summary"), raw: json }; } catch (error) { handleError(error); } }
+export async function runLfa(data: z.infer<typeof LfaInput>) { try { const parsed = LfaInput.parse(data); const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives })}\n\nMODULE: GENERATE_LFA\nHasilkan content.rows array dengan row_type, goal, outcome, output, activity, indicator, baseline, target, means_of_verification, assumption. Gunakan TBD jika baseline/target tidak tersedia. Pastikan GOAL → OUTCOME → OUTPUT → ACTIVITY.`; const json = await generateJson(prompt, 0.3); const content = (json["content"] ?? {}) as JsonRecord; return { rows: Array.isArray(content["rows"]) ? content["rows"] : [], raw: json }; } catch (error) { handleError(error); } }
+export async function runBudget(data: z.infer<typeof BudgetInput>) { try { const parsed = BudgetInput.parse(data); const standardsText = parsed.standards.map((s) => `[${s.source}] ${s.code} | ${s.category} | ${s.description} | ${s.unit} | ${parsed.context.currency} ${s.price.toLocaleString("id-ID")}`).join("\n"); const prompt = `${contextBlock(parsed.context)}\n\nMODULE: GENERATE_RAB\nActivities:\n${parsed.activities.map((a, i) => `${i + 1}. ${a}`).join("\n") || "belum tersedia"}\n\nReferensi SBM/SBU:\n${standardsText || "DATA_NOT_AVAILABLE"}\n\ncontent.items array: category, activity_name, description, standard_source, standard_code, volume, unit, frequency, unit_price, validation_status, notes. Jangan membuat harga jika tidak berasal dari referensi. Jika standar tidak cocok, unit_price 0 dan validation_status STANDARD_NOT_FOUND/MISSING_SOURCE.`; const json = await generateJson(prompt, 0.3); const content = (json["content"] ?? {}) as JsonRecord; return { items: Array.isArray(content["items"]) ? content["items"] : [], raw: json }; } catch (error) { handleError(error); } }
+export async function runActivities(data: z.infer<typeof ActivityInput>) { try { const parsed = ActivityInput.parse(data); const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives })}\n\nMODULE: GENERATE_ACTIVITY\nOutputs:\n${parsed.outputs.map((o, i) => `${i + 1}. ${o}`).join("\n") || "belum tersedia"}\ncontent.activities fields: activity_id, output_id, activity_name, description, location, duration, frequency, participants, responsible_party, expected_result. Jangan membuat activity tanpa hubungan output.`; const json = await generateJson(prompt, 0.3); return { activities: ((json["content"] as JsonRecord | undefined)?.["activities"] ?? []), raw: json }; } catch (error) { handleError(error); } }
+export async function runConsistencyCheck(data: z.infer<typeof ConsistencyInput>) { try { const parsed = ConsistencyInput.parse(data); const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives, lfaSummary: parsed.lfaSummary, rabSummary: parsed.rabSummary })}\n\nMODULE: CHECK_CONSISTENCY\nChanged module: ${parsed.changedModule || "belum tersedia"}\nActivities: ${parsed.activities.join("; ") || "belum tersedia"}\nPeriksa consistency dan kembalikan content.consistency_status, issues, change_impact_analysis.`; return await generateJson(prompt, 0.2); } catch (error) { handleError(error); } }
+export async function runQualityReview(data: z.infer<typeof QualityReviewInput>) { try { const parsed = QualityReviewInput.parse(data); const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives, lfaSummary: parsed.lfaSummary, rabSummary: parsed.rabSummary })}\n\nMODULE: QUALITY_REVIEW\nBudget total: ${parsed.budgetTotal > 0 ? parsed.budgetTotal : "belum tersedia"}\nBerikan skor 0-100 sesuai bobot master prompt. content: score, breakdown, strengths, weaknesses, priority_fixes. Jangan menyatakan peluang pendanaan pasti.`; return await generateJson(prompt, 0.2); } catch (error) { handleError(error); } }

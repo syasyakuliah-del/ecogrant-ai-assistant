@@ -6,10 +6,16 @@ import {
   SummaryInput,
   LfaInput,
   BudgetInput,
+  ActivityInput,
+  ConsistencyInput,
+  QualityReviewInput,
   runNarrative,
   runSummary,
   runLfa,
   runBudget,
+  runActivities,
+  runConsistencyCheck,
+  runQualityReview,
 } from "./ai.server";
 
 export const generateNarrative = createServerFn({ method: "POST" })
@@ -31,5 +37,20 @@ export const generateBudgetPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => BudgetInput.parse(d))
   .handler(async ({ data }) => runBudget(data));
+
+export const generateActivities = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ActivityInput.parse(d))
+  .handler(async ({ data }) => runActivities(data));
+
+export const checkProposalConsistency = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ConsistencyInput.parse(d))
+  .handler(async ({ data }) => runConsistencyCheck(data));
+
+export const reviewProposalQuality = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => QualityReviewInput.parse(d))
+  .handler(async ({ data }) => runQualityReview(data));
 
 export type NarrativeRequest = z.infer<typeof NarrativeInput>;
