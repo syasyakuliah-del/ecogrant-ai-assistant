@@ -141,11 +141,25 @@ function AdminDonors() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["admin-donors-full", showArchived],
     queryFn: async () => {
-      let query = supabase.from("donors").select("*").order("name");
+      let query = supabase
+        .from("donors")
+        .select(
+          "id, name, category, country, website, funding_fields, priorities, requirements, min_grant, max_grant, currency, deadline, is_active, created_at, updated_at, deleted_at",
+        )
+        .order("name");
       if (!showArchived) query = query.is("deleted_at", null);
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      // Contact details are admin-only and served by a guarded database function.
+      const { data: contacts } = await supabase.rpc("admin_donor_contacts");
+      const contactMap = new Map(
+        (contacts ?? []).map((c) => [c.id, { email: c.email, phone: c.phone }]),
+      );
+      return (data ?? []).map((d) => ({
+        ...d,
+        email: contactMap.get(d.id)?.email ?? null,
+        phone: contactMap.get(d.id)?.phone ?? null,
+      }));
     },
   });
 
