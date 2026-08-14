@@ -236,24 +236,43 @@ function AdminActivities() {
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
+
     reader.onload = (evt) => {
       try {
         const bstr = evt.target?.result;
+
         const wb = XLSX.read(bstr, { type: "binary" });
+
         const wsName = wb.SheetNames[0];
+
+        if (!wsName) {
+          toast.error("Worksheet Excel tidak ditemukan.");
+          return;
+        }
+
         const ws = wb.Sheets[wsName];
+
+        if (!ws) {
+          toast.error("Worksheet Excel tidak dapat dibaca.");
+          return;
+        }
+
         const parsed = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
+
         if (parsed.length === 0) {
           toast.error("File Excel kosong.");
           return;
         }
+
         setImportRows(parsed);
         setImportOpen(true);
-      } catch (err) {
+      } catch {
         toast.error("Gagal membaca file Excel.");
       }
     };
+
     reader.readAsBinaryString(file);
     e.target.value = "";
   }
