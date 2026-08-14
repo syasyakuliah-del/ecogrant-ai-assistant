@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { FileText, Plus, RefreshCw } from "lucide-react";
+import { FileText, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { STATUS_LABEL } from "@/lib/constants";
@@ -58,8 +58,15 @@ const PERIODS = [
 ];
 
 function DashboardPage() {
-  const { profile, user } = useAuth();
+  const { profile, user, isAdmin, loading } = useAuth();
+  const navigate = useNavigate();
   const [period, setPeriod] = useState("365");
+
+  useEffect(() => {
+    if (!loading && isAdmin) {
+      void navigate({ to: "/admin", replace: true });
+    }
+  }, [isAdmin, loading, navigate]);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard", user?.id, period],
@@ -154,25 +161,18 @@ function DashboardPage() {
         title={`Selamat datang, ${profile?.full_name || "Pengguna"}`}
         description="Berikut ringkasan penyusunan proposal hibah pada ruang kerja Anda."
         actions={
-          <>
-            <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-44">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PERIODS.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button asChild>
-              <Link to="/proposals">
-                <Plus className="size-4" /> Buat Proposal Baru
-              </Link>
-            </Button>
-          </>
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PERIODS.map((p) => (
+                <SelectItem key={p.value} value={p.value}>
+                  {p.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         }
       />
 
@@ -279,14 +279,7 @@ function DashboardPage() {
             ) : (data?.proposals ?? []).length === 0 ? (
               <EmptyState
                 title="Belum ada proposal"
-                description="Mulai susun proposal hibah pertama Anda melalui wizard sepuluh langkah."
-                action={
-                  <Button asChild>
-                    <Link to="/proposals">
-                      <Plus className="size-4" /> Buat Proposal
-                    </Link>
-                  </Button>
-                }
+                description="Mulai susun proposal hibah pertama Anda melalui menu Proposal Saya."
               />
             ) : (
               (data?.proposals ?? []).slice(0, 5).map((p) => (

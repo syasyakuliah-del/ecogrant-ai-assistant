@@ -46,9 +46,23 @@ function AuthPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      void navigate({ to: search.redirect ?? (isAdmin ? "/admin" : "/dashboard"), replace: true });
+      const redirectTarget = search.redirect && search.redirect !== "/dashboard"
+        ? search.redirect
+        : (isAdmin ? "/admin" : "/dashboard");
+      void navigate({ to: redirectTarget, replace: true });
     }
   }, [user, loading, navigate, search.redirect, isAdmin]);
+
+  if (loading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Leaf className="size-8 animate-pulse text-primary" />
+          <p className="text-sm">Mengalihkan ke ruang kerja…</p>
+        </div>
+      </div>
+    );
+  }
 
   function validatePassword(pw: string) {
     if (pw.length < 10) return "Kata sandi minimal 10 karakter.";
@@ -66,8 +80,8 @@ function AuthPage() {
       email: loginEmail.trim(),
       password: loginPassword,
     });
-    setBusy(false);
     if (error) {
+      setBusy(false);
       if (error.message.toLowerCase().includes("email not confirmed")) {
         toast.error(
           "Email belum dikonfirmasi. Di Supabase Dashboard, buka Authentication -> Providers -> Email dan nonaktifkan 'Confirm email' (atau klik confirm user pada tab Users).",
@@ -77,20 +91,28 @@ function AuthPage() {
       }
       return;
     }
-    await logAudit({ action: "login.success", entityType: "auth" });
-    const { data: u } = await supabase.auth.getUser();
-    if (u.user) {
-      await supabase.from("login_histories").insert({
-        user_id: u.user.id,
-        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
-      });
-      await supabase
-        .from("profiles")
-        .update({ last_login_at: new Date().toISOString() })
-        .eq("id", u.user.id);
-    }
+
     toast.success("Berhasil masuk.");
-    void navigate({ to: search.redirect ?? (isAdmin ? "/admin" : "/dashboard"), replace: true });
+
+    // Asynchronously log audit and history without blocking UI transition or causing duplicate navigation
+    void (async () => {
+      try {
+        await logAudit({ action: "login.success", entityType: "auth" });
+        const { data: u } = await supabase.auth.getUser();
+        if (u?.user) {
+          await supabase.from("login_histories").insert({
+            user_id: u.user.id,
+            user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+          });
+          await supabase
+            .from("profiles")
+            .update({ last_login_at: new Date().toISOString() })
+            .eq("id", u.user.id);
+        }
+      } catch (err) {
+        console.error("[Auth] Audit log failed:", err);
+      }
+    })();
   }
 
   async function handleRegister(e: React.FormEvent) {
@@ -167,100 +189,51 @@ function AuthPage() {
             <span className="font-display text-lg font-semibold">EcoGrant AI</span>
           </div>
 
-          <Tabs defaultValue="login">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Masuk</TabsTrigger>
-              <TabsTrigger value="register">Daftar</TabsTrigger>
-            </TabsList>
+          <div className="space-y-6">
+            <div>
+              <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
+                Masuk ke EcoGrant AI
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                Masukkan email dan kata sandi Anda untuk mengakses ruang kerja.
+              </p>
+            </div>
 
-            <TabsContent value="login" className="mt-6">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    required
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="nama@organisasi.or.id"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Kata Sandi</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    required
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={busy}>
-                  {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-                  Masuk
-                </Button>
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="w-full text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
-                >
-                  Lupa kata sandi
-                </button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="register" className="mt-6">
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="reg-name">Nama Lengkap</Label>
-                  <Input
-                    id="reg-name"
-                    required
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-org">Organisasi</Label>
-                  <Input
-                    id="reg-org"
-                    required
-                    value={regOrg}
-                    onChange={(e) => setRegOrg(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-email">Email</Label>
-                  <Input
-                    id="reg-email"
-                    type="email"
-                    required
-                    value={regEmail}
-                    onChange={(e) => setRegEmail(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-password">Kata Sandi</Label>
-                  <Input
-                    id="reg-password"
-                    type="password"
-                    required
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Minimal 10 karakter, mengandung huruf besar, huruf kecil, angka, dan karakter
-                    khusus.
-                  </p>
-                </div>
-                <Button type="submit" className="w-full" disabled={busy}>
-                  {busy ? <Loader2 className="size-4 animate-spin" /> : null}
-                  Buat Akun
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="login-email">Email</Label>
+                <Input
+                  id="login-email"
+                  type="email"
+                  required
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="nama@organisasi.or.id"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="login-password">Kata Sandi</Label>
+                <Input
+                  id="login-password"
+                  type="password"
+                  required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={busy}>
+                {busy ? <Loader2 className="size-4 animate-spin" /> : null}
+                Masuk
+              </Button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="w-full text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
+              >
+                Lupa kata sandi?
+              </button>
+            </form>
+          </div>
         </div>
       </section>
     </main>

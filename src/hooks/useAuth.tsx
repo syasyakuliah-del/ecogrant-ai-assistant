@@ -145,28 +145,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    let mounted = true;
+
+    async function initSession() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+        if (data.session?.user) {
+          await loadUserData(data.session.user.id);
+        }
+      } catch (err) {
+        console.error("Error initializing auth session:", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    void initSession();
+
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+      if (!mounted) return;
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        const uid = s.user.id;
-        setTimeout(() => void loadUserData(uid), 0);
+        setLoading(true);
+        void loadUserData(s.user.id).finally(() => {
+          if (mounted) setLoading(false);
+        });
       } else {
         setProfile(null);
         setIsAdmin(false);
         setRoles([]);
         setPermissions([]);
+        setLoading(false);
       }
     });
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      if (data.session?.user) void loadUserData(data.session.user.id);
-      setLoading(false);
-    });
-
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const hasPermission = (permissionName: string) => {
