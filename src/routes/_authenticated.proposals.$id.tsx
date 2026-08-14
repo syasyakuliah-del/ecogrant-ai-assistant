@@ -64,7 +64,7 @@ function WizardPage() {
     enabled: Boolean(donorId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("donors")
+        .from("donors_public")
         .select("*")
         .eq("id", donorId!)
         .maybeSingle();
