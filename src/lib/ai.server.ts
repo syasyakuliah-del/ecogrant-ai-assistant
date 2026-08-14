@@ -328,8 +328,14 @@ export async function runLfa(data: z.infer<typeof LfaInput>): Promise<LfaRespons
     const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives })}\n\nMODULE: GENERATE_LFA\nHasilkan content.rows array dengan row_type, goal, outcome, output, activity, indicator, baseline, target, means_of_verification, assumption. Gunakan TBD jika baseline/target tidak tersedia. Pastikan GOAL → OUTCOME → OUTPUT → ACTIVITY.`;
     const json = await generateJson(prompt, 0.3);
     const content = (json["content"] ?? {}) as JsonRecord;
-    const rawRows = Array.isArray(content["rows"]) ? content["rows"] : [];
-    const rows: LfaRowResult[] = rawRows.map((r: any) => ({
+    const rawRows = Array.isArray(content["rows"])
+      ? content["rows"].filter(
+          (row): row is Record<string, unknown> =>
+            typeof row === "object" && row !== null && !Array.isArray(row),
+        )
+      : [];
+
+    const rows: LfaRowResult[] = rawRows.map((r) => ({
       row_type: String(r.row_type || "activity"),
       goal: r.goal ? String(r.goal) : undefined,
       outcome: r.outcome ? String(r.outcome) : undefined,
@@ -359,8 +365,14 @@ export async function runBudget(data: z.infer<typeof BudgetInput>): Promise<Budg
     const prompt = `${contextBlock(parsed.context)}\n\nMODULE: GENERATE_RAB\nActivities:\n${parsed.activities.map((a, i) => `${i + 1}. ${a}`).join("\n") || "belum tersedia"}\n\nReferensi SBM/SBU:\n${standardsText || "DATA_NOT_AVAILABLE"}\n\ncontent.items array: category, activity_name, description, standard_source, standard_code, volume, unit, frequency, unit_price, validation_status, notes. Jangan membuat harga jika tidak berasal dari referensi. Jika standar tidak cocok, unit_price 0 dan validation_status STANDARD_NOT_FOUND/MISSING_SOURCE.`;
     const json = await generateJson(prompt, 0.3);
     const content = (json["content"] ?? {}) as JsonRecord;
-    const rawItems = Array.isArray(content["items"]) ? content["items"] : [];
-    const items: BudgetItemResult[] = rawItems.map((item: any) => ({
+    const rawItems = Array.isArray(content["items"])
+      ? content["items"].filter(
+          (item): item is Record<string, unknown> =>
+            typeof item === "object" && item !== null && !Array.isArray(item),
+        )
+      : [];
+
+    const items: BudgetItemResult[] = rawItems.map((item) => ({
       category: item.category ? String(item.category) : undefined,
       activity_name: item.activity_name ? String(item.activity_name) : undefined,
       description: item.description ? String(item.description) : undefined,
@@ -386,8 +398,16 @@ export async function runActivities(
     const parsed = ActivityInput.parse(data);
     const prompt = `${contextBlock({ ...parsed.context, existingNarratives: parsed.narratives })}\n\nMODULE: GENERATE_ACTIVITY\nOutputs:\n${parsed.outputs.map((o, i) => `${i + 1}. ${o}`).join("\n") || "belum tersedia"}\ncontent.activities fields: activity_id, output_id, activity_name, description, location, duration, frequency, participants, responsible_party, expected_result. Jangan membuat activity tanpa hubungan output.`;
     const json = await generateJson(prompt, 0.3);
-    const rawActs = ((json["content"] as JsonRecord | undefined)?.["activities"] ?? []) as any[];
-    const activities: ActivityResult[] = rawActs.map((a: any) => ({
+    const content = (json["content"] ?? {}) as JsonRecord;
+
+    const rawActs = Array.isArray(content["activities"])
+      ? content["activities"].filter(
+          (activity): activity is Record<string, unknown> =>
+            typeof activity === "object" && activity !== null && !Array.isArray(activity),
+        )
+      : [];
+
+    const activities: ActivityResult[] = rawActs.map((a) => ({
       activity_id: a.activity_id ? String(a.activity_id) : undefined,
       output_id: a.output_id ? String(a.output_id) : undefined,
       activity_name: a.activity_name ? String(a.activity_name) : undefined,
