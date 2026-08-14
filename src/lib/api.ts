@@ -440,10 +440,9 @@ export const api = {
     },
     donorMatch: async (proposalId: string) => {
       const { data: donors } = await supabase
-        .from("donors")
+        .from("donors_public")
         .select("*")
-        .eq("is_active", true)
-        .is("deleted_at", null);
+        .eq("is_active", true);
       const matches = (donors ?? []).map((d) => ({
         donorId: d.id,
         donorName: d.name,
@@ -459,15 +458,18 @@ export const api = {
   donors: {
     list: async () => {
       const { data, error } = await supabase
-        .from("donors")
+        .from("donors_public")
         .select("*")
-        .is("deleted_at", null)
         .order("name");
       if (error) throw error;
       return data;
     },
     create: async (payload: TablesInsert<"donors">) => {
-      const { data, error } = await supabase.from("donors").insert(payload).select().single();
+      const { data, error } = await supabase
+        .from("donors")
+        .insert(payload)
+        .select("id")
+        .single();
       if (error) throw error;
       await logAudit({
         action: "admin.donor.create",
@@ -479,10 +481,9 @@ export const api = {
     },
     getById: async (id: string) => {
       const { data, error } = await supabase
-        .from("donors")
+        .from("donors_public")
         .select("*")
         .eq("id", id)
-        .is("deleted_at", null)
         .single();
       if (error) throw error;
       return data;
@@ -492,7 +493,7 @@ export const api = {
         .from("donors")
         .update(payload)
         .eq("id", id)
-        .select()
+        .select("id")
         .single();
       if (error) throw error;
       await logAudit({
