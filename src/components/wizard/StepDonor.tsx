@@ -156,9 +156,8 @@ export function StepDonor({ proposal, save }: StepProps) {
     queryKey: ["donors-step4"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("donors")
+        .from("donors_public")
         .select("*")
-        .is("deleted_at", null)
         .order("name");
       if (error) throw error;
       return data as DonorRow[];
