@@ -1039,6 +1039,14 @@ export type Database = {
       }
     }
     Functions: {
+      admin_donor_contacts: {
+        Args: never
+        Returns: {
+          email: string
+          id: string
+          phone: string
+        }[]
+      }
       can_access_proposal: { Args: { _pid: string }; Returns: boolean }
       has_role: {
         Args: {
