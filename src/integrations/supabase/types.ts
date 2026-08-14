@@ -375,6 +375,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "donor_matches_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "donor_matches_proposal_id_fkey"
             columns: ["proposal_id"]
             isOneToOne: false
@@ -830,6 +837,13 @@ export type Database = {
             referencedRelation: "donors"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "proposals_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sbm: {
@@ -969,7 +983,60 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      donors_public: {
+        Row: {
+          category: string | null
+          country: string | null
+          created_at: string | null
+          currency: string | null
+          deadline: string | null
+          funding_fields: string[] | null
+          id: string | null
+          is_active: boolean | null
+          max_grant: number | null
+          min_grant: number | null
+          name: string | null
+          priorities: string[] | null
+          requirements: string[] | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          category?: string | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          deadline?: string | null
+          funding_fields?: string[] | null
+          id?: string | null
+          is_active?: boolean | null
+          max_grant?: number | null
+          min_grant?: number | null
+          name?: string | null
+          priorities?: string[] | null
+          requirements?: string[] | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          category?: string | null
+          country?: string | null
+          created_at?: string | null
+          currency?: string | null
+          deadline?: string | null
+          funding_fields?: string[] | null
+          id?: string | null
+          is_active?: boolean | null
+          max_grant?: number | null
+          min_grant?: number | null
+          name?: string | null
+          priorities?: string[] | null
+          requirements?: string[] | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_access_proposal: { Args: { _pid: string }; Returns: boolean }
