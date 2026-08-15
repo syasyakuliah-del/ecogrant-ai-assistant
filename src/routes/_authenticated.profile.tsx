@@ -64,9 +64,17 @@ function ProfilePage() {
     }
   }, [profile, user]);
 
+  // P1 Fix #5: explicit MIME allowlist (accept attribute alone is not enough)
+  const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      toast.error('Format gambar tidak didukung. Gunakan JPG, PNG, WebP, atau GIF.');
+      return;
+    }
 
     if (file.size > 2 * 1024 * 1024) {
       toast.error("Ukuran maksimal foto adalah 2 MB.");
@@ -91,7 +99,8 @@ function ProfilePage() {
         .from("avatars")
         .getPublicUrl(filePath);
 
-      setForm({ ...form, avatar_url: publicUrl });
+      // P1 Fix #3: use functional update to avoid stale closure
+      setForm(prev => ({ ...prev, avatar_url: publicUrl }));
       toast.success("Foto berhasil diunggah!");
     } catch (error: any) {
       console.error("[Profile] Avatar upload failed:", error);

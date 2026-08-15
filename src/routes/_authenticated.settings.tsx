@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bell,
   Clock,
   Globe,
+  Info,
   KeyRound,
   Lock,
   LogOut,
@@ -62,16 +63,45 @@ function SettingsPage() {
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
 
+  // P0 Fix #1: detect Google OAuth user — they have no password to change
+  const isGoogleUser = user?.app_metadata?.provider === 'google';
+
   // Password State
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const [busyPw, setBusyPw] = useState(false);
 
-  // Preferences State
-  const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
-  const [timeZone, setTimeZone] = useState("WIB");
-  const [emailNotif, setEmailNotif] = useState(true);
-  const [inAppNotif, setInAppNotif] = useState(true);
+  // P1 Fix #4: Preferences State — initialize from localStorage for persistence
+  const [dateFormat, setDateFormat] = useState(
+    () => typeof window !== 'undefined' ? (localStorage.getItem('pref_dateFormat') ?? 'DD/MM/YYYY') : 'DD/MM/YYYY'
+  );
+  const [timeZone, setTimeZone] = useState(
+    () => typeof window !== 'undefined' ? (localStorage.getItem('pref_timeZone') ?? 'WIB') : 'WIB'
+  );
+  const [emailNotif, setEmailNotif] = useState(
+    () => typeof window !== 'undefined' ? localStorage.getItem('pref_emailNotif') !== 'false' : true
+  );
+  const [inAppNotif, setInAppNotif] = useState(
+    () => typeof window !== 'undefined' ? localStorage.getItem('pref_inAppNotif') !== 'false' : true
+  );
+
+  // Sync preference changes to localStorage immediately
+  function handleDateFormat(v: string) {
+    setDateFormat(v);
+    localStorage.setItem('pref_dateFormat', v);
+  }
+  function handleTimeZone(v: string) {
+    setTimeZone(v);
+    localStorage.setItem('pref_timeZone', v);
+  }
+  function handleEmailNotif(v: boolean) {
+    setEmailNotif(v);
+    localStorage.setItem('pref_emailNotif', String(v));
+  }
+  function handleInAppNotif(v: boolean) {
+    setInAppNotif(v);
+    localStorage.setItem('pref_inAppNotif', String(v));
+  }
 
   // Active Sessions / Login Histories
   const { data: history = [] } = useQuery({
@@ -157,54 +187,67 @@ function SettingsPage() {
       />
 
       {/* 1. Change Password */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Lock className="size-4 text-emerald-600" /> Ubah Kata Sandi (Password)
-          </CardTitle>
-          <CardDescription>
-            Kata sandi wajib memenuhi standar keamanan minimal 10 karakter dengan kombinasi huruf
-            besar, kecil, angka, dan simbol.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={changePassword} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="pw">Kata Sandi Baru</Label>
-                <Input
-                  id="pw"
-                  type="password"
-                  required
-                  value={pw}
-                  onChange={(e) => setPw(e.target.value)}
-                  placeholder="••••••••••••"
-                />
+      {isGoogleUser ? (
+        <Card className="border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Info className="size-4 text-blue-600" /> Ubah Kata Sandi
+            </CardTitle>
+            <CardDescription>
+              Akun Anda terhubung melalui Google. Kata sandi dikelola oleh Google dan tidak dapat diubah di sini.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Lock className="size-4 text-emerald-600" /> Ubah Kata Sandi (Password)
+            </CardTitle>
+            <CardDescription>
+              Kata sandi wajib memenuhi standar keamanan minimal 10 karakter dengan kombinasi huruf
+              besar, kecil, angka, dan simbol.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={changePassword} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="pw">Kata Sandi Baru</Label>
+                  <Input
+                    id="pw"
+                    type="password"
+                    required
+                    value={pw}
+                    onChange={(e) => setPw(e.target.value)}
+                    placeholder="••••••••••••"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="pw2">Konfirmasi Kata Sandi Baru</Label>
+                  <Input
+                    id="pw2"
+                    type="password"
+                    required
+                    value={pw2}
+                    onChange={(e) => setPw2(e.target.value)}
+                    placeholder="••••••••••••"
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="pw2">Konfirmasi Kata Sandi Baru</Label>
-                <Input
-                  id="pw2"
-                  type="password"
-                  required
-                  value={pw2}
-                  onChange={(e) => setPw2(e.target.value)}
-                  placeholder="••••••••••••"
-                />
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={busyPw || !pw}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  {busyPw ? "Memperbarui Password…" : "Perbarui Kata Sandi"}
+                </Button>
               </div>
-            </div>
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                disabled={busyPw || !pw}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                {busyPw ? "Memperbarui Password…" : "Perbarui Kata Sandi"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 2. Session Management */}
       <Card>
@@ -315,7 +358,7 @@ function SettingsPage() {
             {/* Date Format */}
             <div className="space-y-1.5">
               <Label>Format Tanggal</Label>
-              <Select value={dateFormat} onValueChange={setDateFormat}>
+              <Select value={dateFormat} onValueChange={handleDateFormat}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -332,7 +375,7 @@ function SettingsPage() {
             {/* Timezone */}
             <div className="space-y-1.5">
               <Label>Zona Waktu Platform</Label>
-              <Select value={timeZone} onValueChange={setTimeZone}>
+              <Select value={timeZone} onValueChange={handleTimeZone}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -352,7 +395,7 @@ function SettingsPage() {
                   Kirim ringkasan notifikasi penting ke email terdaftar Anda.
                 </p>
               </div>
-              <Switch checked={emailNotif} onCheckedChange={setEmailNotif} />
+              <Switch checked={emailNotif} onCheckedChange={handleEmailNotif} />
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-lg sm:col-span-2">
@@ -362,7 +405,7 @@ function SettingsPage() {
                   Tampilkan pop-up pemberitahuan saat aplikasi terbuka.
                 </p>
               </div>
-              <Switch checked={inAppNotif} onCheckedChange={setInAppNotif} />
+              <Switch checked={inAppNotif} onCheckedChange={handleInAppNotif} />
             </div>
           </div>
         </CardContent>

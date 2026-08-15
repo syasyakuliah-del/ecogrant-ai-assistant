@@ -12,11 +12,15 @@ export const API_BASE_PATH = "/api/v1";
 export const api = {
   // 27.1 Authentication
   auth: {
-    login: async (email: string, password: string) => {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      await logAudit({ action: "auth.login.success", entityType: "auth", entityId: data.user.id });
-      return data;
+    /**
+     * @deprecated P0: Aplikasi ini sekarang menggunakan Google OAuth (signInWithOAuth).
+     * Fungsi ini tidak berfungsi untuk pengguna Google. Gunakan supabase.auth.signInWithOAuth({ provider: 'google' }).
+     */
+    login: async (_email: string, _password: string) => {
+      throw new Error(
+        "[api.auth.login] Metode ini sudah tidak digunakan. Aplikasi menggunakan Google OAuth. " +
+        "Gunakan supabase.auth.signInWithOAuth({ provider: 'google' })."
+      );
     },
     logout: async () => {
       const { data } = await supabase.auth.getUser();

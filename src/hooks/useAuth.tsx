@@ -71,6 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<string[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  // P1 Fix: prevent race condition between initSession & onAuthStateChange
+  const isLoadingUser = { current: false };
 
   async function loadUserData(userId: string) {
     try {
@@ -147,6 +149,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    async function loadIfNotBusy(userId: string, source: string) {
+      if (isLoadingUser.current) {
+        console.debug(`[useAuth] Skipping duplicate loadUserData from "${source}" — already loading`);
+        return;
+      }
+      isLoadingUser.current = true;
+      try {
+        await loadUserData(userId);
+      } finally {
+        isLoadingUser.current = false;
+      }
+    }
+
     async function initSession() {
       try {
         const { data } = await supabase.auth.getSession();
@@ -154,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(data.session);
         setUser(data.session?.user ?? null);
         if (data.session?.user) {
-          await loadUserData(data.session.user.id);
+          await loadIfNotBusy(data.session.user.id, "initSession");
         }
       } catch (err) {
         console.error("Error initializing auth session:", err);
@@ -171,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(s?.user ?? null);
       if (s?.user) {
         setLoading(true);
-        void loadUserData(s.user.id).finally(() => {
+        void loadIfNotBusy(s.user.id, "onAuthStateChange").finally(() => {
           if (mounted) setLoading(false);
         });
       } else {
