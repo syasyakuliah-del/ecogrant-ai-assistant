@@ -40,6 +40,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
         name: "description",
         content: "Ringkasan proposal hibah, progres penyusunan, dan aktivitas terbaru.",
       },
+      { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: "Dashboard — EcoGrant AI" },
       {
         property: "og:description",

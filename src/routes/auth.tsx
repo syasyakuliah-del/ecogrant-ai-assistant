@@ -17,12 +17,22 @@ export const Route = createFileRoute("/auth")({
         content:
           "Halaman autentikasi EcoGrant AI untuk pengelola program hibah kehutanan dan lingkungan.",
       },
+      { name: "robots", content: "index, follow" },
+      { property: "og:site_name", content: "EcoGrant AI" },
       { property: "og:title", content: "Masuk atau Daftar — EcoGrant AI" },
       {
         property: "og:description",
         content: "Akses ruang kerja penyusunan proposal hibah EcoGrant AI.",
       },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://ecogrant.ai/auth" },
+      { property: "og:image", content: "https://ecogrant.ai/og-image.jpg" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Masuk atau Daftar — EcoGrant AI" },
+      { name: "twitter:description", content: "Akses ruang kerja penyusunan proposal hibah EcoGrant AI." },
+      { name: "twitter:image", content: "https://ecogrant.ai/og-image.jpg" },
     ],
+    links: [{ rel: "canonical", href: "https://ecogrant.ai/auth" }],
   }),
   component: AuthPage,
 });

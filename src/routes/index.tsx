@@ -38,7 +38,87 @@ export const Route = createFileRoute("/")({
         content:
           "Generator proposal hibah lingkungan, Kerangka Kerja Logis (LFA), dan Rencana Anggaran Biaya (RAB) patuh SBM regional secara otomatis dengan AI.",
       },
+      { name: "robots", content: "index, follow" },
+      { property: "og:site_name", content: "EcoGrant AI" },
+      { property: "og:title", content: "EcoGrant AI — Proposal Hibah Lingkungan & Costing SBM Berbasis AI" },
+      {
+        property: "og:description",
+        content:
+          "Generator proposal hibah lingkungan, Kerangka Kerja Logis (LFA), dan Rencana Anggaran Biaya (RAB) patuh SBM regional secara otomatis dengan AI.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://ecogrant.ai" },
+      { property: "og:image", content: "https://ecogrant.ai/og-image.jpg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "EcoGrant AI Platform" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "EcoGrant AI — Proposal Hibah Lingkungan & Costing SBM Berbasis AI" },
+      {
+        name: "twitter:description",
+        content:
+          "Generator proposal hibah lingkungan, Kerangka Kerja Logis (LFA), dan Rencana Anggaran Biaya (RAB) patuh SBM regional secara otomatis dengan AI.",
+      },
+      { name: "twitter:image", content: "https://ecogrant.ai/og-image.jpg" },
     ],
+    links: [{ rel: "canonical", href: "https://ecogrant.ai" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "SoftwareApplication",
+              "name": "EcoGrant AI",
+              "operatingSystem": "Web",
+              "applicationCategory": "BusinessApplication",
+              "description":
+                "Generator proposal hibah lingkungan, Kerangka Kerja Logis (LFA), dan Rencana Anggaran Biaya (RAB) patuh SBM regional secara otomatis dengan AI.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "IDR"
+              }
+            },
+            {
+              "@type": "Organization",
+              "name": "EcoGrant AI",
+              "url": "https://ecogrant.ai",
+              "logo": "https://ecogrant.ai/og-image.jpg"
+            },
+            {
+              "@type": "WebSite",
+              "name": "EcoGrant AI",
+              "url": "https://ecogrant.ai"
+            },
+            {
+              "@type": "FAQPage",
+              "mainEntity": [
+                {
+                  "@type": "Question",
+                  "name": "Bagaimana EcoGrant AI menjamin kepatuhan terhadap SBM Kemenhut & BPDLH?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text":
+                      "EcoGrant AI memiliki database terintegrasi Standar Biaya Masukan (SBM) dan Standar Biaya Umun (SBU) regional terbaru. Setiap komponen biaya dalam RAB secara otomatis disesuaikan dengan plafon resmi lokasi kegiatan."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Apakah hasil ekspor proposal dapat diedit kembali?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text":
+                      "Ya, semua dokumen dapat diekspor langsung dalam format Microsoft Word (.docx), Excel (.xlsx), dan PDF yang dapat diedit sepenuhnya."
+                  }
+                }
+              ]
+            }
+          ]
+        })
+      }
+    ]
   }),
   component: Landing,
 });

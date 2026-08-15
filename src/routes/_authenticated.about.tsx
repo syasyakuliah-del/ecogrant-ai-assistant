@@ -10,6 +10,7 @@ export const Route = createFileRoute("/_authenticated/about")({
         name: "description",
         content: "Informasi versi, ruang lingkup, dan prinsip kerja platform EcoGrant AI.",
       },
+      { name: "robots", content: "noindex, nofollow" },
       { property: "og:title", content: "Tentang Aplikasi — EcoGrant AI" },
       {
         property: "og:description",

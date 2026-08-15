@@ -1,8 +1,26 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /profile
+Disallow: /settings
+Disallow: /notifications
+Disallow: /proposals
+Disallow: /community
+Disallow: /help
+Disallow: /about
 
 User-agent: Bingbot
 Allow: /
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /profile
+Disallow: /settings
+Disallow: /notifications
+Disallow: /proposals
+Disallow: /community
+Disallow: /help
+Disallow: /about
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +30,14 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /profile
+Disallow: /settings
+Disallow: /notifications
+Disallow: /proposals
+Disallow: /community
+Disallow: /help
+Disallow: /about
+
+Sitemap: https://ecogrant.ai/sitemap.xml

@@ -79,24 +79,42 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "EcoGrant AI — Generator Proposal Hibah" },
+      { title: "EcoGrant AI — Generator Proposal Hibah Lingkungan Berbasis AI" },
       {
         name: "description",
         content:
           "Platform penyusunan proposal hibah kehutanan dan lingkungan berbasis AI lengkap dengan Logical Framework, SBM, SBU, dan RAB terintegrasi.",
       },
       { name: "author", content: "EcoGrant AI" },
-      { property: "og:title", content: "EcoGrant AI — Generator Proposal Hibah" },
+      { name: "robots", content: "index, follow" },
+      // Open Graph
+      { property: "og:site_name", content: "EcoGrant AI" },
+      { property: "og:title", content: "EcoGrant AI — Generator Proposal Hibah Lingkungan Berbasis AI" },
       {
         property: "og:description",
         content:
-          "Susun proposal hibah lingkungan secara cepat, konsisten, dan sesuai standar biaya.",
+          "Susun proposal hibah lingkungan secara cepat, konsisten, dan sesuai standar biaya menggunakan kecerdasan buatan.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://ecogrant.ai" },
+      { property: "og:locale", content: "id_ID" },
+      { property: "og:image", content: "https://ecogrant.ai/og-image.jpg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "EcoGrant AI — Generator Proposal Hibah Lingkungan & Costing Engine SBM Berbasis AI" },
+      // Twitter Card
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "EcoGrant AI — Generator Proposal Hibah Lingkungan Berbasis AI" },
+      {
+        name: "twitter:description",
+        content:
+          "Susun proposal hibah lingkungan secara cepat, konsisten, dan sesuai standar biaya menggunakan kecerdasan buatan.",
+      },
+      { name: "twitter:image", content: "https://ecogrant.ai/og-image.jpg" },
+      { name: "twitter:image:alt", content: "EcoGrant AI — Generator Proposal Hibah Lingkungan & Costing Engine SBM Berbasis AI" },
     ],
     links: [
+      { rel: "canonical", href: "https://ecogrant.ai" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
