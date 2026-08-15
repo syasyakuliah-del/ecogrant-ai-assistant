@@ -91,9 +91,9 @@ function AuthPage() {
           <span className="font-display text-lg font-semibold">EcoGrant AI</span>
         </div>
         <div className="max-w-md space-y-5">
-          <h1 className="font-display text-4xl leading-tight font-semibold">
+          <h2 className="font-display text-4xl leading-tight font-semibold">
             Menerjemahkan ide lapangan menjadi proposal hibah yang siap diajukan.
-          </h1>
+          </h2>
           <p className="text-sm leading-relaxed opacity-80">
             Narasi formal, Logical Framework Matrix, validasi Standar Biaya Masukan dan Standar
             Biaya Umum, serta Rencana Anggaran Biaya terintegrasi dalam satu sumber data.
@@ -111,16 +111,16 @@ function AuthPage() {
         <div className="w-full max-w-md">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <Leaf className="size-5" />
+              <Leaf className="size-5" aria-hidden="true" />
             </span>
             <span className="font-display text-lg font-semibold">EcoGrant AI</span>
           </div>
 
           <div className="space-y-6">
             <div>
-              <h2 className="font-display text-2xl font-bold tracking-tight text-foreground">
+              <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
                 Masuk ke EcoGrant AI
-              </h2>
+              </h1>
               <p className="text-xs text-muted-foreground mt-1">
                 Lanjutkan dengan akun Google Anda untuk mengakses ruang kerja.
               </p>
@@ -132,11 +132,12 @@ function AuthPage() {
               variant="outline" 
               onClick={handleGoogleLogin} 
               disabled={busy}
+              aria-label="Lanjutkan dengan akun Google"
             >
               {busy ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
               ) : (
-                <svg className="mr-2 size-5" viewBox="0 0 24 24">
+                <svg className="mr-2 size-5" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                     fill="#4285F4"

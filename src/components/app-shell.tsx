@@ -90,12 +90,13 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
               key={item.to}
               to={item.to}
               onClick={onNavigate}
+              aria-current={pathname === item.to ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 pathname === item.to && "bg-sidebar-accent text-sidebar-accent-foreground",
               )}
             >
-              <item.icon className="size-4" />
+              <item.icon className="size-4" aria-hidden="true" />
               {item.label}
             </Link>
           ))}
@@ -112,12 +113,13 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
               key={item.to}
               to={item.to}
               onClick={onNavigate}
+              aria-current={pathname === item.to ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 pathname === item.to && "bg-sidebar-accent text-sidebar-accent-foreground",
               )}
             >
-              <item.icon className="size-4" />
+              <item.icon className="size-4" aria-hidden="true" />
               {item.label}
             </Link>
           ))}
@@ -168,15 +170,22 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-sidebar lg:flex">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg focus:outline-none"
+      >
+        Langsung ke Konten Utama
+      </a>
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-sidebar lg:flex" aria-label="Navigasi Utama">
         <Brand />
         <NavList />
         <div className="border-t border-sidebar-border p-3">
           <button
             onClick={handleSignOut}
+            aria-label="Keluar dari akun"
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
-            <LogOut className="size-4" />
+            <LogOut className="size-4" aria-hidden="true" />
             Keluar
           </button>
         </div>
@@ -187,8 +196,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden">
-                  <Menu className="size-5" />
+                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Buka menu navigasi">
+                  <Menu className="size-5" aria-hidden="true" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-72 bg-sidebar p-0">
@@ -210,11 +219,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" onClick={toggle} aria-label="Ubah mode tampilan">
-              {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+              {theme === "dark" ? (
+                <Sun className="size-4" aria-hidden="true" />
+              ) : (
+                <Moon className="size-4" aria-hidden="true" />
+              )}
             </Button>
-            <Link to="/notifications" className="relative">
-              <Button variant="ghost" size="icon" aria-label="Notifikasi">
-                <Bell className="size-4" />
+            <Link to="/notifications" className="relative" aria-label="Notifikasi">
+              <Button variant="ghost" size="icon" aria-label="Lihat Notifikasi">
+                <Bell className="size-4" aria-hidden="true" />
               </Button>
               {unread > 0 ? (
                 <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-semibold text-destructive-foreground">
@@ -226,15 +239,17 @@ export function AppShell({ children }: { children: ReactNode }) {
               variant="ghost"
               size="icon"
               onClick={handleSignOut}
-              aria-label="Keluar"
+              aria-label="Keluar dari akun"
               className="lg:hidden"
             >
-              <LogOut className="size-4" />
+              <LogOut className="size-4" aria-hidden="true" />
             </Button>
           </div>
         </header>
 
-        <main className="flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+        <main id="main-content" tabIndex={-1} className="flex-1 px-4 py-6 lg:px-8 lg:py-8 focus:outline-none">
+          {children}
+        </main>
       </div>
     </div>
   );
