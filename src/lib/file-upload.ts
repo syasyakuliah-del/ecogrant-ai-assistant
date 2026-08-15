@@ -156,9 +156,9 @@ export async function getSignedDownloadUrl(
   const { data, error } = await supabase.storage
     .from("private_files")
     .createSignedUrl(storageKey, expiresInSeconds);
-  if (error) {
-    // Fallback if storage bucket isn't provisioned yet
-    return `https://storage.supabase.co/${storageKey}`;
+  if (error || !data?.signedUrl) {
+    console.error("[file-upload] Failed to generate signed URL:", error);
+    throw new Error("Gagal mengunduh file privat: Akses penyimpanan terlindungi bermasalah.");
   }
   await logAudit({ action: "file.download_sensitive", entityType: "file", entityId: storageKey });
   return data.signedUrl;

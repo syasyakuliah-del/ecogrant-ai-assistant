@@ -3,7 +3,7 @@ import { NARRATIVE_SECTIONS, EXECUTIVE_SUMMARY_KEY } from "./constants";
 import { formatCurrency, formatDate } from "./format";
 import { supabase } from "@/integrations/supabase/client";
 import { logAudit } from "@/lib/audit";
-import * as XLSX from "xlsx";
+
 
 export type ExportBundle = {
   proposal: Proposal;
@@ -221,6 +221,7 @@ export async function exportDocx(bundle: ExportBundle) {
 }
 
 export async function exportXlsx(bundle: ExportBundle) {
+  const XLSX = await import("xlsx");
   const wb = XLSX.utils.book_new();
 
   const rab = bundle.budget.map((b, i) => ({

@@ -66,6 +66,11 @@ let _supabaseAdmin: ReturnType<typeof createSupabaseAdminClient> | undefined;
 // Top-level import is safe only in other .server.ts modules - route files and *.functions.ts ship to the client bundle.
 export const supabaseAdmin = new Proxy({} as ReturnType<typeof createSupabaseAdminClient>, {
   get(_, prop, receiver) {
+    if (typeof window !== "undefined") {
+      throw new Error(
+        "[SECURITY] supabaseAdmin (dengan Service Role Key) TIDAK BOLEH dipanggil di browser/client-side bundle!",
+      );
+    }
     if (!_supabaseAdmin) _supabaseAdmin = createSupabaseAdminClient();
     return Reflect.get(_supabaseAdmin, prop, receiver);
   },

@@ -76,35 +76,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadUserData(userId: string) {
     try {
-      // Load profile first
-      const { data: p } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
-      setProfile((p as Profile) ?? null);
+      // Load profile and user_roles concurrently
+      const [profileResult, rolesResult] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+        supabase.from("user_roles").select("role, role_id, roles(name)").eq("user_id", userId),
+      ]);
 
-      // Load roles - may fail if tables don't exist yet
+      setProfile((profileResult.data as Profile) ?? null);
+
       const assignedRoles: string[] = [];
       let roleIds: string[] = [];
-      try {
-        const { data: userRoles } = await supabase
-          .from("user_roles")
-          .select("role, role_id, roles(name)")
-          .eq("user_id", userId);
+      const userRoles = rolesResult.data;
 
-        for (const ur of userRoles ?? []) {
-          if (ur.roles && typeof ur.roles === "object" && "name" in ur.roles && ur.roles.name) {
-            assignedRoles.push(ur.roles.name);
-          } else if (ur.role) {
-            assignedRoles.push(ur.role);
-          }
+      for (const ur of userRoles ?? []) {
+        if (ur.roles && typeof ur.roles === "object" && "name" in ur.roles && ur.roles.name) {
+          assignedRoles.push(ur.roles.name);
+        } else if (ur.role) {
+          assignedRoles.push(ur.role);
         }
-        roleIds = (userRoles ?? []).map((ur) => ur.role_id).filter(Boolean) as string[];
-      } catch {
-        // Tables may not exist yet — silently fallback
-        console.warn("[useAuth] user_roles query failed — tables may not exist yet");
       }
+      roleIds = (userRoles ?? []).map((ur) => ur.role_id).filter(Boolean) as string[];
 
       const adminFlag = assignedRoles.includes("admin");
       setIsAdmin(adminFlag);

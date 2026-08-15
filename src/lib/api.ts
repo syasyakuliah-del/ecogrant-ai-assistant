@@ -891,9 +891,10 @@ export const api = {
       return data;
     },
     createUser: async (email: string, fullName: string, role: "user" | "admin" = "user") => {
+      const tempPassword = `EcoGrant_${crypto.randomUUID()}!`;
       const { data, error } = await supabase.auth.signUp({
         email,
-        password: "TemporaryPassword123!",
+        password: tempPassword,
         options: { data: { full_name: fullName } },
       });
       if (error) throw error;
@@ -903,7 +904,7 @@ export const api = {
         entityId: data.user?.id,
         newValues: { email, role },
       });
-      return data;
+      return { ...data, temporaryPassword: tempPassword };
     },
     updateUser: async (id: string, payload: Record<string, unknown>) => {
       const { data, error } = await supabase
