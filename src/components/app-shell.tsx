@@ -131,15 +131,17 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 
 function Brand() {
   return (
-    <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-5">
-      <span className="flex size-9 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
-        <Leaf className="size-4" />
-      </span>
+    <Link to="/" className="flex items-center gap-3 border-b border-sidebar-border px-5 py-5 group hover:opacity-90 transition-opacity">
+      <img
+        src="/logoecograntai.png"
+        alt="Logo EcoGrant AI"
+        className="size-9 object-contain rounded-lg"
+      />
       <div>
         <p className="font-display text-sm font-semibold text-sidebar-foreground">EcoGrant AI</p>
         <p className="text-[11px] text-sidebar-foreground/60">Generator Proposal Hibah</p>
       </div>
-    </div>
+    </Link>
   );
 }
 

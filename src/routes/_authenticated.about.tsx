@@ -41,9 +41,11 @@ function AboutPage() {
 
       <div className="surface-panel space-y-6 p-6">
         <div className="flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Leaf className="size-5" />
-          </span>
+          <img
+            src="/logoecograntai.png"
+            alt="Logo EcoGrant AI"
+            className="size-11 object-contain rounded-xl"
+          />
           <div>
             <p className="font-display text-lg font-semibold">EcoGrant AI</p>
             <p className="text-sm text-muted-foreground">

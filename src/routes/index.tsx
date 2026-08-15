@@ -168,9 +168,11 @@ function Landing() {
       <header className="sticky top-0 z-50 bg-[#F8FBF8]/95 backdrop-blur-md border-b border-slate-300">
         <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-[#1B4332] flex items-center justify-center text-[#52B788] shadow-sm group-hover:scale-105 transition-transform">
-              <Leaf className="w-5 h-5" />
-            </div>
+            <img
+              src="/logoecograntai.png"
+              alt="Logo EcoGrant AI"
+              className="h-10 w-auto object-contain rounded-lg group-hover:scale-105 transition-transform"
+            />
             <div className="flex flex-col">
               <span className="font-extrabold text-xl text-[#1B4332] tracking-tight leading-none">
                 EcoGrant<span className="text-[#52B788]">.ai</span>
@@ -990,9 +992,11 @@ function Landing() {
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
           <div className="col-span-2 space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#52B788] flex items-center justify-center text-[#0F172A]">
-                <Leaf className="w-5 h-5" />
-              </div>
+              <img
+                src="/logoecograntai.png"
+                alt="Logo EcoGrant AI"
+                className="h-8 w-auto object-contain bg-white/10 p-1 rounded-lg"
+              />
               <span className="font-extrabold text-lg text-white">EcoGrant AI</span>
             </div>
             <p className="text-xs sm:text-sm text-slate-300 max-w-sm leading-relaxed font-medium">

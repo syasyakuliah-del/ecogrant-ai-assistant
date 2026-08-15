@@ -98,7 +98,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://ecogrant.ai" },
       { property: "og:locale", content: "id_ID" },
-      { property: "og:image", content: "https://ecogrant.ai/og-image.jpg" },
+      { property: "og:image", content: "/logoecograntai.png" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { property: "og:image:alt", content: "EcoGrant AI — Generator Proposal Hibah Lingkungan & Costing Engine SBM Berbasis AI" },
@@ -110,7 +110,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Susun proposal hibah lingkungan secara cepat, konsisten, dan sesuai standar biaya menggunakan kecerdasan buatan.",
       },
-      { name: "twitter:image", content: "https://ecogrant.ai/og-image.jpg" },
+      { name: "twitter:image", content: "/logoecograntai.png" },
       { name: "twitter:image:alt", content: "EcoGrant AI — Generator Proposal Hibah Lingkungan & Costing Engine SBM Berbasis AI" },
     ],
     links: [
@@ -126,6 +126,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/logoecograntai.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/logoecograntai.png" },
     ],
   }),
   shellComponent: RootShell,

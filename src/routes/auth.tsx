@@ -90,9 +90,11 @@ function AuthPage() {
     <main className="grid min-h-screen lg:grid-cols-2">
       <section className="relative hidden flex-col justify-between bg-sidebar p-12 text-sidebar-foreground lg:flex">
         <div className="flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
-            <Leaf className="size-5" />
-          </span>
+          <img
+            src="/logoecograntai.png"
+            alt="Logo EcoGrant AI"
+            className="h-10 w-auto object-contain rounded-xl"
+          />
           <span className="font-display text-lg font-semibold">EcoGrant AI</span>
         </div>
         <div className="max-w-md space-y-5">
@@ -115,9 +117,11 @@ function AuthPage() {
       <section className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <Leaf className="size-5" aria-hidden="true" />
-            </span>
+            <img
+              src="/logoecograntai.png"
+              alt="Logo EcoGrant AI"
+              className="h-10 w-auto object-contain rounded-xl"
+            />
             <span className="font-display text-lg font-semibold">EcoGrant AI</span>
           </div>
 
