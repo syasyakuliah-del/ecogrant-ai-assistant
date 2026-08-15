@@ -19,7 +19,7 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { logAudit } from "@/lib/audit";
 import { PageHeader } from "@/components/app-shell";
-import { AdminToolbar, EmptyRow } from "@/components/admin/data-table";
+import { AdminToolbar, EmptyRow, AdminPagination } from "@/components/admin/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -104,6 +104,7 @@ function AdminSbu() {
   const [categoryFilter, setCategoryFilter] = useState("semua");
   const [provinceFilter, setProvinceFilter] = useState("semua");
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const [sortKey, setSortKey] = useState<SortKey>("code");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -162,8 +163,8 @@ function AdminSbu() {
     return result;
   }, [data, q, categoryFilter, provinceFilter, sortKey, sortDir]);
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const rows = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const rows = filtered.slice(page * pageSize, (page + 1) * pageSize);
 
   const toggleSort = useCallback(
     (key: SortKey) => {
@@ -578,31 +579,15 @@ function AdminSbu() {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Halaman {page + 1} dari {totalPages} ({filtered.length} SBU)
-          </span>
-          <div className="flex gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={page === 0}
-              onClick={() => setPage(page - 1)}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage(page + 1)}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <AdminPagination
+        page={page}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        itemLabel="SBU"
+      />
 
       {/* Form Modal */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
