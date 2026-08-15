@@ -1,10 +1,26 @@
-// Quick diagnostic & fix: Check if syasyakuliah@gmail.com has admin role
-// Run: node scratch/check-admin.mjs
 import { createClient } from "@supabase/supabase-js";
-import * as dotenv from "dotenv";
-dotenv.config();
+import fs from "fs";
 
-const url = process.env.VITE_SUPABASE_URL;
+function loadEnv() {
+  const envFiles = ['.env', '.env.local'];
+  for (const file of envFiles) {
+    if (fs.existsSync(file)) {
+      const content = fs.readFileSync(file, 'utf8');
+      for (const line of content.split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+          const idx = trimmed.indexOf('=');
+          const k = trimmed.slice(0, idx).trim();
+          const v = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
+          process.env[k] = v;
+        }
+      }
+    }
+  }
+}
+loadEnv();
+
+const url = process.env.VITE_SUPABASE_URL || "https://scnouypfyimjuonbnnhj.supabase.co";
 const key = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 console.log("Supabase URL:", url);
 console.log("Supabase Key:", key?.substring(0, 20) + "...");
@@ -12,15 +28,14 @@ console.log("Supabase Key:", key?.substring(0, 20) + "...");
 const sb = createClient(url, key);
 
 async function check() {
-  // 1. Check if tables exist by trying to query them
-  console.log("\n--- 1. Checking tables ---");
+  console.log("\n--- Checking tables ---");
 
   const { data: rolesData, error: rolesErr } = await sb.from("roles").select("*");
   console.log(
     "roles table:",
     rolesErr ? `ERROR: ${rolesErr.message}` : `${rolesData?.length ?? 0} rows`,
   );
-  if (rolesData) console.log("  Roles:", JSON.stringify(rolesData.map((r) => r.name)));
+  if (rolesData) console.log("  Roles:", JSON.stringify(rolesData));
 
   const { data: userRoles, error: urErr } = await sb.from("user_roles").select("*");
   console.log(
@@ -39,46 +54,8 @@ async function check() {
   if (profiles)
     console.log(
       "  Profiles:",
-      JSON.stringify(profiles.map((p) => ({ email: p.email, id: p.id?.substring(0, 8) }))),
+      JSON.stringify(profiles)
     );
-
-  const { data: perms, error: permErr } = await sb.from("permissions").select("id, name");
-  console.log(
-    "permissions table:",
-    permErr ? `ERROR: ${permErr.message}` : `${perms?.length ?? 0} rows`,
-  );
-
-  const { data: rolePerms, error: rpErr } = await sb.from("role_permissions").select("*");
-  console.log(
-    "role_permissions table:",
-    rpErr ? `ERROR: ${rpErr.message}` : `${rolePerms?.length ?? 0} rows`,
-  );
-
-  console.log("\n--- CONCLUSION ---");
-  if (rolesErr) {
-    console.log(
-      "❌ Table 'roles' does NOT exist. You MUST run 1_schema_and_policies.sql FIRST in Supabase SQL Editor!",
-    );
-  } else if (!rolesData || rolesData.length === 0) {
-    console.log(
-      "⚠️ Table 'roles' exists but is EMPTY. You need to run 2_seed_master_data.sql in Supabase SQL Editor!",
-    );
-  } else if (!userRoles || userRoles.length === 0) {
-    console.log(
-      "⚠️ Table 'user_roles' exists but is EMPTY. Your account has no admin role assigned.",
-    );
-  } else {
-    const adminRoles = userRoles.filter((ur) => ur.role === "admin");
-    if (adminRoles.length > 0) {
-      console.log(
-        "✅ Admin role IS assigned. The sidebar should show Admin menu. Try logging out and back in.",
-      );
-    } else {
-      console.log(
-        "⚠️ User roles exist but none have role='admin'. Run 2_seed_master_data.sql to fix.",
-      );
-    }
-  }
 }
 
 check().catch(console.error);

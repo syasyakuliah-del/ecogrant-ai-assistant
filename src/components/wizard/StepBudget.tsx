@@ -23,6 +23,7 @@ import { formatCurrency } from "@/lib/format";
 import { budgetTotals, validateItem, type StandardRow } from "@/lib/budget";
 import { BUDGET_CATEGORIES, UNITS } from "@/lib/constants";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import sbmMasterData from "@/data/sbm_master.json";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,17 +68,36 @@ export function StepBudget({ proposal, lfa, budget, donor, refetch }: StepProps)
   const { data: standards } = useQuery({
     queryKey: ["standards", "all"],
     queryFn: async () => {
-      const [sbm, sbu] = await Promise.all([
-        supabase
+      let allSbm: any[] = [];
+      let from = 0;
+      const step = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await supabase
           .from("sbm")
           .select("id,code,description,category,unit,price")
-          .eq("is_active", true),
-        supabase
-          .from("sbu")
-          .select("id,code,description,category,unit,price")
-          .eq("is_active", true),
-      ]);
-      return { sbm: sbm.data ?? [], sbu: sbu.data ?? [] };
+          .eq("is_active", true)
+          .range(from, from + step - 1);
+
+        if (error) break;
+        if (!data || data.length === 0) break;
+
+        allSbm = allSbm.concat(data);
+        if (data.length < step) hasMore = false;
+        from += step;
+      }
+
+      if (allSbm.length === 0) {
+        allSbm = sbmMasterData as any[];
+      }
+
+      const { data: sbuData } = await supabase
+        .from("sbu")
+        .select("id,code,description,category,unit,price")
+        .eq("is_active", true);
+
+      return { sbm: allSbm, sbu: sbuData ?? [] };
     },
   });
 

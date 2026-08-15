@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { logAudit, notify } from "@/lib/audit";
+import sbmMasterData from "@/data/sbm_master.json";
 
 export const API_BASE_PATH = "/api/v1";
 
@@ -571,13 +572,32 @@ export const api = {
   standards: {
     sbm: {
       list: async () => {
-        const { data, error } = await supabase
-          .from("sbm")
-          .select("*")
-          .is("deleted_at", null)
-          .order("code");
-        if (error) throw error;
-        return data;
+        let allData: any[] = [];
+        let from = 0;
+        const step = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from("sbm")
+            .select("*")
+            .is("deleted_at", null)
+            .order("code")
+            .range(from, from + step - 1);
+
+          if (error) break;
+          if (!data || data.length === 0) break;
+
+          allData = allData.concat(data);
+          if (data.length < step) hasMore = false;
+          from += step;
+        }
+
+        if (allData.length > 0) {
+          return allData;
+        }
+
+        return sbmMasterData as any[];
       },
       create: async (payload: Record<string, unknown>) => {
         const { data, error } = await supabase

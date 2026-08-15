@@ -52,6 +52,8 @@ import {
 import { BUDGET_CATEGORIES, UNITS } from "@/lib/constants";
 import { formatCurrency } from "@/lib/format";
 
+import sbmMasterData from "@/data/sbm_master.json";
+
 export const Route = createFileRoute("/_authenticated/admin/sbm")({
   head: () => ({
     meta: [
@@ -116,24 +118,39 @@ function parseSbmRow(r: Record<string, unknown>) {
 
   const code = String(r["Kode"] || r["kode"] || r["code"] || "").trim().toUpperCase();
   const category = String(r["Kategori"] || r["kategori"] || r["category"] || "Honorarium").trim();
-  const description = String(r["Uraian"] || r["uraian"] || r["description"] || "").trim();
-  const unit = String(r["Satuan"] || r["satuan"] || r["unit"] || "OJ").trim();
+  let description = String(r["Uraian"] || r["uraian"] || r["description"] || "").trim();
+  let unit = String(r["Satuan"] || r["satuan"] || r["unit"] || "OJ").trim();
 
   let rawPrice = r["Harga"] ?? r["harga"] ?? r["price"] ?? r["Harga Satuan"] ?? 0;
-  if (typeof rawPrice === "string") {
-    rawPrice = Number(rawPrice.replace(/[^0-9.-]+/g, "")) || 0;
-  }
-  const price = Number(rawPrice) || 0;
-
-  const region_code = String(
+  let region_code = String(
     r["Wilayah"] || r["wilayah"] || r["region"] || r["region_code"] || "NASIONAL"
   )
     .trim()
     .toUpperCase();
 
-  const regulation_source = r["Sumber Regulasi"]
+  let regulation_source = r["Sumber Regulasi"]
     ? String(r["Sumber Regulasi"])
     : "Permenhut No. 32 Tahun 2025 (SBM 2026)";
+
+  // Handle shifted columns when unescaped comma in Uraian caused extra __EMPTY keys
+  const keys = Object.keys(r);
+  const emptyKeys = keys.filter((k) => k.startsWith("__EMPTY"));
+  if (emptyKeys.length > 0) {
+    const strVals = keys.map((k) => String(r[k] ?? "").trim());
+    if (strVals.length >= 8) {
+      const last4 = strVals.slice(strVals.length - 4);
+      description = strVals.slice(3, strVals.length - 4).join(", ").trim();
+      unit = last4[0] || unit;
+      rawPrice = last4[1] || rawPrice;
+      region_code = (last4[2] || region_code).toUpperCase();
+      regulation_source = last4[3] || regulation_source;
+    }
+  }
+
+  if (typeof rawPrice === "string") {
+    rawPrice = Number(rawPrice.replace(/[^0-9.-]+/g, "")) || 0;
+  }
+  const price = Number(rawPrice) || 0;
 
   return { year, version, code, category, description, unit, price, region_code, regulation_source };
 }
@@ -166,14 +183,33 @@ function AdminSbm() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["admin-sbm-full"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sbm")
-        .select("*")
-        .is("deleted_at", null)
-        .order("code")
-        .limit(1000);
-      if (error) throw error;
-      return data;
+      let allData: any[] = [];
+      let from = 0;
+      const step = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("sbm")
+          .select("*")
+          .is("deleted_at", null)
+          .order("code")
+          .range(from, from + step - 1);
+
+        if (error) break;
+        if (!data || data.length === 0) break;
+
+        allData = allData.concat(data);
+        if (data.length < step) hasMore = false;
+        from += step;
+      }
+
+      if (allData.length > 0) {
+        return allData;
+      }
+
+      // Fallback to master SBM dataset (1,694 items) if DB returns 0 rows (e.g. empty DB or RLS)
+      return sbmMasterData as any[];
     },
   });
 
