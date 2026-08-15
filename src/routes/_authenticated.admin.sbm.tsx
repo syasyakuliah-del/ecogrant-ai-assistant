@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Coins,
   Download,
+  FileSpreadsheet,
   Layers,
   Pencil,
   Plus,
@@ -98,6 +99,44 @@ const EMPTY_FORM: FormState = {
 };
 
 type SortKey = "code" | "category" | "price" | "region_code";
+
+function parseSbmRow(r: Record<string, unknown>) {
+  let year = 2026;
+  let version = "1.0";
+
+  const rawThnVer = String(r["Thn/Ver"] || r["thn/ver"] || r["THN/VER"] || r["Thn"] || "").trim();
+  if (rawThnVer) {
+    const parts = rawThnVer.split("/");
+    if (parts[0]) year = Number(parts[0].replace(/\D/g, "")) || 2026;
+    if (parts[1]) version = parts[1].trim() || "1.0";
+  } else {
+    year = Number(r["Tahun"] || r["tahun"] || r["year"] || 2026);
+    version = String(r["Versi"] || r["versi"] || r["version"] || "1.0").trim();
+  }
+
+  const code = String(r["Kode"] || r["kode"] || r["code"] || "").trim().toUpperCase();
+  const category = String(r["Kategori"] || r["kategori"] || r["category"] || "Honorarium").trim();
+  const description = String(r["Uraian"] || r["uraian"] || r["description"] || "").trim();
+  const unit = String(r["Satuan"] || r["satuan"] || r["unit"] || "OJ").trim();
+
+  let rawPrice = r["Harga"] ?? r["harga"] ?? r["price"] ?? r["Harga Satuan"] ?? 0;
+  if (typeof rawPrice === "string") {
+    rawPrice = Number(rawPrice.replace(/[^0-9.-]+/g, "")) || 0;
+  }
+  const price = Number(rawPrice) || 0;
+
+  const region_code = String(
+    r["Wilayah"] || r["wilayah"] || r["region"] || r["region_code"] || "NASIONAL"
+  )
+    .trim()
+    .toUpperCase();
+
+  const regulation_source = r["Sumber Regulasi"]
+    ? String(r["Sumber Regulasi"])
+    : "Permenhut No. 32 Tahun 2025 (SBM 2026)";
+
+  return { year, version, code, category, description, unit, price, region_code, regulation_source };
+}
 
 function AdminSbm() {
   const qc = useQueryClient();
@@ -300,20 +339,13 @@ function AdminSbm() {
         const errors: string[] = [];
         const seenKeys = new Set<string>();
         parsed.forEach((r, idx) => {
-          const code = String(r["Kode"] || r["code"] || "")
-            .trim()
-            .toUpperCase();
-          const year = Number(r["Tahun"] || r["year"] || 2026);
-          const version = String(r["Versi"] || r["version"] || "1.0").trim();
-          const region = String(r["Wilayah"] || r["region_code"] || "NASIONAL")
-            .trim()
-            .toUpperCase();
-          const price = Number(r["Harga"] || r["price"] || 0);
+          const row = parseSbmRow(r);
 
-          if (!code) errors.push(`Baris ${idx + 2}: Kode kosong`);
-          if (price < 0) errors.push(`Baris ${idx + 2}: Harga negatif (${price})`);
+          if (!row.code) errors.push(`Baris ${idx + 2}: Kode kosong`);
+          if (!row.description) errors.push(`Baris ${idx + 2}: Uraian kosong`);
+          if (row.price < 0) errors.push(`Baris ${idx + 2}: Harga negatif (${row.price})`);
 
-          const key = `${year}-${version}-${code}-${region}`;
+          const key = `${row.year}-${row.version}-${row.code}-${row.region_code}`;
           if (seenKeys.has(key)) errors.push(`Baris ${idx + 2}: Duplikasi dalam file (${key})`);
           seenKeys.add(key);
         });
@@ -329,26 +361,65 @@ function AdminSbm() {
     e.target.value = "";
   }
 
+  function downloadTemplate() {
+    const templateData = [
+      {
+        "Thn/Ver": "2026 / 1.0",
+        Kode: "SBM-2026-001",
+        Kategori: "Honorarium",
+        Uraian: "Honorarium Narasumber Pakar / Pejabat Eselon I",
+        Satuan: "OJ",
+        Harga: 1400000,
+        Wilayah: "NASIONAL",
+        "Sumber Regulasi": "Permenhut No. 32 Tahun 2025 / PMK SBM 2026",
+      },
+      {
+        "Thn/Ver": "2026 / 1.0",
+        Kode: "SBM-2026-002",
+        Kategori: "Perjalanan Dinas",
+        Uraian: "Satuan Biaya Transpor Lokal DKI Jakarta",
+        Satuan: "Kali",
+        Harga: 150000,
+        Wilayah: "DKI JAKARTA",
+        "Sumber Regulasi": "Permenhut No. 32 Tahun 2025 / PMK SBM 2026",
+      },
+      {
+        "Thn/Ver": "2026 / 1.0",
+        Kode: "SBM-2026-003",
+        Kategori: "Konsumsi",
+        Uraian: "Satuan Biaya Konsumsi Rapat Koordinasi (Makan + Snack)",
+        Satuan: "OP",
+        Harga: 110000,
+        Wilayah: "JAWA BARAT",
+        "Sumber Regulasi": "Permenhut No. 32 Tahun 2025 / PMK SBM 2026",
+      },
+    ];
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template SBM 2026");
+    XLSX.writeFile(wb, "Template_SBM_Kemenhut_2026.xlsx");
+    toast.success("Template Excel SBM 2026 berhasil diunduh.");
+  }
+
   async function processImport() {
     if (importRows.length === 0) return;
     setIsImporting(true);
     const toInsert = importRows
-      .map((r) => ({
-        year: Number(r["Tahun"] || r["year"] || 2026),
-        version: String(r["Versi"] || r["version"] || "1.0").trim(),
-        code: String(r["Kode"] || r["code"] || "")
-          .trim()
-          .toUpperCase(),
-        category: String(r["Kategori"] || r["category"] || "Honorarium").trim(),
-        description: String(r["Uraian"] || r["description"] || "").trim(),
-        unit: String(r["Satuan"] || r["unit"] || "OJ").trim(),
-        price: Number(r["Harga"] || r["price"] || 0),
-        region_code: String(r["Wilayah"] || r["region_code"] || "NASIONAL")
-          .trim()
-          .toUpperCase(),
-        regulation_source: r["Sumber Regulasi"] ? String(r["Sumber Regulasi"]) : null,
-        is_active: true,
-      }))
+      .map((r) => {
+        const row = parseSbmRow(r);
+        return {
+          year: row.year,
+          version: row.version,
+          code: row.code,
+          category: row.category,
+          description: row.description,
+          unit: row.unit,
+          price: row.price,
+          region_code: row.region_code,
+          regulation_source: row.regulation_source,
+          is_active: true,
+        };
+      })
       .filter((x) => x.code.length > 0 && x.description.length > 0);
 
     const { error } = await supabase
@@ -491,6 +562,9 @@ function AdminSbm() {
             ))}
           </SelectContent>
         </Select>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={downloadTemplate}>
+          <FileSpreadsheet className="size-3.5 text-emerald-600" /> Unduh Template
+        </Button>
         <div className="relative">
           <input
             type="file"
