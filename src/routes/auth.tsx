@@ -45,9 +45,15 @@ function AuthPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      const redirectTarget = search.redirect && search.redirect !== "/dashboard"
-        ? search.redirect
-        : (isAdmin ? "/admin" : "/dashboard");
+      const redirectTarget =
+        search.redirect &&
+        search.redirect !== "/dashboard" &&
+        search.redirect !== "/" &&
+        search.redirect !== "/auth"
+          ? search.redirect
+          : isAdmin
+          ? "/admin"
+          : "/dashboard";
       void navigate({ to: redirectTarget, replace: true });
     }
   }, [user, loading, navigate, search.redirect, isAdmin]);
@@ -65,20 +71,19 @@ function AuthPage() {
 
   async function handleGoogleLogin() {
     setBusy(true);
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
-      }
+        redirectTo: `${origin}/dashboard`,
+      },
     });
-    
+
     if (error) {
       setBusy(false);
       toast.error(error.message || "Gagal masuk dengan Google.");
       return;
     }
-    // The user will be redirected to Google for authentication,
-    // so we don't need to do anything else here.
   }
 
   return (

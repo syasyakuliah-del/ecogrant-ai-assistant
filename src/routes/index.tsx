@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { SbmSimulator } from "@/components/SbmSimulator";
 import {
@@ -124,13 +124,32 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const { user, isAdmin, loading } = useAuth();
   const [activeHeroTab, setActiveHeroTab] = useState<"proposal" | "sbm" | "lfa" | "export" | "chat">("proposal");
   const [activeRoleTab, setActiveRoleTab] = useState<"ngo" | "academic" | "csr" | "asn">("ngo");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
+  useEffect(() => {
+    if (!loading && user) {
+      const redirectTarget = isAdmin ? "/admin" : "/dashboard";
+      void navigate({ to: redirectTarget, replace: true });
+    }
+  }, [user, loading, isAdmin, navigate]);
+
   const appHref = user ? (isAdmin ? "/admin" : "/dashboard") : "/auth";
   const appLabel = user ? "Buka Ruang Kerja" : "Coba Gratis Sekarang";
+
+  if (loading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FBF8]">
+        <div className="flex flex-col items-center gap-3 text-[#334155]">
+          <Leaf className="size-8 animate-pulse text-[#1B4332]" />
+          <p className="text-sm font-medium">Mengalihkan ke ruang kerja…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FBF8] text-[#1E293B] font-sans selection:bg-[#52B788]/20 selection:text-[#1B4332]">
@@ -184,19 +203,31 @@ function Landing() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Link
-              to="/auth"
-              className="text-sm font-bold text-[#0F172A] hover:text-[#1B4332] px-3.5 py-2 transition-colors"
-            >
-              Masuk
-            </Link>
-            <Link
-              to={appHref}
-              className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md transition-all hover:shadow-lg flex items-center gap-2"
-            >
-              <span>{appLabel}</span>
-              <ArrowRight className="w-4 h-4 text-[#52B788]" />
-            </Link>
+            {user ? (
+              <Link
+                to={appHref}
+                className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md transition-all hover:shadow-lg flex items-center gap-2"
+              >
+                <span>Buka Ruang Kerja</span>
+                <ArrowRight className="w-4 h-4 text-[#52B788]" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/auth"
+                  className="text-sm font-bold text-[#0F172A] hover:text-[#1B4332] px-3.5 py-2 transition-colors"
+                >
+                  Masuk
+                </Link>
+                <Link
+                  to="/auth"
+                  className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md transition-all hover:shadow-lg flex items-center gap-2"
+                >
+                  <span>Coba Gratis Sekarang</span>
+                  <ArrowRight className="w-4 h-4 text-[#52B788]" />
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
