@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { SbmSimulator } from "@/components/SbmSimulator";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   ArrowRight,
   Leaf,
@@ -27,6 +28,7 @@ import {
   Building,
   GraduationCap,
   Users,
+  Menu,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -129,6 +131,7 @@ function Landing() {
   const [activeHeroTab, setActiveHeroTab] = useState<"proposal" | "sbm" | "lfa" | "export" | "chat">("proposal");
   const [activeRoleTab, setActiveRoleTab] = useState<"ngo" | "academic" | "csr" | "asn">("ngo");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -166,24 +169,24 @@ function Landing() {
 
       {/* Header / Navbar */}
       <header className="sticky top-0 z-50 bg-[#F8FBF8]/95 backdrop-blur-md border-b border-slate-300">
-        <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 group">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-2">
+          <Link to="/" className="flex items-center gap-2 group shrink-0">
             <img
               src="/logoecograntai.png"
               alt="Logo EcoGrant AI"
-              className="h-10 w-auto object-contain rounded-lg group-hover:scale-105 transition-transform"
+              className="h-8 sm:h-10 w-auto object-contain rounded-lg group-hover:scale-105 transition-transform"
             />
             <div className="flex flex-col">
-              <span className="font-extrabold text-xl text-[#1B4332] tracking-tight leading-none">
+              <span className="font-extrabold text-lg sm:text-xl text-[#1B4332] tracking-tight leading-none">
                 EcoGrant<span className="text-[#52B788]">.ai</span>
               </span>
-              <span className="text-xs font-bold text-[#334155] uppercase tracking-widest mt-0.5">
+              <span className="text-[10px] sm:text-xs font-bold text-[#334155] uppercase tracking-wider sm:tracking-widest mt-0.5">
                 Grant & Costing Engine
               </span>
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-7 text-sm font-bold text-[#334155]">
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-bold text-[#334155]">
             <a href="#solusi" className="hover:text-[#1B4332] transition-colors">
               Keunggulan
             </a>
@@ -204,32 +207,129 @@ function Landing() {
             </a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {user ? (
               <Link
                 to={appHref}
-                className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md transition-all hover:shadow-lg flex items-center gap-2"
+                className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold shadow-md transition-all hover:shadow-lg flex items-center gap-1.5 sm:gap-2"
               >
                 <span>Buka Ruang Kerja</span>
-                <ArrowRight className="w-4 h-4 text-[#52B788]" />
+                <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#52B788]" />
               </Link>
             ) : (
               <>
                 <Link
                   to="/auth"
-                  className="text-sm font-bold text-[#0F172A] hover:text-[#1B4332] px-3.5 py-2 transition-colors"
+                  className="hidden sm:inline-block text-sm font-bold text-[#0F172A] hover:text-[#1B4332] px-3 py-2 transition-colors"
                 >
                   Masuk
                 </Link>
                 <Link
                   to="/auth"
-                  className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-md transition-all hover:shadow-lg flex items-center gap-2"
+                  className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold shadow-md transition-all hover:shadow-lg flex items-center gap-1.5 sm:gap-2"
                 >
-                  <span>Coba Gratis Sekarang</span>
-                  <ArrowRight className="w-4 h-4 text-[#52B788]" />
+                  <span>Coba Gratis</span>
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#52B788]" />
                 </Link>
               </>
             )}
+
+            {/* Mobile Navigation Drawer Toggle */}
+            <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+              <SheetTrigger asChild>
+                <button
+                  className="lg:hidden p-2 rounded-lg text-[#1B4332] hover:bg-[#1B4332]/10 transition-colors"
+                  aria-label="Buka Menu Navigasi Landing Page"
+                >
+                  <Menu className="w-6 h-6" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80 bg-[#F8FBF8] p-6 flex flex-col justify-between">
+                <SheetTitle className="sr-only">Navigasi Landing Page</SheetTitle>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2.5 pb-4 border-b border-slate-200">
+                    <img src="/logoecograntai.png" alt="Logo" className="h-8 w-auto object-contain" />
+                    <span className="font-extrabold text-lg text-[#1B4332]">EcoGrant.ai</span>
+                  </div>
+
+                  <nav className="flex flex-col gap-4 text-base font-bold text-[#334155]">
+                    <a
+                      href="#solusi"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="hover:text-[#1B4332] py-1 border-b border-slate-100"
+                    >
+                      Keunggulan
+                    </a>
+                    <a
+                      href="#fitur"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="hover:text-[#1B4332] py-1 border-b border-slate-100"
+                    >
+                      Modul Fitur
+                    </a>
+                    <a
+                      href="#cara-kerja"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="hover:text-[#1B4332] py-1 border-b border-slate-100"
+                    >
+                      Cara Kerja
+                    </a>
+                    <a
+                      href="#target"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="hover:text-[#1B4332] py-1 border-b border-slate-100"
+                    >
+                      Solusi Peran
+                    </a>
+                    <a
+                      href="#simulator"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="hover:text-[#1B4332] py-1 border-b border-slate-100"
+                    >
+                      Live Simulator
+                    </a>
+                    <a
+                      href="#faq"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="hover:text-[#1B4332] py-1"
+                    >
+                      FAQ
+                    </a>
+                  </nav>
+                </div>
+
+                <div className="space-y-3 pt-6 border-t border-slate-200">
+                  {user ? (
+                    <Link
+                      to={appHref}
+                      onClick={() => setMobileNavOpen(false)}
+                      className="w-full bg-[#1B4332] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-sm shadow-md"
+                    >
+                      <span>Buka Ruang Kerja</span>
+                      <ArrowRight className="w-4 h-4 text-[#52B788]" />
+                    </Link>
+                  ) : (
+                    <>
+                      <Link
+                        to="/auth"
+                        onClick={() => setMobileNavOpen(false)}
+                        className="w-full bg-[#1B4332] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-sm shadow-md"
+                      >
+                        <span>Coba Gratis Sekarang</span>
+                        <ArrowRight className="w-4 h-4 text-[#52B788]" />
+                      </Link>
+                      <Link
+                        to="/auth"
+                        onClick={() => setMobileNavOpen(false)}
+                        className="w-full border border-slate-300 text-[#0F172A] py-2.5 rounded-xl font-bold text-center block text-sm hover:bg-slate-100"
+                      >
+                        Masuk ke Akun
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>

@@ -194,32 +194,47 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-border bg-card/90 px-4 backdrop-blur lg:px-8">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-border bg-card/90 px-3 sm:px-4 backdrop-blur lg:px-8">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Buka menu navigasi">
+                <Button variant="ghost" size="icon" className="lg:hidden shrink-0" aria-label="Buka menu navigasi">
                   <Menu className="size-5" aria-hidden="true" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 bg-sidebar p-0">
-                <SheetTitle className="sr-only">Navigasi</SheetTitle>
+              <SheetContent side="left" className="w-72 bg-sidebar p-0 flex flex-col h-full">
+                <SheetTitle className="sr-only">Navigasi Utama</SheetTitle>
                 <Brand />
-                <NavList onNavigate={() => setMobileOpen(false)} />
+                <div className="flex-1 overflow-y-auto">
+                  <NavList onNavigate={() => setMobileOpen(false)} />
+                </div>
+                <div className="border-t border-sidebar-border p-3 shrink-0">
+                  <button
+                    onClick={() => {
+                      setMobileOpen(false);
+                      void handleSignOut();
+                    }}
+                    aria-label="Keluar dari akun"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-red-500 dark:text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-600 dark:hover:bg-red-500/20"
+                  >
+                    <LogOut className="size-4 text-red-500 dark:text-red-400" aria-hidden="true" />
+                    <span>Keluar (Logout)</span>
+                  </button>
+                </div>
               </SheetContent>
             </Sheet>
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold flex items-center">
-                <span>{profile?.full_name || "Pengguna"}</span>
-                {isAdmin ? <Badge className="ml-2 align-middle">Administrator</Badge> : null}
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-xs sm:text-sm font-semibold flex items-center gap-1.5">
+                <span className="truncate">{profile?.full_name || "Pengguna"}</span>
+                {isAdmin ? <Badge className="text-[10px] sm:text-xs shrink-0 px-1.5 py-0">Admin</Badge> : null}
               </div>
-              <p className="truncate text-xs text-muted-foreground">
+              <p className="truncate text-[11px] sm:text-xs text-muted-foreground">
                 {profile?.organization_name || "Organisasi belum diisi"}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <Button variant="ghost" size="icon" onClick={toggle} aria-label="Ubah mode tampilan">
               {theme === "dark" ? (
                 <Sun className="size-4" aria-hidden="true" />
@@ -238,13 +253,15 @@ export function AppShell({ children }: { children: ReactNode }) {
               ) : null}
             </Link>
             <Button
-              variant="ghost"
-              size="icon"
+              variant="outline"
+              size="sm"
               onClick={handleSignOut}
               aria-label="Keluar dari akun"
-              className="lg:hidden"
+              className="lg:hidden text-xs text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/50 h-8 px-2 sm:px-2.5 font-medium flex items-center gap-1 shrink-0"
+              title="Keluar dari akun"
             >
-              <LogOut className="size-4" aria-hidden="true" />
+              <LogOut className="size-3.5" aria-hidden="true" />
+              <span className="hidden sm:inline">Keluar</span>
             </Button>
           </div>
         </header>
