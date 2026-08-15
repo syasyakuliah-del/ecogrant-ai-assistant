@@ -22,6 +22,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { logAudit } from "@/lib/audit";
 import { PageHeader } from "@/components/app-shell";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -157,8 +168,8 @@ function SettingsPage() {
     toast.success("Kata sandi berhasil diperbarui!");
   }
 
+  // P2 Fix #8: replace window.confirm with AlertDialog state
   async function revokeAllSessions() {
-    if (!window.confirm("Keluar dari seluruh sesi perangkat aktif lainnya?")) return;
     await logAudit({ action: "auth.sessions.revoke", entityType: "session", entityId: user?.id });
     await signOut();
     void navigate({ to: "/auth", replace: true });
@@ -167,12 +178,6 @@ function SettingsPage() {
 
   async function deactivateAccount() {
     if (!user) return;
-    if (
-      !window.confirm(
-        "Apakah Anda yakin ingin menonaktifkan akun ini? Akses Anda ke ruang kerja akan dibekukan.",
-      )
-    )
-      return;
     await supabase.from("profiles").update({ status: "nonaktif" }).eq("id", user.id);
     await logAudit({ action: "account.deactivate", entityType: "profile", entityId: user.id });
     await signOut();
@@ -260,14 +265,35 @@ function SettingsPage() {
               Tinjau perangkat yang terhubung dan riwayat aktivitas masuk ke akun Anda.
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void revokeAllSessions()}
-            className="gap-1.5 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950 border-red-200"
-          >
-            <LogOut className="size-3.5" /> Keluar Semua Sesi
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950 border-red-200"
+              >
+                <LogOut className="size-3.5" /> Keluar Semua Sesi
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Keluar dari Semua Sesi?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tindakan ini akan mengakhiri seluruh sesi aktif di semua perangkat. Anda perlu
+                  masuk kembali setelah ini.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => void revokeAllSessions()}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Ya, Keluar Semua
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardHeader>
         <CardContent>
           {history.length === 0 ? (
@@ -423,9 +449,31 @@ function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="destructive" onClick={() => void deactivateAccount()}>
-            Nonaktifkan Akun Sekarang
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">
+                Nonaktifkan Akun Sekarang
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Nonaktifkan Akun?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Akun Anda akan ditandai nonaktif dan seluruh sesi akan diakhiri. Akses ke ruang
+                  kerja akan dibekukan. Hubungi administrator untuk mengaktifkan kembali.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => void deactivateAccount()}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Ya, Nonaktifkan Akun
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
     </div>

@@ -20,8 +20,6 @@ export async function logAudit(params: {
       entity_id: params.entityId ?? null,
       old_values: (params.oldValues ?? null) as never,
       new_values: (params.newValues ?? null) as never,
-      old_values_json: (params.oldValues ?? null) as never,
-      new_values_json: (params.newValues ?? null) as never,
       ip_address: params.ipAddress ?? null,
       user_agent:
         params.userAgent ?? (typeof navigator !== "undefined" ? navigator.userAgent : null),
