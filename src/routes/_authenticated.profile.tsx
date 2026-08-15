@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Camera, Loader2, Save, User } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Camera, Loader2, Save, Upload, User } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +37,9 @@ function initials(name: string) {
 function ProfilePage() {
   const { profile, user, refreshProfile } = useAuth();
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -60,6 +63,48 @@ function ProfilePage() {
       });
     }
   }, [profile, user]);
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Ukuran maksimal foto adalah 2 MB.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user?.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+         throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      setForm({ ...form, avatar_url: publicUrl });
+      toast.success("Foto berhasil diunggah!");
+    } catch (error: any) {
+      console.error("[Profile] Avatar upload failed:", error);
+      toast.error(
+        "Gagal mengunggah foto. Pastikan Anda memiliki bucket 'avatars' di Supabase Storage."
+      );
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -122,14 +167,32 @@ function ProfilePage() {
               </Avatar>
               <div className="flex-1 space-y-1.5 w-full">
                 <Label htmlFor="avatar">Tautan Foto Avatar (URL)</Label>
-                <Input
-                  id="avatar"
-                  placeholder="https://images.unsplash.com/…"
-                  value={form.avatar_url}
-                  onChange={(e) => setForm({ ...form, avatar_url: e.target.value })}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="avatar"
+                    placeholder="https://images.unsplash.com/…"
+                    value={form.avatar_url}
+                    onChange={(e) => setForm({ ...form, avatar_url: e.target.value })}
+                  />
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    ref={fileInputRef}
+                    onChange={handleAvatarUpload}
+                  />
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                    <span className="sr-only sm:not-sr-only sm:ml-2">Unggah</span>
+                  </Button>
+                </div>
                 <p className="text-[11px] text-muted-foreground">
-                  Masukkan URL gambar atau gunakan Gravatar.
+                  Masukkan URL gambar, gunakan Gravatar, atau klik unggah (Maks 2MB).
                 </p>
               </div>
             </div>
