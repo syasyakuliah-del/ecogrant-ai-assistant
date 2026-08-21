@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { MEMBERSHIP_PLANS } from "@/hooks/useMembership";
+import { formatCurrency } from "@/lib/format";
 import { SbmSimulator } from "@/components/SbmSimulator";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -29,6 +31,8 @@ import {
   GraduationCap,
   Users,
   Menu,
+  Crown,
+  Star,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -130,6 +134,7 @@ function Landing() {
   const { user, isAdmin, loading } = useAuth();
   const [activeHeroTab, setActiveHeroTab] = useState<"proposal" | "sbm" | "lfa" | "export" | "chat">("proposal");
   const [activeRoleTab, setActiveRoleTab] = useState<"ngo" | "academic" | "csr" | "asn">("ngo");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -201,6 +206,9 @@ function Landing() {
             </a>
             <a href="#simulator" className="hover:text-[#1B4332] transition-colors">
               Live Simulator
+            </a>
+            <a href="#harga" className="hover:text-[#1B4332] transition-colors">
+              Paket Membership
             </a>
             <a href="#faq" className="hover:text-[#1B4332] transition-colors">
               FAQ
@@ -287,6 +295,13 @@ function Landing() {
                       className="hover:text-[#1B4332] py-1 border-b border-slate-100"
                     >
                       Live Simulator
+                    </a>
+                    <a
+                      href="#harga"
+                      onClick={() => setMobileNavOpen(false)}
+                      className="hover:text-[#1B4332] py-1 border-b border-slate-100"
+                    >
+                      Paket Membership
                     </a>
                     <a
                       href="#faq"
@@ -999,6 +1014,323 @@ function Landing() {
         </div>
       </section>
 
+      {/* MEMBERSHIP & PRICING SECTION */}
+      <section id="harga" className="py-24 px-6 max-w-7xl mx-auto space-y-12 border-t border-slate-300">
+        <div className="text-center max-w-3xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-2 bg-[#1B4332]/10 border border-[#1B4332]/20 px-4 py-1.5 rounded-full text-xs sm:text-sm font-extrabold text-[#1B4332]">
+            <Crown className="w-4 h-4 text-[#2D6A4F]" />
+            <span>Pilihan Paket Transparan & Tanpa Biaya Tersembunyi</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#0F172A] tracking-tight">
+            Paket Membership EcoGrant AI
+          </h2>
+          <p className="text-base sm:text-lg text-[#334155] font-medium max-w-2xl mx-auto">
+            Pilih paket investasi yang sesuai dengan kebutuhan individu, tim NGO, maupun institusi Anda dalam menyusun proposal hibah lingkungan.
+          </p>
+
+          {/* Billing Cycle Selector */}
+          <div className="pt-4 flex items-center justify-center">
+            <div className="bg-slate-200/80 p-1 rounded-2xl flex items-center gap-1 border border-slate-300 shadow-inner">
+              <button
+                onClick={() => setBillingCycle("monthly")}
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all ${
+                  billingCycle === "monthly"
+                    ? "bg-white text-[#1B4332] shadow-md"
+                    : "text-slate-600 hover:text-[#0F172A]"
+                }`}
+              >
+                Bayar Bulanan
+              </button>
+              <button
+                onClick={() => setBillingCycle("annual")}
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2 ${
+                  billingCycle === "annual"
+                    ? "bg-[#1B4332] text-white shadow-md"
+                    : "text-slate-600 hover:text-[#0F172A]"
+                }`}
+              >
+                <span>Bayar Tahunan</span>
+                <span className="bg-[#52B788] text-[#0F172A] text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Hemat 20%
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Pricing Cards Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto pt-4">
+          {/* Starter Plan */}
+          <div className="bg-white rounded-3xl p-7 md:p-8 border border-slate-300 shadow-md flex flex-col justify-between relative hover:shadow-xl transition-shadow">
+            <div className="space-y-6">
+              <div>
+                <span className="text-xs font-black tracking-widest text-slate-500 uppercase">
+                  Untuk Memulai
+                </span>
+                <h3 className="text-2xl font-black text-[#0F172A] mt-1">Starter</h3>
+                <p className="text-xs text-[#334155] font-medium mt-1 min-h-[36px]">
+                  {MEMBERSHIP_PLANS.starter.description}
+                </p>
+              </div>
+
+              <div className="pb-4 border-b border-slate-200">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl sm:text-4xl font-black text-[#0F172A]">
+                    {formatCurrency(
+                      billingCycle === "annual"
+                        ? MEMBERSHIP_PLANS.starter.priceMonthly * 0.8
+                        : MEMBERSHIP_PLANS.starter.priceMonthly
+                    )}
+                  </span>
+                  <span className="text-xs font-bold text-slate-500">/bulan</span>
+                </div>
+                {billingCycle === "annual" && (
+                  <p className="text-[11px] font-bold text-[#2D6A4F] mt-1">
+                    Ditagih {formatCurrency(MEMBERSHIP_PLANS.starter.priceMonthly * 0.8 * 12)} /tahun
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs font-black uppercase tracking-wider text-slate-400">
+                  Kapasitas & Fitur Utama:
+                </p>
+                <ul className="space-y-3 text-xs sm:text-sm text-[#1E293B] font-medium">
+                  <li className="flex items-start gap-2.5 font-bold text-[#1B4332]">
+                    <CheckCircle2 className="w-4 h-4 text-[#2D6A4F] shrink-0 mt-0.5" />
+                    <span>Quota Proposal: <strong>2 Proposal / bulan</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-[#2D6A4F] shrink-0 mt-0.5" />
+                    <span>Kuota Asistensi AI: <strong>50 kali / bulan</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>AI Proposal Generator (Baku & Terstruktur)</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>AI Scientific Justification & Indicator Engine</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>Matriks LFA & Scope of Work (SoW)</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>Costing Engine SBM Regional Kemenhut</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>Ekspor Dokumen PDF, Word (.docx) & Excel (.xlsx)</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="pt-8">
+              <Link
+                to={user ? "/membership" : "/auth"}
+                className="w-full bg-slate-900 hover:bg-[#1B4332] text-white py-3.5 px-4 rounded-xl font-bold text-sm text-center block transition-all shadow-sm hover:shadow-md"
+              >
+                {user ? "Pilih Paket Starter" : "Mulai Paket Starter"}
+              </Link>
+            </div>
+          </div>
+
+          {/* Basic Plan (Featured / Popular) */}
+          <div className="bg-white rounded-3xl p-7 md:p-8 border-2 border-[#1B4332] shadow-2xl flex flex-col justify-between relative ring-4 ring-[#1B4332]/10 scale-105 z-10">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#1B4332] via-[#2D6A4F] to-[#1B4332] text-white text-xs font-black px-4 py-1 rounded-full uppercase tracking-widest shadow-md flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#52B788]" />
+              <span>PALING POPULER</span>
+            </div>
+
+            <div className="space-y-6 pt-2">
+              <div>
+                <span className="text-xs font-black tracking-widest text-[#2D6A4F] uppercase">
+                  Rekomendasi Utama
+                </span>
+                <h3 className="text-2xl font-black text-[#0F172A] mt-1 flex items-center justify-between">
+                  <span>Basic</span>
+                  <Crown className="w-6 h-6 text-[#2D6A4F]" />
+                </h3>
+                <p className="text-xs text-[#334155] font-medium mt-1 min-h-[36px]">
+                  {MEMBERSHIP_PLANS.basic.description}
+                </p>
+              </div>
+
+              <div className="pb-4 border-b border-slate-200">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl sm:text-4xl font-black text-[#1B4332]">
+                    {formatCurrency(
+                      billingCycle === "annual"
+                        ? MEMBERSHIP_PLANS.basic.priceMonthly * 0.8
+                        : MEMBERSHIP_PLANS.basic.priceMonthly
+                    )}
+                  </span>
+                  <span className="text-xs font-bold text-slate-500">/bulan</span>
+                </div>
+                {billingCycle === "annual" && (
+                  <p className="text-[11px] font-bold text-[#2D6A4F] mt-1">
+                    Ditagih {formatCurrency(MEMBERSHIP_PLANS.basic.priceMonthly * 0.8 * 12)} /tahun
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs font-black uppercase tracking-wider text-[#1B4332]">
+                  Semua Fitur Starter ditambah:
+                </p>
+                <ul className="space-y-3 text-xs sm:text-sm text-[#1E293B] font-medium">
+                  <li className="flex items-start gap-2.5 font-extrabold text-[#1B4332]">
+                    <CheckCircle2 className="w-4 h-4 text-[#2D6A4F] shrink-0 mt-0.5" />
+                    <span>Quota Proposal: <strong>5 Proposal / bulan</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2.5 font-bold text-[#1B4332]">
+                    <CheckCircle2 className="w-4 h-4 text-[#2D6A4F] shrink-0 mt-0.5" />
+                    <span>Kuota Asistensi AI: <strong>200 kali / bulan</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2.5 font-semibold text-[#0F172A]">
+                    <Zap className="w-4 h-4 text-amber-500 shrink-0 mt-0.5 fill-amber-500" />
+                    <span>Pemrosesan Prioritas (Fast-Track Generation)</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>AI Tingkat Lanjut & Interaktif Revision System</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>Penyesuaian Over-budget Warning SBM Kemenhut</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>Dukungan Ekspor Multi-Format Lengkap</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="pt-8">
+              <Link
+                to={user ? "/membership" : "/auth"}
+                className="w-full bg-[#1B4332] hover:bg-[#2D6A4F] text-white py-3.5 px-4 rounded-xl font-black text-sm text-center block transition-all shadow-lg hover:shadow-xl group"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <span>{user ? "Pilih Paket Basic" : "Dapatkan Akses Basic"}</span>
+                  <ArrowRight className="w-4 h-4 text-[#52B788] group-hover:translate-x-1 transition-transform" />
+                </span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Premium Plan */}
+          <div className="bg-white rounded-3xl p-7 md:p-8 border border-slate-300 shadow-md flex flex-col justify-between relative hover:shadow-xl transition-shadow">
+            <div className="space-y-6">
+              <div>
+                <span className="text-xs font-black tracking-widest text-slate-500 uppercase">
+                  Performa Maksimal
+                </span>
+                <h3 className="text-2xl font-black text-[#0F172A] mt-1">Premium</h3>
+                <p className="text-xs text-[#334155] font-medium mt-1 min-h-[36px]">
+                  {MEMBERSHIP_PLANS.premium.description}
+                </p>
+              </div>
+
+              <div className="pb-4 border-b border-slate-200">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl sm:text-4xl font-black text-[#0F172A]">
+                    {formatCurrency(
+                      billingCycle === "annual"
+                        ? MEMBERSHIP_PLANS.premium.priceMonthly * 0.8
+                        : MEMBERSHIP_PLANS.premium.priceMonthly
+                    )}
+                  </span>
+                  <span className="text-xs font-bold text-slate-500">/bulan</span>
+                </div>
+                {billingCycle === "annual" && (
+                  <p className="text-[11px] font-bold text-[#2D6A4F] mt-1">
+                    Ditagih {formatCurrency(MEMBERSHIP_PLANS.premium.priceMonthly * 0.8 * 12)} /tahun
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs font-black uppercase tracking-wider text-slate-400">
+                  Semua Fitur Basic ditambah:
+                </p>
+                <ul className="space-y-3 text-xs sm:text-sm text-[#1E293B] font-medium">
+                  <li className="flex items-start gap-2.5 font-extrabold text-[#1B4332]">
+                    <CheckCircle2 className="w-4 h-4 text-[#2D6A4F] shrink-0 mt-0.5" />
+                    <span>Quota Proposal: <strong>10 Proposal / bulan</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2.5 font-bold text-[#1B4332]">
+                    <CheckCircle2 className="w-4 h-4 text-[#2D6A4F] shrink-0 mt-0.5" />
+                    <span>Kuota Asistensi AI: <strong>1.000 kali / bulan</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2.5 font-semibold text-[#0F172A]">
+                    <Zap className="w-4 h-4 text-amber-500 shrink-0 mt-0.5 fill-amber-500" />
+                    <span>Priority Processing Utama (Highest Priority)</span>
+                  </li>
+                  <li className="flex items-start gap-2.5 font-semibold text-[#1B4332]">
+                    <ShieldCheck className="w-4 h-4 text-[#2D6A4F] shrink-0 mt-0.5" />
+                    <span>Dukungan Prioritas 1-on-1 (Direct Consultation)</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>Konsultasi Penyesuaian Standard Costing Lokal</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>Akses Fitur Eksperimental & Update Terbaru</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="pt-8">
+              <Link
+                to={user ? "/membership" : "/auth"}
+                className="w-full bg-slate-900 hover:bg-[#1B4332] text-white py-3.5 px-4 rounded-xl font-bold text-sm text-center block transition-all shadow-sm hover:shadow-md"
+              >
+                {user ? "Pilih Paket Premium" : "Mulai Paket Premium"}
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Guarantees & Features Bar */}
+        <div className="max-w-4xl mx-auto bg-white rounded-2xl p-6 border border-slate-300 shadow-sm grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div className="space-y-1">
+            <div className="flex justify-center text-[#2D6A4F]">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <p className="text-xs font-black text-[#0F172A]">Upgrade Kapan Saja</p>
+            <p className="text-[11px] text-slate-500 font-medium">Bisa disesuaikan kebutuhan</p>
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-center text-[#2D6A4F]">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <p className="text-xs font-black text-[#0F172A]">Tanpa Komitmen Tersembunyi</p>
+            <p className="text-[11px] text-slate-500 font-medium">Batal kapan saja dengan mudah</p>
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-center text-[#2D6A4F]">
+              <Zap className="w-5 h-5" />
+            </div>
+            <p className="text-xs font-black text-[#0F172A]">Aktivasi Instan</p>
+            <p className="text-[11px] text-slate-500 font-medium">Langsung siap digunakan</p>
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-center text-[#2D6A4F]">
+              <FileCheck2 className="w-5 h-5" />
+            </div>
+            <p className="text-xs font-black text-[#0F172A]">Patuh SBM Kemenhut</p>
+            <p className="text-[11px] text-slate-500 font-medium">100% Kepatuhan standar</p>
+          </div>
+        </div>
+      </section>
+
       {/* INTERACTIVE FAQ SECTION */}
       <section id="faq" className="py-20 px-6 max-w-5xl mx-auto border-t border-slate-300">
         <div className="text-center space-y-4 mb-14">
@@ -1111,6 +1443,7 @@ function Landing() {
               <li><a href="#fitur" className="hover:text-white text-slate-300 transition-colors">Costing Engine SBM</a></li>
               <li><a href="#fitur" className="hover:text-white text-slate-300 transition-colors">Matriks LFA</a></li>
               <li><a href="#simulator" className="hover:text-white text-slate-300 transition-colors">Simulator Live</a></li>
+              <li><a href="#harga" className="hover:text-white text-slate-300 transition-colors">Paket Membership</a></li>
             </ul>
           </div>
 
