@@ -89,6 +89,7 @@ export type UserSubscription = {
 type MembershipContextType = {
   currentPlan: MembershipPlan;
   subscription: UserSubscription | null;
+  hasActiveSubscription: boolean;
   isLoading: boolean;
   proposalCount: number;
   canUseFeature: (featureKey: string) => boolean;
@@ -151,6 +152,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
   });
 
   // Active Plan determination
+  const hasActiveSubscription = Boolean(subData && subData.status === "active");
   const activePlanId: PlanId = subData?.planId || "starter";
   const currentPlan = MEMBERSHIP_PLANS[activePlanId] || MEMBERSHIP_PLANS.starter;
 
@@ -244,6 +246,7 @@ export function MembershipProvider({ children }: { children: ReactNode }) {
       value={{
         currentPlan,
         subscription: subData ?? null,
+        hasActiveSubscription,
         isLoading: isSubLoading,
         proposalCount,
         canUseFeature,

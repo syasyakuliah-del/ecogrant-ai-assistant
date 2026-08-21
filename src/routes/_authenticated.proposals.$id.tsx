@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
@@ -8,11 +8,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Lock,
   RotateCcw,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useProposalData, useAutosave, computeProgress } from "@/hooks/useProposalData";
 import { WIZARD_STEPS } from "@/lib/constants";
 import { supabase } from "@/integrations/supabase/client";
+import { useMembership } from "@/hooks/useMembership";
 import { PageHeader } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,8 +54,10 @@ export const Route = createFileRoute("/_authenticated/proposals/$id")({
 });
 
 function WizardPage() {
+  const navigate = useNavigate();
   const { id } = Route.useParams();
   const { data, isLoading, refetch } = useProposalData(id);
+  const { hasActiveSubscription } = useMembership();
 
   const currentVersion = data?.proposal?.version_number ?? 1;
   const { save, retrySave, state: autosaveState, lastError } = useAutosave(id, currentVersion);
@@ -97,6 +102,19 @@ function WizardPage() {
     refetch: () => void refetch(),
     save,
   };
+
+  function handleStepClick(targetStep: number) {
+    if (targetStep > 1 && !hasActiveSubscription) {
+      toast.info(
+        "Fitur Narasi Proposal dan langkah lanjutan khusus untuk akun berlangganan. Mengalihkan Anda ke halaman paket membership...",
+        { duration: 4000 }
+      );
+      void navigate({ to: "/membership" });
+      return;
+    }
+    setStep(targetStep);
+  }
+
   const currentStepInfo = WIZARD_STEPS.find((s) => s.step === step) ?? WIZARD_STEPS[0]!;
 
   return (
@@ -173,18 +191,23 @@ function WizardPage() {
             {WIZARD_STEPS.map((s) => {
               const isCurrent = s.step === step;
               const isChecked = progress.checks[s.step - 1];
+              const isLockedForFree = s.step > 1 && !hasActiveSubscription;
+
               return (
-                <button key={s.step} type="button" onClick={() => setStep(s.step)}>
+                <button key={s.step} type="button" onClick={() => handleStepClick(s.step)}>
                   <Badge
                     variant={isCurrent ? "default" : isChecked ? "secondary" : "outline"}
-                    className={`cursor-pointer transition-colors text-xs py-1 px-2.5 ${
+                    className={`cursor-pointer transition-colors text-xs py-1 px-2.5 flex items-center gap-1 ${
                       isCurrent
                         ? "bg-primary text-primary-foreground font-bold shadow-sm"
                         : isChecked
                           ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                          : "hover:bg-muted"
+                          : isLockedForFree
+                            ? "border-amber-500/30 text-amber-700 dark:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10"
+                            : "hover:bg-muted"
                     }`}
                   >
+                    {isLockedForFree && <Lock className="size-3 text-amber-500 shrink-0" />}
                     {s.step}. {s.short}
                   </Badge>
                 </button>
@@ -213,7 +236,7 @@ function WizardPage() {
         <Button
           variant="outline"
           disabled={step === 1}
-          onClick={() => setStep((s) => Math.max(1, s - 1))}
+          onClick={() => handleStepClick(Math.max(1, step - 1))}
           className="gap-1.5 text-xs sm:text-sm"
         >
           <ChevronLeft className="size-4" /> Langkah Sebelumnya (
@@ -226,7 +249,7 @@ function WizardPage() {
 
         <Button
           disabled={step === 10}
-          onClick={() => setStep((s) => Math.min(10, s + 1))}
+          onClick={() => handleStepClick(Math.min(10, step + 1))}
           className="gap-1.5 text-xs sm:text-sm shadow-sm"
         >
           Langkah Selanjutnya ({step < 10 ? WIZARD_STEPS[step]?.short : ""}){" "}
@@ -236,3 +259,4 @@ function WizardPage() {
     </div>
   );
 }
+
