@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Check,
   CheckCircle2,
   Clock,
+  Crown,
   Diff,
   FileText,
   History,
@@ -19,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { generateNarrative } from "@/lib/ai.functions";
 import { NARRATIVE_SECTIONS } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
+import { useMembership } from "@/hooks/useMembership";
 import {
   Accordion,
   AccordionContent,
@@ -67,11 +70,16 @@ interface VersionItem {
 }
 
 export function StepNarrative({ proposal, sections, donor, refetch }: StepProps) {
+  const navigate = useNavigate();
+  const { currentPlan } = useMembership();
   const run = useServerFn(generateNarrative);
   const [busy, setBusy] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [comments, setComments] = useState<Record<string, string[]>>({});
   const [newComment, setNewComment] = useState<Record<string, string>>({});
+
+  // Membership modal state
+  const [membershipModalOpen, setMembershipModalOpen] = useState(false);
 
   // AI Diff Confirmation state
   const [aiPreview, setAiPreview] = useState<AiPreviewState | null>(null);
@@ -135,7 +143,13 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
     setAiPreview(null);
   }
 
-  async function handleGenerateAll() {
+  function handleGenerateAllClick() {
+    // Open membership package prompt modal first when clicking generate narrative button
+    setMembershipModalOpen(true);
+  }
+
+  async function executeGenerateAll() {
+    setMembershipModalOpen(false);
     setBusy("all");
     try {
       for (let i = 0; i < NARRATIVE_SECTIONS.length; i++) {
@@ -219,13 +233,23 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
             manual.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void navigate({ to: "/membership" })}
+            className="gap-1.5 text-xs font-semibold border-amber-500/30 text-amber-700 dark:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10"
+          >
+            <Crown className="size-3.5 text-amber-500" />
+            Paket Membership ({currentPlan.name})
+          </Button>
+
           <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
             {filled} / {NARRATIVE_SECTIONS.length} Bagian Terisi
           </Badge>
           <Button
             size="sm"
-            onClick={() => void handleGenerateAll()}
+            onClick={handleGenerateAllClick}
             disabled={busy !== null}
             className="gap-1.5 shadow-sm"
           >
@@ -474,6 +498,67 @@ export function StepNarrative({ proposal, sections, donor, refetch }: StepProps)
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* DIALOG: MEMBERSHIP PACKAGE NAVIGATION & AI PROMPT */}
+      <Dialog open={membershipModalOpen} onOpenChange={setMembershipModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mb-3">
+              <Crown className="size-6" />
+            </div>
+            <DialogTitle className="font-display text-lg font-bold text-center">
+              Paket Membership & Asistensi AI
+            </DialogTitle>
+            <DialogDescription className="text-xs text-center leading-relaxed">
+              Anda saat ini menggunakan paket <strong className="font-semibold text-foreground">{currentPlan.name}</strong> dengan kapasitas pembuatan maksimal <strong className="font-semibold text-foreground">{currentPlan.limits.proposalQuota} proposal / bulan</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-lg border bg-muted/40 p-3.5 text-xs space-y-2">
+            <p className="font-semibold text-foreground">Batas Maksimal Generate Proposal:</p>
+            <ul className="space-y-1.5 text-muted-foreground">
+              <li className="flex justify-between items-center">
+                <span>Starter (Rp49rb/bln):</span>
+                <Badge variant="outline" className="text-[10px]">Maksimal 2 proposal/bulan</Badge>
+              </li>
+              <li className="flex justify-between items-center font-medium text-foreground">
+                <span>Basic (Rp79rb/bln):</span>
+                <Badge className="text-[10px] bg-primary">Maksimal 5 proposal/bulan</Badge>
+              </li>
+              <li className="flex justify-between items-center font-medium text-foreground">
+                <span>Premium (Rp149rb/bln):</span>
+                <Badge variant="secondary" className="text-[10px]">Maksimal 10 proposal/bulan</Badge>
+              </li>
+            </ul>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2 mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full sm:w-auto text-xs font-semibold gap-1.5 border-amber-500/30 text-amber-700 dark:text-amber-400"
+              onClick={() => {
+                setMembershipModalOpen(false);
+                void navigate({ to: "/membership" });
+              }}
+            >
+              <Crown className="size-3.5 text-amber-500" />
+              Pilih / Upgrade Membership
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="w-full sm:w-auto text-xs gap-1.5"
+              onClick={() => void executeGenerateAll()}
+            >
+              <Wand2 className="size-3.5" />
+              Lanjutkan Generasi AI
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+

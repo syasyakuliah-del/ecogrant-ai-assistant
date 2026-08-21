@@ -13,9 +13,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { FileText, RefreshCw } from "lucide-react";
+import { Crown, FileText, RefreshCw, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useMembership } from "@/hooks/useMembership";
 import { STATUS_LABEL } from "@/lib/constants";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { EmptyState, PageHeader } from "@/components/app-shell";
@@ -60,6 +61,7 @@ const PERIODS = [
 
 function DashboardPage() {
   const { profile, user, isAdmin, loading } = useAuth();
+  const { currentPlan, proposalCount } = useMembership();
   const navigate = useNavigate();
   const [period, setPeriod] = useState("365");
 
@@ -156,6 +158,9 @@ function DashboardPage() {
     );
   }
 
+  const proposalLimit = currentPlan.limits.proposalQuota;
+  const usagePercentage = proposalLimit === 999 ? 0 : Math.min(100, Math.round((proposalCount / proposalLimit) * 100));
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -176,6 +181,52 @@ function DashboardPage() {
           </Select>
         }
       />
+
+      {/* MEMBERSHIP SUMMARY CARD */}
+      <Card className="border-l-4 border-l-primary bg-card/80 backdrop-blur shadow-xs">
+        <CardContent className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+              <Crown className="size-6" />
+            </div>
+            <div className="space-y-0.5 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Membership Anda
+                </span>
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-[10px]">
+                  AKTIF
+                </Badge>
+              </div>
+              <p className="font-display text-lg font-bold text-foreground">
+                Paket {currentPlan.name}{" "}
+                <span className="text-xs font-medium text-muted-foreground font-sans">
+                  ({formatCurrency(currentPlan.priceMonthly)} / bulan)
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <div className="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center gap-4 border-t md:border-t-0 md:border-l pt-3 md:pt-0 md:pl-6">
+            <div className="space-y-1.5 min-w-[200px]">
+              <div className="flex justify-between text-xs font-medium">
+                <span className="text-muted-foreground">Kuota Proposal Bulan Ini:</span>
+                <span className="font-bold text-foreground">
+                  {proposalCount} / {proposalLimit === 999 ? "Tanpa Batas" : proposalLimit}
+                </span>
+              </div>
+              <Progress value={proposalLimit === 999 ? 100 : usagePercentage} className="h-2" />
+            </div>
+
+            <Link to="/membership" className="shrink-0">
+              <Button size="sm" variant={currentPlan.id === "premium" ? "outline" : "default"} className="w-full h-9 text-xs font-semibold gap-1.5">
+                <Sparkles className="size-3.5" />
+                {currentPlan.id === "premium" ? "Kelola Membership" : "Upgrade Membership"}
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
 
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

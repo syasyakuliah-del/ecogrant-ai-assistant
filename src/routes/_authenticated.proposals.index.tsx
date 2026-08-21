@@ -7,6 +7,7 @@ import {
   Calendar,
   CheckSquare,
   Copy,
+  Crown,
   Download,
   Eye,
   FileSpreadsheet,
@@ -23,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useMembership } from "@/hooks/useMembership";
 import { logAudit } from "@/lib/audit";
 import { PROPOSAL_STATUSES, STATUS_LABEL } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
@@ -98,6 +100,7 @@ type ProposalRow = {
 
 function ProposalsPage() {
   const { user, isAdmin, hasPermission } = useAuth();
+  const { canUseFeature, currentPlan, proposalCount } = useMembership();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -118,8 +121,18 @@ function ProposalsPage() {
 
   // Dialog states
   const [createOpen, setCreateOpen] = useState(false);
+  const [upgradeQuotaOpen, setUpgradeQuotaOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [detailProposal, setDetailProposal] = useState<ProposalRow | null>(null);
+
+  const handleOpenCreateDialog = () => {
+    if (!canUseFeature("proposal_generation")) {
+      setUpgradeQuotaOpen(true);
+      return;
+    }
+    setCreateOpen(true);
+  };
+
 
   const canAccessAll = isAdmin || hasPermission("proposal.view.all");
 
@@ -502,7 +515,7 @@ function ProposalsPage() {
         title="Proposal Saya"
         description="Kelola seluruh proposal hibah beserta pencarian, filter status/donor, progress, duplikasi, dan ekspor dokumen."
         actions={
-          <Button onClick={() => setCreateOpen(true)} className="gap-2 shadow-sm">
+          <Button onClick={handleOpenCreateDialog} className="gap-2 shadow-sm">
             <Plus className="size-4" /> Buat Proposal
           </Button>
         }
@@ -1089,6 +1102,48 @@ function ProposalsPage() {
           </DialogContent>
         )}
       </Dialog>
+
+      {/* DIALOG: CONTEXTUAL QUOTA LIMIT UPGRADE PROMPT */}
+      <Dialog open={upgradeQuotaOpen} onOpenChange={setUpgradeQuotaOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mb-3">
+              <Crown className="size-6" />
+            </div>
+            <DialogTitle className="font-display text-lg font-bold text-center">
+              Batas Kuota Proposal Tercapai
+            </DialogTitle>
+            <DialogDescription className="text-xs text-center leading-relaxed">
+              Anda telah menggunakan <strong className="font-semibold text-foreground">{proposalCount} dari {currentPlan.limits.proposalQuota} proposal</strong> pada paket <strong className="font-semibold text-foreground">{currentPlan.name}</strong>. Upgrade membership Anda untuk mendapatkan kapasitas penggunaan yang lebih besar dan pemrosesan AI prioritas.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2 mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full sm:w-auto text-xs"
+              onClick={() => setUpgradeQuotaOpen(false)}
+            >
+              Nanti
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="w-full sm:w-auto text-xs font-semibold gap-1.5"
+              onClick={() => {
+                setUpgradeQuotaOpen(false);
+                void navigate({ to: "/membership" });
+              }}
+            >
+              <Sparkles className="size-3.5" />
+              Lihat Paket Membership
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+

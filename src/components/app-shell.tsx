@@ -6,6 +6,7 @@ import {
   Building2,
   ClipboardList,
   Coins,
+  Crown,
   FileText,
   Gauge,
   HelpCircle,
@@ -18,6 +19,7 @@ import {
   ScrollText,
   Settings,
   ShieldCheck,
+  Sparkles,
   Sun,
   User as UserIcon,
   Users,
@@ -25,6 +27,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useMembership } from "@/hooks/useMembership";
 import { useTheme } from "@/hooks/useTheme";
 import { logAudit } from "@/lib/audit";
 import { cn } from "@/lib/utils";
@@ -35,6 +38,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 const USER_NAV = [
   { to: "/dashboard", label: "Dashboard", icon: Gauge, permission: "dashboard.user.view" },
   { to: "/proposals", label: "Proposal Saya", icon: FileText, permission: "proposal.view.own" },
+  { to: "/membership", label: "Membership", icon: Crown },
   { to: "/community", label: "Community", icon: Users },
   { to: "/notifications", label: "Notifikasi", icon: Bell },
   { to: "/help", label: "Help Center", icon: HelpCircle },
@@ -147,6 +151,7 @@ function Brand() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { profile, user, isAdmin, signOut } = useAuth();
+  const { currentPlan } = useMembership();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -224,9 +229,24 @@ export function AppShell({ children }: { children: ReactNode }) {
               </SheetContent>
             </Sheet>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-xs sm:text-sm font-semibold flex items-center gap-1.5">
+              <div className="truncate text-xs sm:text-sm font-semibold flex items-center gap-1.5 flex-wrap">
                 <span className="truncate">{profile?.full_name || "Pengguna"}</span>
-                {isAdmin ? <Badge className="text-[10px] sm:text-xs shrink-0 px-1.5 py-0">Admin</Badge> : null}
+                {isAdmin ? (
+                  <Badge className="text-[10px] sm:text-xs shrink-0 px-1.5 py-0">Admin</Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] shrink-0 px-2 py-0.5 font-bold uppercase ${
+                      currentPlan.id === "premium"
+                        ? "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                        : currentPlan.id === "basic"
+                        ? "bg-primary/10 text-primary border-primary/30"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    Membership: {currentPlan.name}
+                  </Badge>
+                )}
               </div>
               <p className="truncate text-[11px] sm:text-xs text-muted-foreground">
                 {profile?.organization_name || "Organisasi belum diisi"}
@@ -234,7 +254,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {!isAdmin && currentPlan.id !== "premium" && (
+              <Link to="/membership">
+                <Button size="sm" className="h-8 text-xs px-2.5 sm:px-3 gap-1 font-semibold shadow-xs">
+                  <Sparkles className="size-3.5" />
+                  <span className="hidden sm:inline">Upgrade</span> Membership
+                </Button>
+              </Link>
+            )}
+
             <Button variant="ghost" size="icon" onClick={toggle} aria-label="Ubah mode tampilan">
               {theme === "dark" ? (
                 <Sun className="size-4" aria-hidden="true" />
@@ -273,6 +302,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
 }
+
 
 export function PageHeader({
   title,
